@@ -30,7 +30,7 @@ const clean=s=>{if(ST.clean)return String(s||'');const c=cleanRaw(s);return c||S
 const isAdult=s=>/xxx|adult|18\s?\+|\+\s?18|porn|erotic|yetişkin/i.test(s||'');
 
 /* ---------- ayar listesi ---------- */
-const SET=[['aud','Varsayılan ses',['Türkçe dublaj','Orijinal dil']],['sub','Varsayılan altyazı',['Türkçe','Kapalı','English']],['buf','Oynatıcı tamponu',['Dengeli','Güçlü, takılmaya karşı','Hızlı kanal geçişi']],['start','Açılışta',['Ana sayfa','Son izlenen kanal']],['mini','Kanal önizleme (aynı anda 2 bağlantı gerekir)',['Açık','Kapalı']],['pin','Ebeveyn kilidi',['Açık: yetişkin kategoriler','Kapalı']],['clean','Kanal ve kategori adlarını temizle',['Açık','Kapalı']],['clock','Saat',['Göster','Gizle']],['snd','Açılış sesi',['Açık','Kapalı']],['logs','Hata raporlarını gönder',['Açık','Kapalı']]];
+const SET=[['aud','Varsayılan ses',['Türkçe dublaj','Orijinal dil']],['sub','Varsayılan altyazı',['Türkçe','Kapalı','English']],['buf','Oynatıcı tamponu',['Dengeli','Güçlü, takılmaya karşı','Hızlı kanal geçişi']],['start','Açılışta',['Ana sayfa','Son izlenen kanal']],['mini','Kanal önizleme (2 bağlantı hakkı gerekir)',['Kapalı','Açık']],['pin','Ebeveyn kilidi',['Açık: yetişkin kategoriler','Kapalı']],['clean','Kanal ve kategori adlarını temizle',['Açık','Kapalı']],['clock','Saat',['Göster','Gizle']],['snd','Açılış sesi',['Açık','Kapalı']],['logs','Hata raporlarını gönder',['Açık','Kapalı']]];
 const pinOn=()=>!ST.pin,pinCode=()=>ST.pinCode||'0000';
 
 /* =========================================================
@@ -43,11 +43,11 @@ const API={C:{},
  base(){return ACC.srv.replace(/\/+$/,'')},
  q(a,x){return`${this.base()}/player_api.php?username=${encodeURIComponent(ACC.u)}&password=${encodeURIComponent(ACC.p)}${a?'&action='+a:''}${x||''}`},
  Q:[],busy:0,
- slot(){return new Promise(r=>{const go=()=>{if(this.busy<2){this.busy++;r()}else this.Q.push(go)};go()})},
- free(){this.busy--;const n=this.Q.shift();if(n)setTimeout(n,120)},
+ slot(){return new Promise(r=>{const go=()=>{if(this.busy<1){this.busy++;const w=Math.max(0,(this.last||0)+400-Date.now());setTimeout(r,w)}else this.Q.push(go)};go()})},
+ free(){this.busy--;this.last=Date.now();const n=this.Q.shift();if(n)n()},
  async get(url,ms,again){again=true;await this.slot();const c=new AbortController(),t=setTimeout(()=>c.abort(),ms||20000);
   try{const r=await fetch(url,{signal:c.signal});
-   if(!r.ok){const e=new Error('Sunucu hata verdi (HTTP '+r.status+')');e.retry=[404,429,500,502,503,504].indexOf(r.status)>=0;throw e}
+   if(!r.ok){const e=new Error('Sunucu hata verdi (HTTP '+r.status+')');e.retry=[500,502,503,504].indexOf(r.status)>=0;e.code=r.status;throw e}
    const tx=await r.text();try{return JSON.parse(tx)}catch(e){throw new Error('Sunucudan geçersiz yanıt geldi')}}
   catch(e){let er=e;if(e.name==='AbortError')er=new Error('Sunucu zamanında yanıt vermedi');else if(e instanceof TypeError){er=new Error('Sunucuya ulaşılamadı. Adresi ve internet bağlantını kontrol et.');er.retry=true}
    er.again=!again&&(er.retry||e.name==='AbortError');throw er}
@@ -56,7 +56,7 @@ const API={C:{},
  async once(k,fn){if(this.C[k])return this.C[k];const p=fn();this.C[k]=p;try{return await p}catch(e){delete this.C[k];throw e}},
  async login(){const j=await this.getR(this.q(''));if(!j||!j.user_info)throw new Error('Bu adres bir Xtream sunucusu gibi yanıt vermedi');const u=j.user_info;
   if(+u.auth===0)throw new Error('Kullanıcı adı veya şifre hatalı');if(u.status&&u.status!=='Active')throw new Error('Abonelik aktif değil ('+u.status+')');return u},
- cats(k){return this.once('c'+k,async()=>{if(ACC.type==='m3u')return M3U.cats(k);const j=await this.getR(this.q({live:'get_live_categories',vod:'get_vod_categories',series:'get_series_categories'}[k]));return(Array.isArray(j)?j:[]).map(c=>({id:String(c.category_id),name:c.category_name||''}))})},
+ cats(k){return this.once('c'+k,async()=>{if(ACC.type==='m3u')return M3U.cats(k);const ck='rg-c-'+k+'-'+(ACC.u||''),cc=load(ck,null);if(cc&&Date.now()-cc.t<432e5)return cc.v;const j=await this.getR(this.q({live:'get_live_categories',vod:'get_vod_categories',series:'get_series_categories'}[k]));const v=(Array.isArray(j)?j:[]).map(c=>({id:String(c.category_id),name:c.category_name||''}));save(ck,{t:Date.now(),v});return v})},
  items(k,cat){return this.once('i'+k+'|'+cat,async()=>{if(ACC.type==='m3u')return M3U.items(k,cat);const j=await this.getR(this.q({live:'get_live_streams',vod:'get_vod_streams',series:'get_series'}[k],'&category_id='+encodeURIComponent(cat)),45000);return(Array.isArray(j)?j:[]).map({live:nL,vod:nV,series:nS}[k])})},
  all(k){return this.once('a'+k,async()=>{if(ACC.type==='m3u')return M3U.all(k);const j=await this.getR(this.q({live:'get_live_streams',vod:'get_vod_streams',series:'get_series'}[k]),120000);return(Array.isArray(j)?j:[]).map({live:nL,vod:nV,series:nS}[k])})},
  vodInfo(id){return this.once('vi'+id,()=>this.getR(this.q('get_vod_info','&vod_id='+id)))},
@@ -147,7 +147,7 @@ AF.tv=async(a,tok,sel)=>{const cs=visCats('live',await API.cats('live'));if(tok!
  if(want!=null)await loadCat('live',want,tok);if(tok!==RT)return;
  if(sel&&$('#view '+sel))focus($('#view '+sel));else if(!cur||!cur.isConnected||cur.closest('#view'))focus($('#chl [data-f]')||$('#catl [data-f]'))};
 const lcc=it=>`<div class="lcc" data-f data-act="live" data-key="${reg(it)}" data-pv="1"><div class="lct">${it.icon?`<img loading="lazy" src="${esc(it.icon)}" onerror="this.remove()">`:''}<span>${it.num||''}</span>${isFav(it.id)?`<em>${IC.star}</em>`:''}</div><b>${esc(clean(it.name))}</b><small class="lnow" data-id="${esc(it.id)}">${it.arch?'Arşiv var':'&nbsp;'}</small><div class="pg"><div></div></div></div>`;
-function fillNow(list,tok){list.slice(0,8).forEach((it,i)=>setTimeout(()=>{if(tok!==RT)return;API.epg(it.id,2).then(ep=>{const el=$(`#chl .lnow[data-id="${CSS.escape(it.id)}"]`);if(!el)return;const n=ep.find(e=>e.s<=Date.now()&&e.e>Date.now());if(!n)return;el.textContent=n.title;el.nextElementSibling.firstElementChild.style.width=Math.min(100,(Date.now()-n.s)/(n.e-n.s)*100)+'%'})},800+i*400))}
+function fillNow(list,tok){if(!ST.cardEpg)return;list.slice(0,8).forEach((it,i)=>setTimeout(()=>{if(tok!==RT)return;API.epg(it.id,2).then(ep=>{const el=$(`#chl .lnow[data-id="${CSS.escape(it.id)}"]`);if(!el)return;const n=ep.find(e=>e.s<=Date.now()&&e.e>Date.now());if(!n)return;el.textContent=n.title;el.nextElementSibling.firstElementChild.style.width=Math.min(100,(Date.now()-n.s)/(n.e-n.s)*100)+'%'})},800+i*400))}
 let CTX=[],LCN=0;
 async function loadCat(k,cid,tok){tok=tok||RT;$$('#catl [data-act=cat]').forEach(c=>c.classList.toggle('sel',c.dataset.c===cid));
  const box=k==='live'?$('#chl'):$('#vg');if(!box)return;box.innerHTML='<div class="spin sm"></div>';let it;
@@ -159,10 +159,10 @@ let MT=null,CT=null;
 function miniDraw(it){const m=$('#mv');if(!m||!it)return;miniStop();m.innerHTML=it.icon?`<img src="${esc(it.icon)}" onerror="this.remove()">`:'';
  const cat=(API.C.clive&&null)||'';
  $('#mi').innerHTML=`${it.icon?`<img class="lvlogo" src="${esc(it.icon)}" onerror="this.remove()">`:''}<div class="meta"><span class="q on">● Canlı</span>${it.num?`<span>${it.num}</span>`:''}${it.arch?'<span>Arşiv var</span>':''}${isFav(it.id)?'<span>Favori</span>':''}</div><div class="mt">${esc(clean(it.name))}</div><div id="mepg"><span style="color:var(--mut)">Program bilgisi yükleniyor…</span></div><div class="hint3">OK ile tam ekran izle</div>`;
- API.epg(it.id,3).then(ep=>{if(!$('#mepg')||REG.get(cur&&cur.dataset.key)!==it)return;const n=ep.find(e=>e.s<=Date.now()&&e.e>Date.now()),x=ep.find(e=>e.s>Date.now());
-  $('#mepg').innerHTML=n?`<div class="mnow">${esc(n.title)}</div><div class="mtime">${hhmm(n.s)} – ${hhmm(n.e)}, ${Math.max(1,Math.round((n.e-Date.now())/60000))} dk kaldı</div><div class="pg"><div style="width:${Math.min(100,(Date.now()-n.s)/(n.e-n.s)*100)}%"></div></div>${x?`<div class="mnext">Sonra: ${esc(x.title)}, ${hhmm(x.s)}</div>`:''}`:'<span style="color:var(--mut)">Program bilgisi yok</span>'});
+ clearTimeout(miniDraw.t);miniDraw.t=setTimeout(()=>API.epg(it.id,3).then(ep=>{if(!$('#mepg')||REG.get(cur&&cur.dataset.key)!==it)return;const n=ep.find(e=>e.s<=Date.now()&&e.e>Date.now()),x=ep.find(e=>e.s>Date.now());
+  $('#mepg').innerHTML=n?`<div class="mnow">${esc(n.title)}</div><div class="mtime">${hhmm(n.s)} – ${hhmm(n.e)}, ${Math.max(1,Math.round((n.e-Date.now())/60000))} dk kaldı</div><div class="pg"><div style="width:${Math.min(100,(Date.now()-n.s)/(n.e-n.s)*100)}%"></div></div>${x?`<div class="mnext">Sonra: ${esc(x.title)}, ${hhmm(x.s)}</div>`:''}`:'<span style="color:var(--mut)">Program bilgisi yok</span>'}),700);
  clearTimeout(MT);if(miniOn())MT=setTimeout(()=>{if(cur&&REG.get(cur.dataset.key)===it&&cv==='tv'&&scr==='app')miniPlay(it)},1500)}
-const miniOn=()=>ST.mini===0||(ST.mini==null&&!(ACC&&ACC.ui&&+ACC.ui.max_connections<=1));
+const miniOn=()=>ST.mini===1;
 function miniPlay(it){const m=$('#mv');if(!m)return;const r=m.getBoundingClientRect(),sr=$('#stage').getBoundingClientRect();if(!sr.width)return;
  const u=1280/sr.width,x=(r.left-sr.left)*u,y=(r.top-sr.top)*u,w=r.width*u,h=r.height*u,k=1920/(innerWidth||1920);
  $('#hole').style.clipPath=`path(evenodd,"M0 0H1280V720H0Z M${x} ${y}h${w}v${h}h${-w}Z")`;
@@ -514,7 +514,7 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
  switch(a){
  case'login':{let acc;try{acc=parseLogin($('#in1').value,$('#in2').value,$('#in3').value)}catch(x){$('#lerr').textContent=x.message;return focus($('#in1'))}return doLogin(acc)}
  case'logout':AV.close();ACC=null;save('rg-acc',null);API.C={};go('login');return focus($('#in1'));
- case'reload':API.C={};toast('Liste yenileniyor','');return(ACC.type==='m3u'?M3U.load(ACC.url):Promise.resolve()).then(()=>render('home')).catch(x=>toast('Yenilenemedi',x.message));
+ case'reload':API.C={};['live','vod','series'].forEach(k=>save('rg-c-'+k+'-'+(ACC.u||''),null));toast('Liste yenileniyor','');return(ACC.type==='m3u'?M3U.load(ACC.url):Promise.resolve()).then(()=>render('home')).catch(x=>toast('Yenilenemedi',x.message));
  case'nav':if(d.v==='search')Q='';render(d.v==='live'?'tv':d.v);return focus($(`.sn[data-v="${d.v}"]`));
  case'srch':Q='';return render('search',d.s);
  case'rq':Q=d.q;return drawSearch();
