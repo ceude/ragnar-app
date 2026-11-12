@@ -594,7 +594,12 @@ $('#side').innerHTML='<div class="brand">R<span>AGNAR</span></div>'+[['home','An
 $('#pad .pgrid').innerHTML=['1','2','3','4','5','6','7','8','9','DEL','0','ok'].map(k=>`<div class="pk" data-f data-act="pk" data-v="${k}">${k==='ok'?'Tamam':k==='DEL'?'Sil':k}</div>`).join('');
 $$('[data-ic]').forEach(e=>e.insertAdjacentHTML('afterbegin',IC[e.dataset.ic]));
 introSound();$('#login .wm').style.cursor='pointer';$('#login .wm').onclick=replayIntro;
-function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);$('#stage').style.transform=`scale(${s})`}addEventListener('resize',fit);fit();clock();
+function fit(){const de=document.documentElement,W=innerWidth||de.clientWidth||1920,H=innerHeight||de.clientHeight||1080,s=Math.min(W/1280,H/720);
+ $('#stage').style.transform=`translate(${Math.round((W-1280*s)/2)}px,${Math.round((H-720*s)/2)}px) scale(${s})`}
+addEventListener('resize',fit);fit();setTimeout(fit,300);setTimeout(fit,1500);clock();
+/* TV'de: HTML5 yedek videoyu kaldır (AVPlay görüntüsünü örtmesin), AVPlay yüzeyini ekle */
+if(isTV){document.documentElement.classList.add('tv');const hv=$('#hv');if(hv)hv.remove();
+ if(!$('#avp')){const o=document.createElement('object');o.id='avp';o.type='application/avplayer';o.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;z-index:-2';document.body.insertBefore(o,document.body.firstChild)}}
 (async()=>{scr='login';$$('.scr').forEach(x=>x.classList.toggle('on',x.id==='login'));if(!ACC)PAIR.start();focus($('#in1'));
  if(ACC){$('#in1').value=ACC.type==='xt'?ACC.srv:ACC.url;$('#in2').value=ACC.u||'';$('#in3').value=ACC.p||'';await new Promise(r=>setTimeout(r,2400));
   if(ACC.type==='m3u')return doLogin(ACC);try{API.C={};ACC.ui=await API.login();save('rg-acc',ACC);startApp()}catch(e){$('#lerr').textContent=e.message+' Bilgileri kontrol edip tekrar giriş yap.';PAIR.start();focus($('[data-act=login]'))}}})();

@@ -266,3 +266,8 @@ html.vid #mv{border-radius:0}
 .lcc small{color:var(--mut);font-size:14px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lcc .pg{margin-top:auto}
 .lcc.fx{transform:scale(1.05);background:var(--s2)}
+
+/* sabit yerleşim: sahne ekrana göre hesaplanır, kapsayıcıya bağlı değil */
+#stage{position:fixed!important;left:0;top:0;transform-origin:0 0!important}
+html.tv #hv{display:none!important}
+html.tv.vid #wrap,html.tv.vid #stage{background:transparent!important}
