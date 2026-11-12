@@ -103,18 +103,19 @@ const inMy=it=>MYL.some(m=>m.k===it.k&&m.id===it.id);
 const hue=s=>{let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))%360;return h};
 const SHP=['radial-gradient(circle at 72% 30%,#ffffff2e 0 11%,transparent 11.5%),','linear-gradient(transparent 63%,#0000004d 63%),','repeating-linear-gradient(115deg,#ffffff0a 0 2px,transparent 2px 26px),',''];
 const artN=s=>{const h=hue(s);return SHP[h%4]+`radial-gradient(ellipse at 72% 28%,hsl(${h} 55% 45% / .8),transparent 58%),radial-gradient(ellipse at 18% 88%,hsl(${(h+140)%360} 45% 30% / .7),transparent 55%),linear-gradient(160deg,hsl(${(h+210)%360} 40% 12%),#05070a)`};
-const img=(src,cls)=>src?`<img loading="lazy" decoding="async" src="${esc(src)}"${cls?` class="${cls}"`:''} onload="this.parentNode.classList.add('im')" onerror="this.remove()">`:'';
+const isz=(u,w)=>String(u||'').replace(/(image\.tmdb\.org\/t\/p\/)(original|w\d+)\//,'$1'+w+'/');
+const img=(src,cls,w)=>src?`<img loading="lazy" decoding="async" src="${esc(w?isz(src,w):src)}"${cls?` class="${cls}"`:''} onload="this.parentNode.classList.add('im')" onerror="this.remove()">`:'';
 const row=(h,it)=>it.length?`<div class="rt">${h}</div><div class="row">${it.join('')}</div>`:'';
-const poster=it=>`<div class="po" data-f data-act="open" data-key="${reg(it)}" style="background:${artN(it.name)}">${img(it.icon)}<div class="pt${hue(it.name)%2?' os':''}">${esc(clean(it.name))}</div></div>`;
+const poster=it=>`<div class="po" data-f data-act="open" data-key="${reg(it)}" style="background:${artN(it.name)}">${img(it.icon,0,'w342')}<div class="pt${hue(it.name)%2?' os':''}">${esc(clean(it.name))}</div></div>`;
 const cwCard=h=>{const ep=h.k==='ep'||h.k==='nx',it=ep?{k:'ep',id:h.id,name:h.name,icon:h.icon,ext:h.ext,url:h.url,sid:h.sid,sname:h.sname,scover:h.scover,season:h.season,num:h.num}:{k:h.k,id:h.id,name:h.name,icon:h.icon,ext:h.ext,url:h.url};
  const t=ep?h.sname:h.name,sub=h.k==='nx'?`S${h.season}:B${h.num}, ${h.name}`:ep?`S${h.season}:B${h.num}, ${Math.max(1,Math.round((h.d-h.t)/60))} dk kaldı`:`${Math.max(1,Math.round((h.d-h.t)/60))} dk kaldı`;
- return`<div class="ls" data-f data-act="cw" data-key="${reg(it)}" style="background:${artN(t)}">${img(ep?(h.scover||h.icon):h.icon)}${h.k==='nx'?'<span class="tag2">Sıradaki bölüm</span>':''}<div class="lt">${esc(clean(t))}<small>${esc(sub)}</small></div>${h.k==='nx'?'':`<div class="pb"><div style="width:${h.t/h.d*100}%"></div></div>`}</div>`};
+ return`<div class="ls" data-f data-act="cw" data-key="${reg(it)}" style="background:${artN(t)}">${img(ep?(h.scover||h.icon):h.icon,0,'w500')}${h.k==='nx'?'<span class="tag2">Sıradaki bölüm</span>':''}<div class="lt">${esc(clean(t))}<small>${esc(sub)}</small></div>${h.k==='nx'?'':`<div class="pb"><div style="width:${h.t/h.d*100}%"></div></div>`}</div>`};
 const lcCard=it=>`<div class="lc" data-f data-act="live" data-key="${reg(it)}"><i></i><b>${it.num||''}</b><div>${esc(clean(it.name))}</div>${img(it.icon)}</div>`;
 const tvi=it=>`<div class="tvi" data-f data-act="live" data-key="${reg(it)}" data-pv="1">${it.icon?`<img loading="lazy" src="${esc(it.icon)}" onerror="this.style.visibility='hidden'">`:''}<span>${it.num||''}</span><div><b>${esc(clean(it.name))}</b><small>${it.arch?'Arşiv var':''}</small></div>${isFav(it.id)?`<em>${IC.star}</em>`:''}</div>`;
 const srchBtn=(s,t)=>`<div class="btn sm" data-f data-act="srch" data-s="${s}">${IC.search} ${t}</div>`;
 function heroHTML(it,btns){const bd=it.bd||'',pic=bd||it.icon;
  const meta=[it.year,it.rating&&+it.rating?'Puan '+(+it.rating).toFixed(1):'',it.genre,it.dur].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('');
- return`<div class="bd" style="background:${artN(it.name)}">${pic?`<img src="${esc(pic)}"${bd?'':' class="pb2"'} onerror="this.remove()">`:''}</div><div class="hc"><div class="tl">${esc(clean(it.name))}</div><div class="meta">${meta}</div>${it.plot?`<p class="ds">${esc(it.plot.length>260?it.plot.slice(0,257)+'…':it.plot)}</p>`:'<p class="ds"></p>'}${btns||''}</div>`}
+ return`<div class="bd" style="background:${artN(it.name)}">${pic?`<img decoding="async" src="${esc(isz(pic,bd?'w1280':'w342'))}"${bd?'':' class="pb2"'} onerror="this.remove()">`:''}</div><div class="hc"><div class="tl">${esc(clean(it.name))}</div><div class="meta">${meta}</div>${it.plot?`<p class="ds">${esc(it.plot.length>260?it.plot.slice(0,257)+'…':it.plot)}</p>`:'<p class="ds"></p>'}${btns||''}</div>`}
 const heroBtns=it=>{const k=reg(it);if(it.k==='ep'){const h=HIST['ep:'+it.id],go=h&&h.t>30;const sk=reg({k:'series',id:it.sid,name:it.sname,icon:it.scover});
   return`<div class="bt"><div class="btn pri" data-f data-act="cw" data-key="${k}">${IC.play} ${go?'Devam et':'İzle'} S${it.season}:B${it.num}</div><div class="btn" data-f data-act="open" data-key="${sk}">Bölümler</div></div>`}
  const h=HIST[it.k+':'+it.id],go=h&&h.t>30&&h.t<h.d*.92;return`<div class="bt"><div class="btn pri" data-f data-act="${it.k==='vod'?'playv':'open'}" data-key="${k}">${IC.play} ${it.k==='series'?'Bölümler':go?'Devam et':'Oynat'}</div><div class="btn" data-f data-act="open" data-key="${k}">Ayrıntılar</div></div>`};
@@ -147,11 +148,11 @@ AF.tv=async(a,tok,sel)=>{const cs=visCats('live',await API.cats('live'));if(tok!
  if(sel&&$('#view '+sel))focus($('#view '+sel));else if(!cur||!cur.isConnected||cur.closest('#view'))focus($('#chl [data-f]')||$('#catl [data-f]'))};
 const lcc=it=>`<div class="lcc" data-f data-act="live" data-key="${reg(it)}" data-pv="1"><div class="lct">${it.icon?`<img loading="lazy" src="${esc(it.icon)}" onerror="this.remove()">`:''}<span>${it.num||''}</span>${isFav(it.id)?`<em>${IC.star}</em>`:''}</div><b>${esc(clean(it.name))}</b><small class="lnow" data-id="${esc(it.id)}">${it.arch?'Arşiv var':'&nbsp;'}</small><div class="pg"><div></div></div></div>`;
 function fillNow(list,tok){list.slice(0,8).forEach((it,i)=>setTimeout(()=>{if(tok!==RT)return;API.epg(it.id,2).then(ep=>{const el=$(`#chl .lnow[data-id="${CSS.escape(it.id)}"]`);if(!el)return;const n=ep.find(e=>e.s<=Date.now()&&e.e>Date.now());if(!n)return;el.textContent=n.title;el.nextElementSibling.firstElementChild.style.width=Math.min(100,(Date.now()-n.s)/(n.e-n.s)*100)+'%'})},800+i*400))}
-let CTX=[];
+let CTX=[],LCN=0;
 async function loadCat(k,cid,tok){tok=tok||RT;$$('#catl [data-act=cat]').forEach(c=>c.classList.toggle('sel',c.dataset.c===cid));
  const box=k==='live'?$('#chl'):$('#vg');if(!box)return;box.innerHTML='<div class="spin sm"></div>';let it;
  try{it=cid==='__fav'?FAVL.slice():await API.items(k,cid)}catch(e){if(tok===RT)box.innerHTML=`<div class="empty err2">${esc(e.message)}</div>`;return}
- if(tok!==RT)return;if(k==='live'){ST.lastCat=cid;saveST();CTX=it;box.innerHTML=it.slice(0,400).map(lcc).join('')||'<div class="empty">Bu kategoride kanal yok.</div>';box.scrollLeft=0;fillNow(it,tok)}
+ if(tok!==RT)return;if(k==='live'){ST.lastCat=cid;saveST();CTX=it;LCN=40;box.innerHTML=it.slice(0,40).map(lcc).join('')||'<div class="empty">Bu kategoride kanal yok.</div>';box.scrollLeft=0;fillNow(it,tok)}
  else{GRID={k,items:it,n:0};box.innerHTML='';gridMore();if(!it.length)box.innerHTML='<div class="empty">Bu kategoride içerik yok.</div>'}}
 function gridMore(){if(!GRID)return;const b=$('#vg');if(!b)return;const nx=GRID.items.slice(GRID.n,GRID.n+60);GRID.n+=nx.length;b.insertAdjacentHTML('beforeend',nx.map(poster).join(''))}
 let MT=null,CT=null;
@@ -162,9 +163,11 @@ function miniDraw(it){const m=$('#mv');if(!m||!it)return;miniStop();m.innerHTML=
   $('#mepg').innerHTML=n?`<div class="mnow">${esc(n.title)}</div><div class="mtime">${hhmm(n.s)} – ${hhmm(n.e)}, ${Math.max(1,Math.round((n.e-Date.now())/60000))} dk kaldı</div><div class="pg"><div style="width:${Math.min(100,(Date.now()-n.s)/(n.e-n.s)*100)}%"></div></div>${x?`<div class="mnext">Sonra: ${esc(x.title)}, ${hhmm(x.s)}</div>`:''}`:'<span style="color:var(--mut)">Program bilgisi yok</span>'});
  clearTimeout(MT);if(miniOn())MT=setTimeout(()=>{if(cur&&REG.get(cur.dataset.key)===it&&cv==='tv'&&scr==='app')miniPlay(it)},1500)}
 const miniOn=()=>ST.mini===0||(ST.mini==null&&!(ACC&&ACC.ui&&+ACC.ui.max_connections<=1));
-function miniPlay(it){const m=$('#mv');if(!m)return;const r=m.getBoundingClientRect(),k=1920/innerWidth,sr=$('#stage').getBoundingClientRect(),sc=sr.width/1280,hx=(r.left-sr.left)/sc,hy=(r.top-sr.top)/sc,hw=r.width/sc,hh=r.height/sc;
- if(sc)$('#hole').style.clipPath=`path(evenodd,"M0 0H1280V720H0Z M${hx} ${hy}h${hw}v${hh}h${-hw}Z")`;
- LOG.add('info','Önizleme başlatıldı',{kanal:it.name});AV.open(API.url(it),{x:Math.round(r.left*k),y:Math.round(r.top*k),w:Math.round(r.width*k),h:Math.round(r.height*k)},{error:()=>{miniStop();if($('#mepg'))toast('Önizleme açılamadı','Tam ekranda tekrar denenecek.',0,2500)}});
+function miniPlay(it){const m=$('#mv');if(!m)return;const r=m.getBoundingClientRect(),sr=$('#stage').getBoundingClientRect();if(!sr.width)return;
+ const u=1280/sr.width,x=(r.left-sr.left)*u,y=(r.top-sr.top)*u,w=r.width*u,h=r.height*u,k=1920/(innerWidth||1920);
+ $('#hole').style.clipPath=`path(evenodd,"M0 0H1280V720H0Z M${x} ${y}h${w}v${h}h${-w}Z")`;
+ LOG.add('info','Önizleme başlatıldı',{kanal:it.name});
+ AV.open(API.url(it),{x:Math.round((STX+x*STS)*k),y:Math.round((STY+y*STS)*k),w:Math.round(w*STS*k),h:Math.round(h*STS*k)},{error:()=>{miniStop();if($('#mepg'))toast('Önizleme açılamadı','Tam ekranda tekrar denenecek.',0,2500)}});
  document.documentElement.classList.add('vid')}
 function miniStop(){clearTimeout(MT);if(scr==='app'&&AV.st!=='none'){AV.close();document.documentElement.classList.remove('vid')}}
 
@@ -208,7 +211,7 @@ function drawSeason(s,focusSel){const{ss,it}=SEAS,nx=HIST['nx:'+it.id],nxId=nx&&
  const L=EPS.filter(e=>e.season===s),cnt={done:0,prog:0,new:0};
  const rows=L.map(e=>{const{st,h}=epState(e);cnt[st]++;const isNx=st!=='done'&&e.id===nxId,left=h?Math.max(1,Math.round((h.d-h.t)/60)):0;
   const lab=st==='done'?'<span class="st d">İzlendi</span>':st==='prog'?`<span class="st p">Yarım kaldı, ${left} dk kaldı</span>`:isNx?'<span class="st p">Sıradaki bölüm</span>':'<span class="st n">İzlenmedi</span>';
-  return`<div class="ep ${st}${isNx?' nxt':''}" data-f data-act="playe" data-key="${reg(e)}"><div class="th" style="background:${artN(e.name)}">${img(e.icon)}${st==='done'?`<div class="ck">${IC.check}</div>`:''}${isNx?'<span class="tag2">Sıradaki</span>':''}${st==='prog'?`<div class="pb"><div style="width:${Math.min(100,h.t/h.d*100)}%"></div></div>`:''}</div><div><div class="n">${e.num}. Bölüm${e.dur?', '+esc(e.dur):''} · ${lab}</div><b>${esc(e.name)}</b><p>${esc(e.plot.slice(0,180))}</p></div></div>`}).join('');
+  return`<div class="ep ${st}${isNx?' nxt':''}" data-f data-act="playe" data-key="${reg(e)}"><div class="th" style="background:${artN(e.name)}">${img(e.icon,0,'w300')}${st==='done'?`<div class="ck">${IC.check}</div>`:''}${isNx?'<span class="tag2">Sıradaki</span>':''}${st==='prog'?`<div class="pb"><div style="width:${Math.min(100,h.t/h.d*100)}%"></div></div>`:''}</div><div><div class="n">${e.num}. Bölüm${e.dur?', '+esc(e.dur):''} · ${lab}</div><b>${esc(e.name)}</b><p>${esc(e.plot.slice(0,180))}</p></div></div>`}).join('');
  const sum=L.length?`<p class="esum">${L.length} bölüm: ${cnt.done} izlendi, ${cnt.prog} yarım kaldı, ${cnt.new} izlenmedi</p>`:'';
  $('#dmore').innerHTML=`<div class="seas">${chips}</div>${sum}`+(rows||'<p class="empty">Bu sezonda bölüm yok.</p>');if(focusSel)focus($('#dmore '+focusSel))}
 
@@ -252,8 +255,14 @@ async function render(v,a,push=true,sel){if(push||!nav.length)nav.push([v,a]);el
 function exit(){AV.close();clearTimeout(SLEEP);go('app');const[v,a]=nav[nav.length-1]||['home'];render(v,a,false,retSel)}
 function back(){if(scr!=='app')return;if($('#catov').classList.contains('on')){$('#catov').classList.remove('on');return focus($('[data-act=catpick]'))}if(nav.length>1){nav.pop();const[v,a]=nav[nav.length-1];render(v,a,false)}else if(cur&&!cur.closest('#side'))focus($('.sn.cur')||$('.sn'));else{$('#exitov').classList.add('on');focus($('[data-act=noquit]'))}}
 const selOf=e=>{const d=e.dataset;return`[data-act="${d.act}"]`+(d.key?`[data-key="${d.key}"]`:'')};
+let IO=null;const VSET=new Set();
+function ioScan(){if(!('IntersectionObserver' in window))return;if(!IO)IO=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting?VSET.add(e.target):VSET.delete(e.target)),{rootMargin:'300px'});
+ document.querySelectorAll('[data-f]:not([data-io])').forEach(el=>{el.setAttribute('data-io','');IO.observe(el)})}
+if('MutationObserver' in window){let mt=0;new MutationObserver(()=>{if(mt)return;mt=requestAnimationFrame(()=>{mt=0;ioScan()})}).observe(document.body,{childList:true,subtree:true})}
 function vis(){if(PAD)return $$('#pad [data-f]');if($('#exitov').classList.contains('on'))return $$('#exitov [data-f]');
- const ov=$('#'+scr+' .ov.on');if(ov)return [...ov.querySelectorAll('[data-f]'),...(scr==='app'&&ov.id==='catov'?$$('#side [data-f]'):[])];return $$('#'+scr+' [data-f]').filter(e=>e.offsetParent!==null)}
+ const ov=$('#'+scr+' .ov.on');if(ov)return [...ov.querySelectorAll('[data-f]'),...(scr==='app'&&ov.id==='catov'?$$('#side [data-f]'):[])];if(IO&&VSET.size){for(const e of VSET)if(!e.isConnected)VSET.delete(e);const L=[...VSET].filter(e=>e.closest('#'+scr)&&e.offsetParent!==null);if(L.length)return L}
+ return $$('#'+scr+' [data-f]').filter(e=>e.offsetParent!==null)}
+const HROW='.row,.lvrow,.lvcats,.chips,.bt,.seas';
 function unf(){cur&&cur.classList.remove('fx');cur=null}
 let HT=null;
 function focus(e){if(!e)return;if(!PAD&&!e.closest('#'+scr)&&!e.closest('#toast,#exitov,#pad'))return;const ae=document.activeElement;if(ae&&ae.tagName==='INPUT'&&ae!==e)ae.blur();cur&&cur.classList.remove('fx');cur=e;e.classList.add('fx');try{e.scrollIntoView({block:'nearest',inline:'nearest'})}catch(x){}
@@ -262,8 +271,11 @@ function focus(e){if(!e)return;if(!PAD&&!e.closest('#'+scr)&&!e.closest('#toast,
  if(d.act==='cat'){clearTimeout(CT);if(!e.classList.contains('sel')&&!(d.ad&&pinOn()&&!UNL))CT=setTimeout(()=>{if(cur===e)loadCat(d.t,d.c)},350)}
  if(BR&&e.closest('#brows')){const rows=$$('#brows .row'),ri=rows.indexOf(e.closest('.row'));if(ri>=rows.length-2)browseMore()}
  if((cv==='home'||cv==='series'||cv==='films')&&d.key&&e.closest('.rows')){clearTimeout(HT);HT=setTimeout(()=>{const it=REG.get(d.key);if(it&&it.k!=='live')setHero(it)},550)}
+ if(e.closest('#chl')&&CTX.length>LCN){const all=$$('#chl [data-f]');if(all.indexOf(e)>=all.length-6){$('#chl').insertAdjacentHTML('beforeend',CTX.slice(LCN,LCN+40).map(lcc).join(''));LCN+=40}}
  if(GRID&&e.closest('#vg')){const all=$$('#vg [data-f]');if(all.indexOf(e)>=all.length-12)gridMore()}}
-function move(d){if(!cur||!cur.isConnected)return focus(vis()[0]);const c=cur.getBoundingClientRect(),cx=c.x+c.width/2,cy=c.y+c.height/2;let best=null,bd=1e9;
+function move(d){if(!cur||!cur.isConnected)return focus(vis()[0]);
+ if((d==='l'||d==='r')&&cur.parentElement&&cur.parentElement.matches(HROW)){let n=d==='r'?cur.nextElementSibling:cur.previousElementSibling;
+  while(n&&!n.hasAttribute('data-f'))n=d==='r'?n.nextElementSibling:n.previousElementSibling;if(n)return focus(n);if(d==='r')return}const c=cur.getBoundingClientRect(),cx=c.x+c.width/2,cy=c.y+c.height/2;let best=null,bd=1e9;
  for(const e of vis()){if(e===cur)continue;const r=e.getBoundingClientRect(),dx=r.x+r.width/2-cx,dy=r.y+r.height/2-cy;
   if(!{l:dx<-4,r:dx>4,u:dy<-4,d:dy>4}[d])continue;const h=d==='l'||d==='r',s=(h?Math.abs(dx):Math.abs(dy))+(h?Math.abs(dy):Math.abs(dx))*2.5;if(s<bd){bd=s;best=e}}focus(best)}
 
@@ -608,8 +620,11 @@ $('#side').innerHTML='<div class="brand">R<span>AGNAR</span></div>'+[['home','An
 $('#pad .pgrid').innerHTML=['1','2','3','4','5','6','7','8','9','DEL','0','ok'].map(k=>`<div class="pk" data-f data-act="pk" data-v="${k}">${k==='ok'?'Tamam':k==='DEL'?'Sil':k}</div>`).join('');
 $$('[data-ic]').forEach(e=>e.insertAdjacentHTML('afterbegin',IC[e.dataset.ic]));
 introSound();$('#login .wm').style.cursor='pointer';$('#login .wm').onclick=replayIntro;
-function fit(){const de=document.documentElement,W=innerWidth||de.clientWidth||1920,H=innerHeight||de.clientHeight||1080,s=Math.min(W/1280,H/720);
- $('#stage').style.transform=`translate(${Math.round((W-1280*s)/2)}px,${Math.round((H-720*s)/2)}px) scale(${s})`}
+let STS=1,STX=0,STY=0;
+function fit(){const de=document.documentElement,W=innerWidth||de.clientWidth||1920,H=innerHeight||de.clientHeight||1080,s=Math.min(W/1280,H/720),st=$('#stage');
+ STS=s;STX=Math.round((W-1280*s)/2);STY=Math.round((H-720*s)/2);
+ if(Math.abs(W/H-16/9)<0.02&&'zoom' in st.style){st.style.transform='';st.style.zoom=s;STX=0;STY=0}
+ else{st.style.zoom='';st.style.transform=`translate(${STX}px,${STY}px) scale(${s})`}}
 addEventListener('resize',fit);fit();setTimeout(fit,300);setTimeout(fit,1500);clock();
 /* TV'de: HTML5 yedek videoyu kaldır (AVPlay görüntüsünü örtmesin), AVPlay yüzeyini ekle */
 if(isTV){document.documentElement.classList.add('tv');const hv=$('#hv');if(hv)hv.remove();

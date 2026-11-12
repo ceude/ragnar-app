@@ -279,4 +279,7 @@ html.tv #view,html.tv .hero,html.tv .rows,html.tv .btop,html.tv .lvinfo,html.tv 
 html.tv #mv,html.tv #toast{box-shadow:none!important}
 html.tv .pt{text-shadow:none}
 html.tv [data-f]{transition:transform .1s ease}
-html.tv #stage{will-change:transform}
+
+/* açılış: her parça ayrı katman, GPU ile hareket eder */
+.helm2{position:relative;width:150px;height:203px;margin:0 auto 22px}
+.pc2{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;will-change:transform,opacity;animation:pin .8s cubic-bezier(.2,.9,.25,1.08) forwards}
