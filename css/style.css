@@ -271,3 +271,12 @@ html.vid #mv{border-radius:0}
 #stage{position:fixed!important;left:0;top:0;transform-origin:0 0!important}
 html.tv #hv{display:none!important}
 html.tv.vid #wrap,html.tv.vid #stage{background:transparent!important}
+
+/* ---- TV performansı: GPU'yu yoran efektleri kapat ---- */
+html.tv .helm{animation:none!important}
+html.tv .bd img.pb2{filter:none!important;transform:none!important;opacity:.35}
+html.tv #view,html.tv .hero,html.tv .rows,html.tv .btop,html.tv .lvinfo,html.tv .lvbot,html.tv #side,html.tv .sn,html.tv .brand span,html.tv .sn span{transition:none!important}
+html.tv #mv,html.tv #toast{box-shadow:none!important}
+html.tv .pt{text-shadow:none}
+html.tv [data-f]{transition:transform .1s ease}
+html.tv #stage{will-change:transform}
