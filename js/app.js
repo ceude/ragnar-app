@@ -17,6 +17,8 @@ const b64=s=>{try{return decodeURIComponent(escape(atob(s||'')))}catch(e){return
 
 /* ---------- kalıcı durum ---------- */
 let ACC=load('rg-acc',null),ST=load('rg-st',{}),PF=load('rg-pf',{}),HIST=load('rg-hist',{}),FAVL=load('rg-fav',[]),MYL=load('rg-my',[]),REM=load('rg-rem',[]);
+/* izlendi kuralı: jenerik payı sürenin %8'i, dizide en fazla 2 dk, filmde en fazla 3 dk */
+const tail8=(d,ep)=>Math.min(d*.08,ep?120:180),isDone=(t,d,ep)=>d>0&&d-t<=tail8(d,ep),isPart=(t,d,ep)=>t>30&&!isDone(t,d,ep),hDone=h=>!!h&&isDone(h.t,h.d,h.k==='ep'),hPart=h=>!!h&&isPart(h.t,h.d,h.k==='ep');
 ST.rec=ST.rec||[];
 const saveST=()=>save('rg-st',ST);
 let nav=[],cv='home',cur=null,scr='login',PAD=null,UNL=false,RT=0,retSel=null;
@@ -95,9 +97,9 @@ async function adultSet(k){const cs=await API.cats(k);return new Set(cs.filter(c
 const REG=new Map();const reg=it=>{const k=it.k+':'+it.id;REG.set(k,it);return k};
 function histSet(it,t,d){if(!it||it.k==='live'||!d||d<60)return;const k=it.k+':'+it.id;
  HIST[k]={k:it.k,id:it.id,name:it.name,icon:it.icon,ext:it.ext,url:it.url,t:Math.floor(t),d:Math.floor(d),ts:Date.now(),sid:it.sid,sname:it.sname,scover:it.scover,season:it.season,num:it.num};if(it.k==='ep'){HIST['sl:'+it.sid]={k:'sl',id:it.id,t:0,d:1,ts:Date.now()};
- if(t>=d*.92){const i=EPS.findIndex(e=>e.id===it.id),n=i>=0?EPS[i+1]:null;if(n)HIST['nx:'+it.sid]={k:'nx',id:n.id,name:n.name,icon:n.icon,ext:n.ext,url:n.url,sid:n.sid,sname:n.sname,scover:n.scover,season:n.season,num:n.num,t:0,d:1,ts:Date.now()+1};else delete HIST['nx:'+it.sid]}}
+ if(isDone(t,d,it.k==='ep')){const i=EPS.findIndex(e=>e.id===it.id),n=i>=0?EPS[i+1]:null;if(n)HIST['nx:'+it.sid]={k:'nx',id:n.id,name:n.name,icon:n.icon,ext:n.ext,url:n.url,sid:n.sid,sname:n.sname,scover:n.scover,season:n.season,num:n.num,t:0,d:1,ts:Date.now()+1};else delete HIST['nx:'+it.sid]}}
  const ks=Object.keys(HIST);if(ks.length>400)ks.sort((a,b)=>HIST[a].ts-HIST[b].ts).slice(0,ks.length-400).forEach(x=>delete HIST[x]);save('rg-hist',HIST)}
-function cwList(){const seen=new Set();return Object.values(HIST).filter(h=>h.k==='nx'||(h.k!=='sl'&&h.t>30&&h.t<h.d*.92)).sort((a,b)=>b.ts-a.ts).filter(h=>{const g=h.sid?'s'+h.sid:h.k+h.id;if(seen.has(g))return false;seen.add(g);return true}).slice(0,20)}
+function cwList(){const seen=new Set();return Object.values(HIST).filter(h=>h.k==='nx'||(h.k!=='sl'&&hPart(h))).sort((a,b)=>b.ts-a.ts).filter(h=>{const g=h.sid?'s'+h.sid:h.k+h.id;if(seen.has(g))return false;seen.add(g);return true}).slice(0,20)}
 const isFav=id=>FAVL.some(f=>f.id===id);
 function favToggle(it){if(isFav(it.id))FAVL=FAVL.filter(f=>f.id!==it.id);else FAVL.push({k:'live',id:it.id,name:it.name,icon:it.icon,num:it.num,cat:it.cat,arch:it.arch,url:it.url});save('rg-fav',FAVL)}
 const inMy=it=>MYL.some(m=>m.k===it.k&&m.id===it.id);
@@ -131,7 +133,7 @@ function heroHTML(it,btns){const bd=it.bd||'',pic=bd||it.icon;
  return`<div class="bd" style="background:${artN(it.name)}">${img(pic,bd?'':'pb2',bd?'w1280':'w342')}</div><div class="hc"><div class="tl">${esc(clean(it.name))}</div><div class="meta">${meta}</div>${it.plot?`<p class="ds">${esc(it.plot.length>260?it.plot.slice(0,257)+'…':it.plot)}</p>`:'<p class="ds"></p>'}${btns||''}</div>`}
 const heroBtns=it=>{const k=reg(it);if(it.k==='ep'){const h=HIST['ep:'+it.id],go=h&&h.t>30;const sk=reg({k:'series',id:it.sid,name:it.sname,icon:it.scover});
   return`<div class="bt"><div class="btn pri" data-f data-act="cw" data-key="${k}">${IC.play} ${go?'Devam et':'İzle'} S${it.season}:B${it.num}</div><div class="btn" data-f data-act="open" data-key="${sk}">Bölümler</div></div>`}
- const h=HIST[it.k+':'+it.id],go=h&&h.t>30&&h.t<h.d*.92;return`<div class="bt"><div class="btn pri" data-f data-act="${it.k==='vod'?'playv':'open'}" data-key="${k}">${IC.play} ${it.k==='series'?'Bölümler':go?'Devam et':'Oynat'}</div><div class="btn" data-f data-act="open" data-key="${k}">Ayrıntılar</div></div>`};
+ const h=HIST[it.k+':'+it.id],go=hPart(h);return`<div class="bt"><div class="btn pri" data-f data-act="${it.k==='vod'?'playv':'open'}" data-key="${k}">${IC.play} ${it.k==='series'?'Bölümler':go?'Devam et':'Oynat'}</div><div class="btn" data-f data-act="open" data-key="${k}">Ayrıntılar</div></div>`};
 function toast(title,text,btns,ms){const t=$('#toast');t.innerHTML=`<b>${esc(title)}</b>${text?`<span>${esc(text)}</span>`:''}${btns||''}`;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>{t.classList.remove('on');if(cur&&t.contains(cur))unf()},ms||5000)}
 
 /* =========================================================
@@ -152,7 +154,7 @@ AF.home=async(a,tok)=>{const cw=cwList();let first=null,n=0;
  if(!cur||!cur.isConnected)focus($('#view [data-f]'))};
 function setHero(it){const k=reg(it);if(HKEY===k||!$('#hero'))return;HKEY=k;let v=it;
  if(it.k==='ep'){const sr=REG.get('series:'+it.sid)||{},h=HIST['ep:'+it.id],nx=!(h&&h.t>30);v={k:'series',id:it.sid,name:it.sname,icon:it.scover,bd:sr.bd,year:sr.year,genre:sr.genre,rating:sr.rating,dur:nx?`Sıradaki bölüm: S${it.season}:B${it.num}`:`S${it.season}:B${it.num}, ${Math.max(1,Math.round((h.d-h.t)/60))} dk kaldı`,plot:sr.plot||it.name}}
- else if(it.k==='vod'){const h=HIST['vod:'+it.id];if(h&&h.t>30&&h.t<h.d*.92)v={...it,dur:`${Math.max(1,Math.round((h.d-h.t)/60))} dk kaldı`}}
+ else if(it.k==='vod'){const h=HIST['vod:'+it.id];if(hPart(h))v={...it,dur:`${Math.max(1,Math.round((h.d-h.t)/60))} dk kaldı`}}
  const html=heroHTML(v,it.k==='live'?'':heroBtns(it)),put=()=>{if(HKEY!==k||!$('#hero'))return;const hadF=cur&&cur.closest('#hero')?cur.dataset.act:null;$('#hero').innerHTML=html;if(hadF)focus($('#hero [data-act="'+hadF+'"]')||$('#hero [data-f]'))};
  const pic=v.bd||v.icon,src=pic&&!IMG.bad.has(pic)?isz(pic,v.bd?'w1280':'w342'):'';if(!src||!window.Image)return put();
  const im=new Image();let done=0;const fin=()=>{if(done)return;done=1;put()};im.decoding='async';im.onerror=fin;im.src=src;setTimeout(fin,1800);if(im.decode)im.decode().then(fin,fin);else im.onload=fin}
@@ -217,7 +219,7 @@ let EPS=[],SEAS=null;
 AF.detail=async(key,tok)=>{const it=REG.get(key);const my=`<div class="btn" data-f data-act="mylist" data-key="${key}">${inMy(it)?'Listemde':'Listeme ekle'}</div>`;
  if(it.k==='vod'){let inf={};if(ACC.type==='xt'){const j=await API.vodInfo(it.id).catch(()=>null);inf=(j&&j.info)||{}}if(tok!==RT)return;
   const x={...it,plot:inf.plot||inf.description||'',genre:inf.genre||'',year:String(inf.releasedate||inf.release_date||'').slice(0,4),rating:inf.rating||it.rating,dur:inf.duration||'',bd:(Array.isArray(inf.backdrop_path)&&inf.backdrop_path[0])||'',icon:it.icon||inf.movie_image};
-  const h=HIST['vod:'+it.id],res=h&&h.t>30&&h.t<h.d*.92;
+  const h=HIST['vod:'+it.id],res=hPart(h);
   $('#dhero').innerHTML=heroHTML(x,`<div class="bt"><div class="btn pri" data-f data-act="playv" data-key="${key}">${IC.play} ${res?'Devam et':'Oynat'}</div>${my}</div>`);
   $('#dmore').innerHTML=[inf.cast?`<p class="sub2"><b style="color:var(--tx)">Oyuncular:</b> ${esc(inf.cast)}</p>`:'',inf.director?`<p class="sub2"><b style="color:var(--tx)">Yönetmen:</b> ${esc(inf.director)}</p>`:''].join('');
   return focus($('#dhero [data-act=playv]'))}
@@ -228,7 +230,7 @@ AF.detail=async(key,tok)=>{const it=REG.get(key);const my=`<div class="btn" data
  const last=HIST['sl:'+it.id],nx=HIST['nx:'+it.id];let lastEp=last&&EPS.find(e=>e.id===last.id),lab='Devam et';if(nx&&(!last||nx.ts>=last.ts)){const e=EPS.find(z=>z.id===nx.id);if(e){lastEp=e;lab='Sıradaki bölüm'}}const tgt=lastEp||EPS[0];SEAS={it,x,ss};
  $('#dhero').innerHTML=heroHTML(x,`<div class="bt">${tgt?`<div class="btn pri" data-f data-act="playe" data-key="${reg(tgt)}">${IC.play} ${lastEp?lab:'İzle'} S${tgt.season}:B${tgt.num}</div>`:''}${my}</div>`);
  drawSeason(tgt?tgt.season:+ss[0]);focus($('#dhero [data-f]'))};
-function epState(e){const h=HIST['ep:'+e.id];if(h&&h.t>=h.d*.92)return{st:'done',h};if(h&&h.t>30)return{st:'prog',h};return{st:'new',h:null}}
+function epState(e){const h=HIST['ep:'+e.id];if(hDone(h))return{st:'done',h};if(h&&h.t>30)return{st:'prog',h};return{st:'new',h:null}}
 function drawSeason(s,focusSel){const{ss,it}=SEAS,nx=HIST['nx:'+it.id],nxId=nx&&nx.id;
  const chips=ss.map(n=>{const eps=EPS.filter(e=>e.season===+n),all=eps.length&&eps.every(e=>epState(e).st==='done');return`<div class="chip${+n===s?' sel':''}" data-f data-act="season" data-s="${n}">${all?IC.check:''}${n}. Sezon</div>`}).join('');
  const L=EPS.filter(e=>e.season===s),cnt={done:0,prog:0,new:0};
@@ -443,7 +445,7 @@ function openPlayer(it,start){if(scr!=='player')retSel=cur?selOf(cur):null;PL=it
  $('#pe').textContent=it.k==='ep'?`Sezon ${it.season}, Bölüm ${it.num}: ${it.name}`:'';$('#beps').style.display='none';
  $('#player').append($('#pan'));hidePan();unf();['#nx','#rs','#perr'].forEach(s=>$(s).classList.remove('on'));$('#sub').style.display='none';$('#player .osd').style.display='none';
  $('#t1').textContent='0:00';$('#t2').textContent='';$('#fl').style.width='0';$('#trk').textContent='';drawPP();
- const h=HIST[it.k+':'+it.id];if(start==null&&h&&h.t>30&&h.t<h.d*.92){$('#rst').textContent=`${fmt(h.t)} noktasında kalmıştın.`;$('[data-act=rsY]').innerHTML=IC.play+' Kaldığın yerden devam et';$('[data-act=rsY]').dataset.t=h.t;$('#rs').classList.add('on');return focus($('[data-act=rsY]'))}
+ const h=HIST[it.k+':'+it.id];if(start==null&&hPart(h)){$('#rst').textContent=`${fmt(h.t)} noktasında kalmıştın.`;$('[data-act=rsY]').innerHTML=IC.play+' Kaldığın yerden devam et';$('[data-act=rsY]').dataset.t=h.t;$('#rs').classList.add('on');return focus($('[data-act=rsY]'))}
  startPlay(start||0)}
 function startPlay(t){$('#rs').classList.remove('on');$('#perr').classList.remove('on');unf();tryN=0;loadingOn('player','Yükleniyor');PL.start=t;
  AV.open(API.url(PL),null,{start:t,ready:()=>{loadingOff('player');AV.mode(1);applyTracks();wake()},buf:b=>b?loadingOn('player','Arabelleğe alınıyor'):loadingOff('player'),
