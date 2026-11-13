@@ -58,7 +58,7 @@ const API={C:{},
   finally{clearTimeout(t);this.free()}},
  async getR(url,ms){try{return await this.get(url,ms,true)}catch(e){if(!e.again&&!e.retry)throw e;await new Promise(r=>setTimeout(r,1500));return this.get(url,ms,true)}},
  trim(){const ks=Object.keys(this.C).filter(k=>k[0]==='i');for(let i=0;i<ks.length-40;i++)delete this.C[ks[i]]},
- purge(big){Object.keys(this.C).forEach(k=>{if(k[0]==='a'||k[0]==='e'||(big&&k[0]==='i'))delete this.C[k]})},
+ purge(big){SIDX={};Object.keys(this.C).forEach(k=>{if(k[0]==='a'||k[0]==='e'||(big&&k[0]==='i'))delete this.C[k]})},
  async once(k,fn){if(this.C[k])return this.C[k];if(k[0]==='i')this.trim();const p=fn();this.C[k]=p;try{return await p}catch(e){delete this.C[k];throw e}},
  async login(){const j=await this.getR(this.q(''));if(!j||!j.user_info)throw new Error('Bu adres bir Xtream sunucusu gibi yanıt vermedi');const u=j.user_info;
   if(+u.auth===0)throw new Error('Kullanıcı adı veya şifre hatalı');if(u.status&&u.status!=='Active')throw new Error('Abonelik aktif değil ('+u.status+')');return u},
@@ -262,10 +262,16 @@ let Q='',SDATA=null;
 const SCOPES={all:['live','vod','series'],live:['live'],vod:['vod'],series:['series']};
 V.search=sc=>{sc=sc||'all';const H={all:'Ara',live:'Kanallarda ara',vod:'Filmlerde ara',series:'Dizilerde ara'}[sc];
  return`<h1>${H}</h1><div class="srch"><div><div class="qbox" id="qbox"></div><div class="kb">${[...'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ0123456789'].map(k=>`<div class="key" data-f data-act="key" data-v="${k}">${k}</div>`).join('')}<div class="key w" data-f data-act="key" data-v=" ">Boşluk</div><div class="key w" data-f data-act="key" data-v="DEL">Sil</div></div></div><div style="flex:1;min-width:0" id="sres"><div class="spin"></div><p class="empty" style="text-align:center">Liste aramaya hazırlanıyor. Büyük listelerde bu ilk seferde biraz sürebilir.</p></div></div>`};
-AF.search=async(sc,tok)=>{sc=sc||'all';const D={};for(const k of SCOPES[sc]){try{const[all,ad]=await Promise.all([API.all(k),adultSet(k)]);const hid=new Set(ST['h_'+k]||[]);D[k]=all.filter(i=>!hid.has(i.cat)&&!(pinOn()&&!UNL&&ad.has(i.cat))).map(i=>[U(clean(i.name)),i])}catch(e){D[k]=[]}}
- if(tok!==RT)return;SDATA={sc,D};drawSearch()};
+let SIDX={};
+const yieldT=()=>new Promise(r=>setTimeout(r,0));
+AF.search=async(sc,tok)=>{sc=sc||'all';const D={};SDATA={sc,D};for(const k of SCOPES[sc]){try{const ck=k+(pinOn()&&!UNL?'p':'')+(ST['h_'+k]||[]).join(',');
+  if(SIDX[k]&&SIDX[k].ck===ck){D[k]=SIDX[k].v;continue}
+  const[all,ad]=await Promise.all([API.all(k),adultSet(k)]);const hid=new Set(ST['h_'+k]||[]),out=[];
+  for(let i=0;i<all.length;i++){const it=all[i];if(!hid.has(it.cat)&&!(pinOn()&&!UNL&&ad.has(it.cat)))out.push([U(clean(it.name)),it]);if(i%1500===1499){await yieldT();if(tok!==RT)return}}
+  D[k]=out;SIDX[k]={ck,v:out}}catch(e){D[k]=[]}if(tok!==RT)return;if(Q)drawSearch()}
+ if(tok!==RT)return;drawSearch()};
 function drawSearch(){$('#qbox').innerHTML=Q?esc(Q):`<span style="color:var(--dim)">Aramak için yaz</span>`;if(!SDATA)return;const{D}=SDATA,R={};let tot=0;
- for(const k in D){R[k]=Q?D[k].filter(x=>x[0].includes(Q)).slice(0,48).map(x=>x[1]):[];tot+=R[k].length}
+ for(const k in D){const a=[];if(Q){const L=D[k];for(let i=0;i<L.length&&a.length<48;i++)if(L[i][0].includes(Q))a.push(L[i][1])}R[k]=a;tot+=a.length}
  const chips=(h,a)=>a.length?`<div class="rt" style="margin:0 0 10px;font-size:16px;color:var(--mut)">${h}</div><div class="chips" style="margin-bottom:16px">${a.map(x=>`<div class="chip" data-f data-act="rq" data-q="${esc(x)}">${esc(x)}</div>`).join('')}</div>`:'';
  let h='';if(!Q)h=chips('Son aramalar',ST.rec)+'<p class="empty">Ekrandaki klavyeyle yazmaya başla. Sonuçlar yazdıkça gelir.</p>';
  else{h=`<div class="rt" style="margin:0 0 12px">${tot} sonuç${tot>=48?' (ilk sonuçlar)':''}</div>`;if(!tot)h+='<p class="empty">Bu adla bir sonuç yok. Farklı bir kelime dene.</p>';
@@ -430,7 +436,7 @@ const AV={st:'none',cb:{},url:'',v:null,lt:-1,same:0,buf:false,
  suspend(){try{isTV&&this.st!=='none'&&webapis.avplay.suspend()}catch(e){}},restore(){try{isTV&&this.st!=='none'&&webapis.avplay.restore()}catch(e){}}};
 const LN={tur:'Türkçe',tr:'Türkçe',eng:'English',en:'English',ger:'Deutsch',deu:'Deutsch',de:'Deutsch',fre:'Français',fra:'Français',fr:'Français',spa:'Español',es:'Español',ita:'Italiano',it:'Italiano',rus:'Русский',ru:'Русский',ara:'العربية',ar:'العربية',
  por:'Português',pt:'Português',nld:'Nederlands',dut:'Nederlands',nl:'Nederlands',pol:'Polski',pl:'Polski',ron:'Română',rum:'Română',ro:'Română',swe:'Svenska',sv:'Svenska',nor:'Norsk',nob:'Norsk',no:'Norsk',dan:'Dansk',da:'Dansk',ces:'Čeština',cze:'Čeština',cs:'Čeština',hun:'Magyar',hu:'Magyar',fin:'Suomi',fi:'Suomi',ind:'Bahasa Indonesia',id:'Bahasa Indonesia',hrv:'Hrvatski',hr:'Hrvatski',
- ukr:'Українська',uk:'Українська',bul:'Български',bg:'Български',srp:'Srpski',sr:'Srpski',ell:'Ελληνικά',gre:'Ελληνικά',el:'Ελληνικά',heb:'עברית',he:'עברית',fas:'فارسی',per:'فارسی',fa:'فارسی',jpn:'日本語',ja:'日本語',kor:'한국어',ko:'한국어',zho:'中文',chi:'中文',zh:'中文',tha:'ไทย',th:'ไทย',hin:'हिन्दी',hi:'हिन्दी'};
+ ukr:'Українська',uk:'Українська',bul:'Български',bg:'Български',srp:'Srpski',sr:'Srpski',ell:'Ελληνικά',gre:'Ελληνικά',el:'Ελληνικά',heb:'עברית',he:'עברית',fas:'فارسی',per:'فارسی',fa:'فارسی',jpn:'日本語',ja:'日本語',kor:'한국어',ko:'한국어',zho:'中文',chi:'中文',zh:'中文',tha:'ไทย',th:'ไทย',hin:'हिन्दी',hi:'हिन्दी',isl:'Íslenska',ice:'Íslenska',est:'Eesti',lit:'Lietuvių',lav:'Latviešu',mkd:'Македонски',mac:'Македонски',msa:'Bahasa Melayu',may:'Bahasa Melayu',slk:'Slovenčina',slo:'Slovenčina',slv:'Slovenščina',vie:'Tiếng Việt',fil:'Filipino',cat:'Català',eus:'Euskara',glg:'Galego',kaz:'Қазақ',aze:'Azərbaycan',sqi:'Shqip',alb:'Shqip',bos:'Bosanski',kur:'Kurdî',urd:'اردو',ben:'বাংলা',tam:'தமிழ்',tel:'తెలుగు'};
 const lname=c=>LN[c]||(c?c.toUpperCase():'Bilinmeyen dil');
 /* altyazı metninden dil tanıma */
 const LANGS=[['tur',/[ğışİ]/g,'bir ve bu ne için değil evet hayır ben sen var yok çok ama mi mı de da şey gibi daha beni seni nasıl neden tamam'],
@@ -472,8 +478,8 @@ function openPlayer(it,start){if(scr!=='player')retSel=cur?selOf(cur):null;PL=it
  const h=HIST[it.k+':'+it.id];if(start==null&&hPart(h)){$('#rst').textContent=`${fmt(h.t)} noktasında kalmıştın.`;$('[data-act=rsY]').innerHTML=IC.play+' Kaldığın yerden devam et';$('[data-act=rsY]').dataset.t=h.t;$('#rs').classList.add('on');return focus($('[data-act=rsY]'))}
  startPlay(start||0)}
 async function startPlay(t){$('#rs').classList.remove('on');$('#perr').classList.remove('on');unf();tryN=0;loadingOn('player','Yükleniyor');PL.start=t;const me=PL;
- const pr=pref(PK);MKOK=false;if(!pr.mk&&!pr.mkx&&isTV){const t0=Date.now(),mk=await MKV.read(API.url(PL));if(PL!==me||scr!=='player')return;
-  if(mk&&mk.length){pr.mk=mk;savePF();LOG.add('info','Altyazı dilleri dosyadan okundu',{ms:Date.now()-t0,diller:mk.map(x=>x.lang+(x.forced?'*':'')+(x.sdh?'+':'')).join(' ')})}else{pr.mkx=1;savePF();LOG.add('info','Dosyadan altyazı dili okunamadı',{ms:Date.now()-t0})}}
+ const pr=pref(PK);MKOK=false;if(!pr.mk&&pr.mkx!==2&&isTV){const t0=Date.now(),mk=await MKV.read(API.url(PL));if(PL!==me||scr!=='player')return;
+  if(mk&&mk.length){pr.mk=mk;savePF();LOG.add('info','Altyazı dilleri dosyadan okundu',{ms:Date.now()-t0,diller:mk.map(x=>x.lang+(x.forced?'*':'')+(x.sdh?'+':'')).join(' '),kodekler:[...new Set(mk.map(x=>x.codec))].join(' ')})}else{pr.mkx=2;savePF();LOG.add('info','Dosyadan altyazı dili okunamadı',{ms:Date.now()-t0,neden:MKV.why||(mk&&!mk.length?'altyazı parçası yok':'bilinmiyor'),uzanti:PL.ext||''})}}
  AV.open(API.url(PL),null,{start:t,ready:()=>{loadingOff('player');AV.mode(1);applyTracks();wake()},buf:b=>b?loadingOn('player','Arabelleğe alınıyor'):loadingOff('player'),
   time:ms=>{if(SK==null&&$('#player').classList.contains('ui'))drawT(ms/1000)},end:()=>{histSet(PL,AV.dur()/1000,AV.dur()/1000);const n=nextEp();n?openPlayer(n,0):exit()},sub:(tx,d)=>showSub(tx,d),
   error:er=>{loadingOff('player');LOG.add('player','Film/dizi açılamadı: '+((er&&(er.name||er.message||er.code))||(typeof er==='string'?er:'bilinmeyen hata')),{deneme:tryN,tur:PL.k,ad:PL.name,url:API.url(PL),sure:Math.round(AV.time()/1000)});if(tryN++<1){const cb0=AV.cb,at=Math.max(0,AV.time()/1000||PL.start||0);AV.close();loadingOn('player','Yeniden bağlanılıyor');setTimeout(()=>{if(scr==='player')AV.open(API.url(PL),null,Object.assign(cb0,{start:at}))},1500);return}
@@ -481,13 +487,20 @@ async function startPlay(t){$('#rs').classList.remove('on');$('#perr').classList
 let TLD={},SC=null,LRN=null,MKN={},MKOK=false;
 /* MKV dosyasının başındaki parça listesinden altyazı dillerini oku (yayın açılmadan önce, tek kısa istek) */
 const MKV={
- async read(url){if(!url||!/\.(mkv|webm)(\?|$)/i.test(url)&&!/\/series\//.test(url)&&!/\/movie\//.test(url))return null;
-  const c=new AbortController(),t=setTimeout(()=>c.abort(),3500);let buf=new Uint8Array(0);
-  try{const r=await fetch(url,{headers:{Range:'bytes=0-1048575'},signal:c.signal});if(!r.ok&&r.status!==206)return null;
-   if(r.body&&r.body.getReader){const rd=r.body.getReader();const parts=[];let n=0;while(n<1048576){const x=await rd.read();if(x.done)break;parts.push(x.value);n+=x.value.length;if(parts.length===1&&x.value.length>=4&&!(x.value[0]===0x1A&&x.value[1]===0x45)){try{rd.cancel()}catch(e){}return null}
-     const tk=this.tryParse(parts,n);if(tk)return tk}
-    try{rd.cancel()}catch(e){}buf=this.join(parts,n)}else buf=new Uint8Array(await r.arrayBuffer()).subarray(0,1048576);
-   return this.parse(buf)}catch(e){return null}finally{clearTimeout(t);try{c.abort()}catch(e){}}},
+ why:'',
+ async grab(url,range,max){const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);let parts=[],n=0,st=0,ct='';
+  try{const r=await fetch(url,{headers:{Range:range},signal:c.signal});st=r.status;ct=(r.headers&&r.headers.get&&r.headers.get('content-type'))||'';if(!r.ok&&st!==206){this.why='HTTP '+st;return null}
+   if(r.body&&r.body.getReader){const rd=r.body.getReader();while(n<max){const x=await rd.read();if(x.done)break;parts.push(x.value);n+=x.value.length;
+     if(parts.length===1&&x.value.length>=8){const v=x.value;const ebml=v[0]===0x1A&&v[1]===0x45,mp4=String.fromCharCode(v[4],v[5],v[6],v[7])==='ftyp';if(range.indexOf('bytes=0')===0&&!ebml&&!mp4){this.why='biçim '+Array.from(v.subarray(0,8)).map(z=>z.toString(16).padStart(2,'0')).join('')+' '+ct;try{rd.cancel()}catch(e){}return null}}
+     if(parts[0]&&parts[0][0]===0x1A&&n>=65536&&parts.length%8===0){const tk=this.parse(this.join(parts,n));if(tk){try{rd.cancel()}catch(e){}return{tk}}}}
+    try{rd.cancel()}catch(e){}}else{const ab=new Uint8Array(await r.arrayBuffer());parts=[ab.subarray(0,max)];n=Math.min(max,ab.length)}
+   return{b:this.join(parts,n),st}}catch(e){this.why=(e.name==='AbortError'?'zaman aşımı':'ağ hatası')+' ('+n+' bayt)';return null}finally{clearTimeout(t);try{c.abort()}catch(e){}}},
+ async read(url){this.why='';if(!url||!/\/(series|movie)\//.test(url)&&!/\.(mkv|webm|mp4|m4v|mov)(\?|$)/i.test(url)){this.why='canlı/uygun değil';return null}
+  const h=await this.grab(url,'bytes=0-1048575',1048576);if(!h)return null;if(h.tk)return h.tk;const b=h.b;
+  if(b[0]===0x1A&&b[1]===0x45){const tk=this.parse(b);if(!tk)this.why='MKV parça listesi ilk 1 MB içinde değil';return tk}
+  const r=MP4.parse(b);if(r&&r.tk)return r.tk;
+  if(r&&r.tail){const t=await this.grab(url,'bytes=-4194304',4194304);if(!t)return null;const r2=MP4.scan(t.b);if(r2)return r2;this.why='MP4 moov dosya sonunda bulunamadı';return null}
+  this.why='MP4 altyazı parçası yok';return r?[]:null},
  join(parts,n){const b=new Uint8Array(n);let o=0;for(const p of parts){b.set(p.subarray(0,Math.min(p.length,n-o)),o);o+=p.length;if(o>=n)break}return b},
  tryParse(parts,n){if(n<65536||parts.length%8)return null;return this.parse(this.join(parts,n),true)},
  vint(b,i,keep){const x=b[i];if(x===undefined)return null;let l=1,m=0x80;while(l<=8&&!(x&m)){l++;m>>=1}if(l>8||i+l>b.length)return null;let v=keep?x:(x&(m-1));for(let k=1;k<l;k++)v=v*256+b[i+k];
@@ -507,12 +520,27 @@ const MKV={
     return out.map(t=>({lang:normLang(t.bcp||t.lang||'eng'),name:t.name,forced:!!t.forced,sdh:/sdh|hearing|cc\b|i[sş]itme|hoh/i.test(t.name),codec:t.codec}))}
    if(x.unk)return null;i=x.e}
   return null}};
-const normLang=c=>{c=String(c||'').toLowerCase().split(/[-_]/)[0];return({tr:'tur',en:'eng',de:'deu',ger:'deu',fr:'fra',fre:'fra',es:'spa',it:'ita',ru:'rus',ar:'ara',pt:'por',nl:'nld',dut:'nld',pl:'pol',ro:'ron',rum:'ron',sv:'swe',no:'nor',nob:'nor',da:'dan',cs:'ces',cze:'ces',hu:'hun',fi:'fin',id:'ind',hr:'hrv',uk:'ukr',bg:'bul',sr:'srp',el:'ell',gre:'ell',he:'heb',fa:'fas',per:'fas',ja:'jpn',ko:'kor',zh:'zho',chi:'zho',th:'tha',hi:'hin'})[c]||(c==='und'?'':c)};
+const MP4={
+ u32(b,i){return((b[i]<<24)>>>0)+(b[i+1]<<16)+(b[i+2]<<8)+b[i+3]},
+ typ(b,i){return String.fromCharCode(b[i],b[i+1],b[i+2],b[i+3])},
+ kids(b,s,e,cb){let i=s;while(i+8<=e){let sz=this.u32(b,i),hl=8;const t=this.typ(b,i+4);if(sz===1){sz=this.u32(b,i+8)*4294967296+this.u32(b,i+12);hl=16}else if(sz===0)sz=e-i;if(sz<hl)return false;if(cb(t,i+hl,Math.min(e,i+sz),i+sz>e)===false)return false;i+=sz}return true},
+ trak(b,s,e){let h='',lang='',el='',nm='';this.kids(b,s,e,(t,a,z)=>{if(t!=='mdia')return;this.kids(b,a,z,(t2,a2,z2)=>{
+   if(t2==='hdlr'){h=this.typ(b,a2+8);let k=a2+24,q='';while(k<z2&&b[k])q+=String.fromCharCode(b[k++]);nm=q}
+   else if(t2==='mdhd'){const v=b[a2],o=a2+(v===1?32:20),x=(b[o]<<8)|b[o+1];lang=String.fromCharCode(((x>>10)&31)+96,((x>>5)&31)+96,(x&31)+96)}
+   else if(t2==='elng'){let k=a2+4,q='';while(k<z2&&b[k])q+=String.fromCharCode(b[k++]);el=q}})});
+  return{h,lang:el||lang,nm}},
+ moov(b,s,e){const out=[];this.kids(b,s,e,(t,a,z)=>{if(t==='trak'){const r=this.trak(b,a,z);if(['sbtl','subt','text','subp'].indexOf(r.h)>=0)out.push({codec:r.h==='subp'?'subp':'text',lang:normLang(r.lang==='und'?'':r.lang),name:r.nm,forced:/forced|zorunlu/i.test(r.nm),sdh:/sdh|hearing|cc\b/i.test(r.nm)})}});return out},
+ parse(b){if(this.typ(b,4)!=='ftyp')return null;let res=null;this.kids(b,0,b.length,(t,a,z,cut)=>{if(t==='moov'){if(cut){res={tail:false,cut:true};return false}res={tk:this.moov(b,a,z)};return false}if(t==='mdat'){res={tail:true};return false}});
+  return res&&res.cut?null:res||{tail:true}},
+ scan(b){for(let i=4;i+4<b.length;i++){if(b[i]===0x6d&&b[i+1]===0x6f&&b[i+2]===0x6f&&b[i+3]===0x76){const sz=this.u32(b,i-4);if(sz>16&&i-4+sz<=b.length){const tk=this.moov(b,i+4,i-4+sz);return tk}}}return null}};
+const normLang=c=>{c=String(c||'').toLowerCase().split(/[-_]/)[0];return({is:'isl',ice:'isl',et:'est',lt:'lit',lv:'lav',mk:'mkd',mac:'mkd',ms:'msa',may:'msa',sk:'slk',slo:'slk',sl:'slv',vi:'vie',ca:'cat',eu:'eus',gl:'glg',kk:'kaz',az:'aze',sq:'sqi',alb:'sqi',bs:'bos',ku:'kur',ur:'urd',bn:'ben',ta:'tam',te:'tel',tr:'tur',en:'eng',de:'deu',ger:'deu',fr:'fra',fre:'fra',es:'spa',it:'ita',ru:'rus',ar:'ara',pt:'por',nl:'nld',dut:'nld',pl:'pol',ro:'ron',rum:'ron',sv:'swe',no:'nor',nob:'nor',da:'dan',cs:'ces',cze:'ces',hu:'hun',fi:'fin',id:'ind',hr:'hrv',uk:'ukr',bg:'bul',sr:'srp',el:'ell',gre:'ell',he:'heb',fa:'fas',per:'fas',ja:'jpn',ko:'kor',zh:'zho',chi:'zho',th:'tha',hi:'hin'})[c]||(c==='und'?'':c)};
 const tlang=x=>x?(x.lang||TLD[x.i]||''):'';
 const tname=(x,j)=>{const l=tlang(x);if(!l)return'Altyazı '+(j+1);const m=MKN[x.i];if(m&&(m.forced||m.sdh))return lname(l)+(m.forced?' (yalnız yabancı konuşmalar)':' (işitme engelli)');const same=TRK.tx.filter(y=>lname(tlang(y))===lname(l)&&!(MKN[y.i]&&(MKN[y.i].forced||MKN[y.i].sdh)));const k=same.indexOf(x);return lname(l)+(same.length>1&&k>0?' '+(k+1):'')};
 const wantSub=()=>{const pr=pref(PK);return pr.s||['tur','off','eng'][ST.sub||0]};
-function applyTracks(){const pr=pref(PK),au=AV.tracks('AUDIO'),tx=AV.tracks('TEXT');TRK={au,tx,ca:au[0]?au[0].i:-1,cs:-1};scanStop();LRN=null;TLD=Object.assign({},pr.tl||{});MKN={};MKOK=false;
- if(pr.mk&&tx.length){if(pr.mk.length===tx.length){tx.forEach((x,j)=>{const m=pr.mk[j];if(m.lang)TLD[x.i]=m.lang;MKN[x.i]=m});MKOK=tx.every(x=>!!tlang(x))}else{delete pr.mk;savePF()}}
+function applyTracks(){const pr=pref(PK),au=AV.tracks('AUDIO'),tx=AV.tracks('TEXT');TRK={au,tx,ca:au[0]?au[0].i:-1,cs:-1};scanStop();LRN=null;if(pr.tlv!==2){delete pr.tl;pr.tlv=2}TLD=Object.assign({},pr.tl||{});MKN={};MKOK=false;
+ if(pr.mk&&tx.length){const txt=pr.mk.filter(m=>!m.codec||/^S_TEXT|^tx3g|^wvtt|^text|^stpp/i.test(m.codec)),L=pr.mk.length===tx.length?pr.mk:txt.length===tx.length?txt:null;
+  if(L){TLD={};tx.forEach((x,j)=>{const m=L[j];if(m.lang)TLD[x.i]=m.lang;MKN[x.i]=m});MKOK=tx.every(x=>!!tlang(x))}
+  else{LOG.add('warn','Altyazı sayısı tutmadı',{dosyada:pr.mk.length,metin:txt.length,tv:tx.length,kodekler:[...new Set(pr.mk.map(m=>m.codec))].join(' ')});delete pr.mk;delete pr.mkx;savePF()}}
  if(au.length||tx.length)LOG.add('info','Parçalar: '+clean(PL.k==='ep'?PL.sname:PL.name),{ses:au.map(x=>x.raw).join(' | ').slice(0,700),altyazi:tx.map(x=>x.raw).join(' | ').slice(0,1200)});
  const want=pr.a||(ST.aud?null:'tur');const ta=want&&au.find(x=>lname(x.lang)===lname(want));if(ta){AV.sel('AUDIO',ta.i);TRK.ca=ta.i}
  const ws=wantSub(),same=ws!=='off'?tx.filter(x=>tlang(x)&&lname(tlang(x))===lname(ws)):[];const ts=same.find(x=>!(MKN[x.i]&&(MKN[x.i].forced||MKN[x.i].sdh)))||same[0];
@@ -523,16 +551,17 @@ function trkLabel(){const a=TRK.au.find(x=>x.i===TRK.ca),j=TRK.tx.findIndex(x=>x
 /* dili yazmayan altyazıları sırayla dinleyip tanı; istenen dil bulununca onu aç */
 function scanStart(want,restore,pan){scanStop();const q=TRK.tx.filter(x=>!tlang(x)).map(x=>x.i);if(!q.length)return;SC={q,want:want||null,restore:restore==null?-1:restore,pan:pan?1:0,miss:0,cur:-1,txt:'',n:0,t:null,t0:Date.now()};$('#sub').style.display='none';AV.silent(false);scanNext();trkLabel()}
 function panRefresh(){if(scr==='player'&&!$('#pan').classList.contains('hide')&&!panLive){const f=cur&&cur.dataset.k?`#pan [data-k="${cur.dataset.k}"][data-v="${cur.dataset.v}"]`:null;drawPan();focus((f&&$(f))||$('#pan [data-f]'))}}
-function scanNext(timeout){if(!SC)return;clearTimeout(SC.t);if(paused&&scr==='player')return;if(timeout===true&&SC.cur>=0&&!TLD[SC.cur]&&SC.miss<TRK.tx.length*2){SC.miss++;SC.q.push(SC.cur)}if(!SC.q.length)return scanEnd(SC.restore);SC.prev=SC.lastTx||'';SC.cur=SC.q.shift();SC.txt='';SC.n=0;SC.seen={};SC.sw=Date.now();AV.sel('TEXT',SC.cur);SC.t=setTimeout(()=>scanNext(true),9000);panRefresh()}
+function scanNext(timeout){if(!SC)return;clearTimeout(SC.t);if(paused&&scr==='player')return;if(timeout===true&&SC.cur>=0&&!TLD[SC.cur]&&SC.miss<TRK.tx.length*2){SC.miss++;SC.q.push(SC.cur)}if(!SC.q.length)return scanEnd(SC.restore);SC.prev=SC.lastTx||'';SC.cur=SC.q.shift();SC.txt='';SC.n=0;SC.seen={};SC.sw=Date.now();AV.sel('TEXT',SC.cur);SC.t=setTimeout(()=>scanNext(true),SC.pan?6000:9000);panRefresh()}
 function scanEnd(sel){const c=SC;if(!c)return;clearTimeout(c.t);SC=null;LOG.add('info','Altyazı dilleri: '+TRK.tx.map((x,j)=>(j+1)+'='+(tlang(x)||'?')).join(' '),{sure_sn:Math.round((Date.now()-(c.t0||Date.now()))/1000)});const t=TRK.tx.find(x=>x.i===sel);if(t){AV.silent(false);AV.sel('TEXT',t.i);TRK.cs=t.i}else{AV.silent(true);TRK.cs=-1;$('#sub').style.display='none'}
  pref(PK).tl=Object.assign({},TLD);savePF();trkLabel();panRefresh()}
 function scanStop(){if(SC){clearTimeout(SC.t);SC=null}}
-function subLearn(tx){if(SC){if(!tx)return true;const nt=String(tx).trim();if(Date.now()-(SC.sw||0)<1200||nt===SC.prev||(SC.seen&&SC.seen[nt]))return true;SC.seen=SC.seen||{};SC.seen[nt]=1;SC.txt+=' '+tx;SC.n++;const g=detectLang(SC.txt,SC.n);if(g){TLD[SC.cur]=g;if(SC.want&&lname(g)===lname(SC.want)){const i=SC.cur;scanEnd(i);osd(lname(g)+' altyazı bulundu')}else scanNext()}return true}
+function subLearn(tx){tx=tx&&subClean(tx);if(SC){if(!tx)return true;const nt=String(tx).trim();if(Date.now()-(SC.sw||0)<1200||nt===SC.prev||(SC.seen&&SC.seen[nt]))return true;SC.seen=SC.seen||{};SC.seen[nt]=1;SC.txt+=' '+tx;SC.n++;const g=detectLang(SC.txt,SC.n);if(g){TLD[SC.cur]=g;if(SC.want&&lname(g)===lname(SC.want)){const i=SC.cur;scanEnd(i);osd(lname(g)+' altyazı bulundu')}else scanNext()}return true}
  if(LRN&&tx&&LRN.i===TRK.cs){LRN.txt+=' '+tx;LRN.n++;const g=detectLang(LRN.txt,LRN.n);if(g){const L=LRN;LRN=null;TLD[L.i]=g;if(L.setPref)pref(PK).s=g;pref(PK).tl=Object.assign({},TLD);savePF();trkLabel();
    if(L.verify&&lname(g)!==lname(L.verify)){$('#sub').style.display='none';AV.silent(true);TRK.cs=-1;scanStart(L.verify);return true}}}
  return false}
+const subClean=t=>String(t||'').replace(/\{\\[^}]*\}/g,'').replace(/\\[Nn]/g,'\n').replace(/\\h/g,' ').replace(/<[^>]+>/g,'').trim();
 function showSub(tx,d){if(SC&&tx)SC.lastTx=String(tx).trim();if(scr==='player'&&subLearn(tx))return;if(TRK.cs<0)return;const el=$('#sub'),pr=pref(PK);clearTimeout(subT);if(!tx){el.style.display='none';return}
- el.innerHTML=esc(String(tx).replace(/<[^>]+>/g,'')).replace(/\n/g,'<br>');el.style.display='block';el.className='p-'+pr.pos;el.style.fontSize={s:'22px',m:'28px',l:'36px'}[pr.size];el.style.color=pr.color;
+ el.innerHTML=esc(subClean(tx)).replace(/\n/g,'<br>');el.style.display='block';el.className='p-'+pr.pos;el.style.fontSize={s:'22px',m:'28px',l:'36px'}[pr.size];el.style.color=pr.color;
  el.style.background={none:'transparent',semi:'rgba(0,0,0,.55)',box:'#000'}[pr.bg];el.style.textShadow=pr.bg==='none'?'0 2px 6px #000,0 0 2px #000':'none';subT=setTimeout(()=>el.style.display='none',Math.max(1200,+d||3000))}
 function drawT(t){const d=AV.dur()/1000;$('#t1').textContent=fmt(t);$('#t2').textContent=d?fmt(d):'';$('#fl').style.width=d?Math.min(100,t/d*100)+'%':'0'}
 function drawPP(){$('#bpp').innerHTML=paused?IC.play+' Devam':IC.pause+' Durdur'}
@@ -552,6 +581,8 @@ async function ensureEps(it){if(it.k!=='ep'||EPS.some(e=>e.id===it.id))return;tr
 /* ---------- ses/altyazı ve kanal ayarları paneli ---------- */
 let panLive=false,SLEEP=null;
 function openPan(){panLive=scr==='live';$('#'+scr).append($('#pan'));if(!panLive&&!SC&&TRK.tx.some(x=>!tlang(x)))scanStart(null,TRK.cs,1);drawPan();$('#pan').classList.remove('hide');clearTimeout(hideT);focus($('#pan .sel')||$('#pan [data-f]'))}
+function panLeftClose(){if(!cur||!cur.closest('#pan'))return false;const g=cur.parentElement;if(g&&g.classList.contains('opts')){let p=cur.previousElementSibling;while(p&&!p.hasAttribute('data-f'))p=p.previousElementSibling;if(p)return false}
+ if(scr==='live'){hidePan();return focus($('[data-act=lset]')),true}hidePan();unf();return true}
 function hidePan(){$('#pan').classList.add('hide');if(SC&&SC.pan)scanEnd(SC.restore)}
 function drawPan(){const k=panLive?'l:'+LV.id:PK,pr=pref(k),au=TRK.au,tx=TRK.tx;let g=[];
  g.push(['Ses','audio',au.length?au.map(x=>[x.i,lname(x.lang),[x.codec,x.ch?x.ch+' kanal':''].filter(Boolean).join(', ')]):[[-1,'Varsayılan','Yayında tek ses var']],TRK.ca]);
@@ -574,6 +605,7 @@ function pick(k,v){const pk=panLive?'l:'+LV.id:PK,pr=pref(pk);
 const skMark=()=>$('#player').classList.toggle('sk',!cur);
 function pKey(e,m,b,cu,cd,pp,ff,rw){wake();setTimeout(skMark,0);const pan=!$('#pan').classList.contains('hide'),ov=$('#player .ov.on'),nx=$('#nx').classList.contains('on');
  if(b){if(pan){hidePan();return unf()}if(nx){$('#nx').classList.remove('on');return unf()}if(cur&&!ov)return unf();histSet(PL,AV.time()/1000,AV.dur()/1000);return exit()}
+ if(pan&&!ov&&m==='l'&&panLeftClose())return;
  if(pan||ov){if(m)move(m);else if(e.keyCode===13)ok(cur);return}
  if(pp)return pause();if(ff||rw)return seek(ff?30:-30);
  if(cu||cd){const n=cu?nextEp():prevEp();if(n){histSet(PL,AV.time()/1000,AV.dur()/1000);return openPlayer(n,0)}return osd(PL.k!=='ep'?'Film':cu?'Son bölüm':'İlk bölüm')}
@@ -622,6 +654,7 @@ function lKey(e,m,b,cu,cd,pp,ff,rw){const epg=$('#epg').classList.contains('on')
  if(b)return liveBack();
  if((cu||cd)&&!ov)return zap(cu?1:-1);if(pp&&!ov)return lpause();
  if(!epg&&!pan&&!ov&&cur&&cur.closest('#band')&&m==='u'){unf();showBand();return}
+ if(pan&&!ov&&m==='l'&&panLeftClose())return;
  if(epg||pan||ov||(cur&&cur.closest('#band'))){if(!epg)showBand();if(m)move(m);else if(e.keyCode===13)ok(cur);return}
  if(pp)return lpause();if(cu||cd)return zap(cu?1:-1);if(ff||rw)return liveSeek(rw?60:-60);
  if(m==='u'||m==='d'){showBand();if(m==='d')focus($('[data-act=epg]'));return}
