@@ -174,6 +174,10 @@ async function loadCat(k,cid,tok){tok=tok||RT;$$('#catl [data-act=cat]').forEach
  try{it=cid==='__fav'?FAVL.slice():await API.items(k,cid)}catch(e){if(tok===RT)box.innerHTML=`<div class="empty err2">${esc(e.message)}</div>`;return}
  if(tok!==RT)return;if(k==='live'){ST.lastCat=cid;saveST();CTX=it;LCN=40;box.innerHTML=it.slice(0,40).map(lcc).join('')||'<div class="empty">Bu kategoride kanal yok.</div>';box.scrollLeft=0;fillNow(it,tok)}
  else{GRID={k,items:it,n:0};box.innerHTML='';gridMore();if(!it.length)box.innerHTML='<div class="empty">Bu kategoride içerik yok.</div>'}}
+function gridTrim(e){const b=$('#vg');if(!GRID||!b)return;const i=Array.prototype.indexOf.call(b.children,e);if(i<0)return;const want=Math.max(0,Math.floor((i-96)/12)*12),c0=GRID.c0||0;
+ if(want>c0){for(let j=c0;j<want;j++){const el=b.children[j];if(el&&!el.dataset.cold){el.innerHTML='';el.dataset.cold='1'}}}
+ else if(want<c0){const t=document.createElement('div');for(let j=want;j<c0;j++){const el=b.children[j],it=GRID.items[j];if(el&&el.dataset.cold&&it){t.innerHTML=poster(it);el.replaceWith(t.firstElementChild)}}}
+ GRID.c0=want}
 function gridMore(){if(!GRID)return;const b=$('#vg');if(!b)return;const nx=GRID.items.slice(GRID.n,GRID.n+60);GRID.n+=nx.length;b.insertAdjacentHTML('beforeend',nx.map(poster).join(''))}
 let MT=null,CT=null;
 function miniDraw(it){const m=$('#mv');if(!m||!it)return;miniStop();m.innerHTML=img(it.icon);
@@ -264,7 +268,7 @@ V.settings=()=>{const u=ACC.ui||{},ex=+u.exp_date?new Date(+u.exp_date*1000):nul
  ${SET.map(([k,n,o])=>`<div class="set" data-f data-act="set" data-k="${k}">${n}<span>‹ ${o[ST[k]||0]} ›</span></div>`).join('')}
  <div class="set" data-f data-act="pinchg">PIN kodunu değiştir<span>›</span></div>
  <div class="set" data-f data-act="diag">Son hatalar<span>Sorun bildirmek için ›</span></div>`};
-V.diag=()=>{const b=load('rg-logbuf',[]);return`<h1>Son hatalar</h1><p class="sub2">Bir sorun olduğunda bu ekranın fotoğrafını göndermen yeterli. Sürüm ${APPV} (${APPSRC}), cihaz ${DEV}${ACC&&ACC.ui&&ACC.ui.max_connections?`, bağlantı hakkı ${ACC.ui.max_connections}`:''}.</p>`+(b.length?b.map(x=>`<div class="set" data-f><b style="font-weight:700;max-width:640px">${esc(x.m)}</b><span>${esc(x.l)} · ${hhmm(x.t)}</span></div>`).join(''):'<p class="empty">Kayıtlı hata yok.</p>')}
+V.diag=()=>{const b=load('rg-logbuf',[]);return`<h1>Son hatalar</h1><p class="sub2">Bir sorun olduğunda bu ekranın fotoğrafını göndermen yeterli. Sürüm ${APPV} (${APPSRC}), cihaz ${DEV}. Akıcılık: ${PERF.text()}${ACC&&ACC.ui&&ACC.ui.max_connections?`, bağlantı hakkı ${ACC.ui.max_connections}`:''}.</p>`+(b.length?b.map(x=>`<div class="set" data-f><b style="font-weight:700;max-width:640px">${esc(x.m)}</b><span>${esc(x.l)} · ${hhmm(x.t)}</span></div>`).join(''):'<p class="empty">Kayıtlı hata yok.</p>')}
 V.cats=t=>`<h1>Kategoriler</h1><div class="chips">${[['live','Canlı TV'],['vod','Filmler'],['series','Diziler']].map(([k,n])=>`<div class="chip${k===t?' sel':''}" data-f data-act="ctab" data-t="${k}">${n}</div>`).join('')}</div><p class="sub2">Gizlediğin kategoriler listede, aramada ve kanal geçişinde görünmez. Yetişkin kategoriler otomatik algılanır ve PIN ile korunur.</p><div id="cbox"><div class="spin sm"></div></div>`;
 AF.cats=async(t,tok,sel)=>{const cs=await API.cats(t);if(tok!==RT)return;drawCats(t,cs,sel)};
 function drawCats(t,cs,sel){const h=ST['h_'+t]||[],o=visCats(t,cs.filter(c=>true)).concat(cs.filter(c=>h.includes(c.id)).map(c=>({...c,adult:isAdult(c.name)})));
@@ -283,7 +287,7 @@ const selOf=e=>{const d=e.dataset;return`[data-act="${d.act}"]`+(d.key?`[data-ke
 let IO=null;const VSET=new Set();
 function ioScan(){if(!('IntersectionObserver' in window))return;if(!IO)IO=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting?VSET.add(e.target):VSET.delete(e.target)),{rootMargin:'300px'});
  document.querySelectorAll('[data-f]:not([data-io])').forEach(el=>{el.setAttribute('data-io','');IO.observe(el)})}
-if('MutationObserver' in window){let mt=0;new MutationObserver(()=>{if(mt)return;mt=requestAnimationFrame(()=>{mt=0;ioScan();IMG.scan()})}).observe(document.body,{childList:true,subtree:true})}
+if('MutationObserver' in window){let mt=0;new MutationObserver(ms=>{if(mt)return;let el=false;for(const m of ms){for(const n of m.addedNodes)if(n.nodeType===1){el=true;break}if(el)break}if(!el)return;mt=requestAnimationFrame(()=>{mt=0;ioScan();IMG.scan()})}).observe(document.body,{childList:true,subtree:true})}
 function vis(){if(PAD)return $$('#pad [data-f]');if($('#exitov').classList.contains('on'))return $$('#exitov [data-f]');
  const ov=$('#'+scr+' .ov.on');if(ov)return [...ov.querySelectorAll('[data-f]'),...(scr==='app'&&ov.id==='catov'?$$('#side [data-f]'):[])];if(IO&&VSET.size){for(const e of VSET)if(!e.isConnected)VSET.delete(e);const L=[...VSET].filter(e=>e.closest('#'+scr)&&e.offsetParent!==null);if(L.length)return L}
  return $$('#'+scr+' [data-f]').filter(e=>e.offsetParent!==null)}
@@ -304,7 +308,7 @@ function focus(e){if(!e)return;if(!PAD&&!e.closest('#'+scr)&&!e.closest('#toast,
  if(BR){const rw=e.closest('#brows .row');if(rw){if(tail(rw,8)<8)browseMore();rowsTrim(rw)}}
  if((cv==='home'||cv==='series'||cv==='films')&&d.key&&e.closest('.rows')){clearTimeout(HT);HT=setTimeout(()=>{const it=REG.get(d.key);if(it&&it.k!=='live')setHero(it)},550)}
  if(CTX.length>LCN&&e.parentElement&&e.parentElement.id==='chl'&&tail(e,7)<7){e.parentElement.insertAdjacentHTML('beforeend',CTX.slice(LCN,LCN+40).map(lcc).join(''));LCN+=40}
- if(GRID&&e.parentElement&&e.parentElement.id==='vg'&&tail(e,13)<13)gridMore()}
+ if(GRID&&e.parentElement&&e.parentElement.id==='vg'){if(tail(e,13)<13)gridMore();gridTrim(e)}}
 function move(d){if(!cur||!cur.isConnected)return focus(vis()[0]);
  if((d==='l'||d==='r')&&cur.parentElement&&cur.parentElement.matches(HROW)){let n=d==='r'?cur.nextElementSibling:cur.previousElementSibling;
   while(n&&!n.hasAttribute('data-f'))n=d==='r'?n.nextElementSibling:n.previousElementSibling;if(n)return focus(n);if(d==='r')return}const c=cur.getBoundingClientRect(),cx=c.x+c.width/2,cy=c.y+c.height/2,ver=d==='u'||d==='d',inSide=!!cur.closest('#side');
@@ -334,6 +338,8 @@ function startApp(){go('app');nav=[];LOG.add('info','Uygulama açıldı',{kaynak
    TELEFONLA EŞLEŞTİRME (Supabase + GitHub Pages)
    ========================================================= */
 const HELM='<path fill="#e0a028" d="M95 10C66 14 44 40 38 86L36 104L95 113Z"/><path fill="#c98a1c" d="M105 10C134 14 156 40 162 86L164 104L105 113Z"/><path fill="#f2b84a" d="M96 3L104 3L109 113L104 160L100 170L96 160L91 113Z"/><g><path fill="#e0a028" d="M35 109L90 119L90 137L75 147L49 142L35 127Z"/><path fill="#000" d="M49 121L88 130L83 137L54 130Z"/></g><g><path fill="#c98a1c" d="M165 109L110 119L110 137L125 147L151 142L165 127Z"/><path fill="#000" d="M151 121L112 130L117 137L146 130Z"/></g><path fill="#e0a028" d="M33 131L49 146L57 198L51 208L39 186L31 147Z"/><path fill="#c98a1c" d="M167 131L151 146L143 198L149 208L161 186L169 147Z"/><path fill="#f2b84a" d="M62 157L90 148L100 157L110 148L138 157L129 180L110 164L100 170L90 164L71 180Z"/><path fill="#e0a028" d="M59 173L76 171L81 228L68 240Z"/><path fill="#e0a028" d="M80 174L92 176L94 252L83 239Z"/><path fill="#f2b84a" d="M96 177L104 177L104 258L100 268L96 258Z"/><path fill="#c98a1c" d="M108 176L120 174L117 239L106 252Z"/><path fill="#c98a1c" d="M124 171L141 173L132 240L119 228Z"/>';
+const APPBASE=((document.currentScript&&document.currentScript.src)||'').replace(/js\/app\.js.*$/,'');
+function needQR(cb){if(window.qrcode)return cb();const sc=document.createElement('script');sc.src=APPBASE+'js/qr.js';sc.onload=()=>cb();sc.onerror=()=>cb();document.head.appendChild(sc)}
 function qrSvg(text){const q=qrcode(0,'H');q.addData(text);q.make();const n=q.getModuleCount(),L=Math.round(n*.26),o=(n-L)/2;let d='';
  for(let r=0;r<n;r++)for(let c=0;c<n;c++)if(q.isDark(r,c))d+=`M${c} ${r}h1v1h-1z`;
  return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges"><path d="${d}" fill="#0a0d12"/><rect x="${o-.6}" y="${o-.6}" width="${L+1.2}" height="${L+1.2}" rx="${L*.22}" fill="#fff"/><rect x="${o}" y="${o}" width="${L}" height="${L}" rx="${L*.18}" fill="#0a0d12"/><svg x="${o+L*.14}" y="${o+L*.08}" width="${L*.72}" height="${L*.84}" viewBox="0 0 200 270" shape-rendering="geometricPrecision">${HELM}</svg></svg>`}
@@ -349,7 +355,7 @@ const PAIR={code:null,secret:null,t:null,exp:0,
   this.code=code;this.secret=secret;this.exp=Date.now()+9.5*60000;const base=CFG.pairPage.replace(/\/?$/,'/'),url=`${base}?c=${code}`;
   $('#pcode').textContent=code.slice(0,3)+' '+code.slice(3);$('#purl').textContent=base.replace(/^https?:\/\//,'').replace(/\/$/,'');
   $('#pinfo').innerHTML=`Kamera okumazsa <span id="purl">${esc(base.replace(/^https?:\/\//,'').replace(/\/$/,''))}</span> adresine gir, bu kodu yaz:`;
-  try{$('#qr').innerHTML=qrSvg(url);$('#qr').style.visibility=''}catch(e){$('#qr').style.visibility='hidden'}
+  $('#qr').style.visibility='hidden';needQR(()=>{try{$('#qr').innerHTML=qrSvg(url);$('#qr').style.visibility=''}catch(e){}});
   this.poll()},
  poll(){clearTimeout(this.t);this.t=setTimeout(async()=>{if(scr!=='login'||!this.code)return;if(Date.now()>this.exp)return this.start();
   let p=null;try{p=await this.rpc('ragnar_pair_take',{p_code:this.code,p_secret:this.secret})}catch(e){}
@@ -387,6 +393,7 @@ const AV={st:'none',cb:{},url:'',v:null,lt:-1,same:0,buf:false,
    this.rect(rect);const b=[[5,8],[12,16],[2,4]][ST.buf||0];
    try{a.setBufferingParam('PLAYER_BUFFER_FOR_PLAY','PLAYER_BUFFER_SIZE_IN_SECOND',b[0]);a.setBufferingParam('PLAYER_BUFFER_FOR_RESUME','PLAYER_BUFFER_SIZE_IN_SECOND',b[1])}catch(e){}
    try{a.setTimeoutForBuffering(20)}catch(e){}
+   try{a.setStreamingProperty('SET_MODE_4K','TRUE')}catch(e){}
    a.prepareAsync(()=>{if(this.url!==url)return;this.st='ready';const go=()=>{try{a.play();this.st='play';this.e('ready')}catch(e){this.e('error',e)}};
     if(this.cb.start>0)a.seekTo(Math.floor(this.cb.start*1000),go,go);else go()},er=>{if(this.url===url)this.e('error',er)})}
    catch(e){this.e('error',e)}}
@@ -437,6 +444,7 @@ function detectLang(t,n){t=String(t||'').replace(/<[^>]+>/g,' ');const cnt=re=>(
  if(sc[0][1]>=9&&sc[0][1]>=sc[1][1]*1.3)return sc[0][0];return n>=8&&sc[0][1]>0?sc[0][0]:null}
 const pref=k=>PF[k]||(PF[k]={a:null,s:null,size:'m',color:'#fff',bg:'semi',pos:'alt',fit:1,hls:0});
 const savePF=()=>save('rg-pf',PF);
+(()=>{const ks=Object.keys(PF);if(ks.length>500){ks.slice(0,ks.length-300).forEach(k=>delete PF[k]);savePF()}})();
 
 /* ---------- film ve dizi oynatıcı ---------- */
 let PL=null,PK='',paused=false,osdT,hold=0,wT,SK=null,SKT,nxOn=0,nxC=0,TRK={au:[],tx:[]},subT,saveT=0,tryN=0;
@@ -449,7 +457,7 @@ function openPlayer(it,start){if(scr!=='player')retSel=cur?selOf(cur):null;PL=it
  startPlay(start||0)}
 function startPlay(t){$('#rs').classList.remove('on');$('#perr').classList.remove('on');unf();tryN=0;loadingOn('player','Yükleniyor');PL.start=t;
  AV.open(API.url(PL),null,{start:t,ready:()=>{loadingOff('player');AV.mode(1);applyTracks();wake()},buf:b=>b?loadingOn('player','Arabelleğe alınıyor'):loadingOff('player'),
-  time:ms=>{if(SK==null)drawT(ms/1000)},end:()=>{histSet(PL,AV.dur()/1000,AV.dur()/1000);const n=nextEp();n?openPlayer(n,0):exit()},sub:(tx,d)=>showSub(tx,d),
+  time:ms=>{if(SK==null&&$('#player').classList.contains('ui'))drawT(ms/1000)},end:()=>{histSet(PL,AV.dur()/1000,AV.dur()/1000);const n=nextEp();n?openPlayer(n,0):exit()},sub:(tx,d)=>showSub(tx,d),
   error:er=>{loadingOff('player');LOG.add('player','Film/dizi açılamadı: '+((er&&(er.name||er.message||er.code))||(typeof er==='string'?er:'bilinmeyen hata')),{deneme:tryN,tur:PL.k,ad:PL.name,url:API.url(PL),sure:Math.round(AV.time()/1000)});if(tryN++<1){const cb0=AV.cb,at=Math.max(0,AV.time()/1000||PL.start||0);AV.close();loadingOn('player','Yeniden bağlanılıyor');setTimeout(()=>{if(scr==='player')AV.open(API.url(PL),null,Object.assign(cb0,{start:at}))},1500);return}
    $('#perrt').textContent='Sunucu bu içeriği şu an açamadı. İnternet bağlantını kontrol edip tekrar deneyebilirsin. (Kod: '+((er&&(er.name||er.message||er.code))||er||'-')+')';$('#perr').classList.add('on');focus($('[data-act=retry]'))}})}
 let TLD={},SC=null,LRN=null;
@@ -483,7 +491,7 @@ function drawPP(){$('#bpp').innerHTML=paused?IC.play+' Devam':IC.pause+' Durdur'
 function osd(t,keep){const o=$('#'+scr+' .osd');if(!o)return;o.innerHTML=t;o.style.display='block';clearTimeout(osdT);if(!keep)osdT=setTimeout(()=>o.style.display='none',1100)}
 function loadingOn(s,t){const l=$('#'+s+' .ld');l.querySelector('span').textContent=t||'';l.classList.add('on')}
 function loadingOff(s){$('#'+s+' .ld').classList.remove('on')}
-function wake(){$('#player').classList.add('ui');clearTimeout(wT);wT=setTimeout(()=>{if(scr==='player'&&!paused&&$('#pan').classList.contains('hide')&&!cur&&!$('#player .ov.on'))$('#player').classList.remove('ui')},4000)}
+function wake(){if(!$('#player').classList.contains('ui')&&SK==null&&PL&&AV.st!=='none')drawT(AV.time()/1000);$('#player').classList.add('ui');clearTimeout(wT);wT=setTimeout(()=>{if(scr==='player'&&!paused&&$('#pan').classList.contains('hide')&&!cur&&!$('#player .ov.on'))$('#player').classList.remove('ui')},4000)}
 function pause(){if(AV.st==='none')return;paused=!paused;paused?AV.pause():AV.play();osd(paused?IC.pause:IC.play,paused);drawPP();wake();if(paused)histSet(PL,AV.time()/1000,AV.dur()/1000)}
 function seek(st){const d=AV.dur()/1000;if(!d)return osd('Bu içerikte sarma yok');if(SK==null)SK=AV.time()/1000;SK=Math.max(0,Math.min(d-2,SK+st));drawT(SK);osd(fmt(SK),paused);
  clearTimeout(SKT);SKT=setTimeout(()=>{AV.seek(SK*1000);SK=null},700)}
@@ -655,8 +663,14 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
    ========================================================= */
 const KEYS=['MediaPlayPause','MediaPlay','MediaPause','MediaStop','MediaFastForward','MediaRewind','ChannelUp','ChannelDown','ChannelList','0','1','2','3','4','5','6','7','8','9','ColorF0Red','ColorF1Green','ColorF2Yellow','ColorF3Blue','Info'];
 try{KEYS.forEach(k=>{try{tizen.tvinputdevice.registerKey(k)}catch(e){}})}catch(e){}
+/* akıcılık ölçer: yalnızca tuşa basıldıktan sonraki 0,7 sn boyunca kare sürelerini sayar */
+const PERF={n:0,slow:0,jank:0,max:0,sent:0,until:0,last:0,on:false,
+ kick(){this.until=performance.now()+700;if(!this.on){this.on=true;this.last=0;requestAnimationFrame(t=>this.tick(t))}},
+ tick(t){if(this.last){const d=t-this.last;this.n++;if(d>34)this.slow++;if(d>100)this.jank++;if(d>this.max)this.max=d}this.last=t;if(t<this.until)requestAnimationFrame(x=>this.tick(x));else this.on=false},
+ text(){return this.n?`${this.n} kare ölçüldü, yüzde ${Math.round(this.slow/this.n*100)} yavaş, ${this.jank} takılma, en uzun kare ${Math.round(this.max)} ms`:'henüz ölçüm yok'},
+ report(){if(this.n-this.sent<400)return;this.sent=this.n;LOG.add('perf','Akıcılık: '+this.text(),{sayfa:cv})}};
 let MQ=null;function qmove(d){if(MQ){MQ=d;return}MQ=d;requestAnimationFrame(()=>{const x=MQ;MQ=null;move(x)})}
-addEventListener('keydown',e=>{REP=e.repeat;const kc=e.keyCode,inp=e.target.tagName==='INPUT';if(inp&&(kc===65376||kc===65385)){e.target.blur();return}if(inp&&![38,40,27,13,10009].includes(kc))return;
+addEventListener('keydown',e=>{REP=e.repeat;if(scr==='app')PERF.kick();const kc=e.keyCode,inp=e.target.tagName==='INPUT';if(inp&&(kc===65376||kc===65385)){e.target.blur();return}if(inp&&![38,40,27,13,10009].includes(kc))return;
  const m={37:'l',39:'r',38:'u',40:'d'}[kc],b=kc===10009||kc===27||(kc===8&&!inp),cu=kc===427||kc===33,cd=kc===428||kc===34,pp=kc===10252||kc===415||kc===19||(kc===32&&!inp),ff=kc===417,rw=kc===412,dg=kc>=48&&kc<=57&&!inp?String(kc-48):null;
  if(m||b||cu||cd||pp||ff||rw||kc===13)e.preventDefault();
  if($('#toast').classList.contains('on')&&$('#toast').contains(cur)){if(m)return focus(m==='l'||m==='r'?[...$('#toast').querySelectorAll('[data-f]')].find(x=>x!==cur)||cur:cur);if(kc===13)return ok(cur);if(b){$('#toast').classList.remove('on');return unf()}}
@@ -688,7 +702,7 @@ setInterval(()=>{const d=new Date(),hm=hhmm(d);if(hm!==CLK){CLK=hm;$('#clk').tex
  if(scr==='player'&&PL&&AV.st==='play'&&!paused){const t=AV.time()/1000,du=AV.dur()/1000;if(++saveT>=10){saveT=0;histSet(PL,t,du)}
   if($('#nx').classList.contains('on')){nxC--;$('#nxc').textContent=nxC+' sn içinde başlıyor';if(nxC<=0)playNext()}else if(!nxOn&&du>120&&du-t<=25&&nextEp())showNext()}
  if(scr==='live'&&LV&&d.getSeconds()%30===0)bandEpg();
- if(d.getSeconds()%20===0)checkRem()},1000);
+ if(d.getSeconds()%20===0)checkRem();if(d.getSeconds()===7)PERF.report()},1000);
 
 
 /* ---------- açılış sesi (Web Audio ile üretilir, dosya gerekmez) ---------- */
