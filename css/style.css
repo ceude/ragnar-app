@@ -345,3 +345,8 @@ html.tv [data-f]{transition:none!important}
 .btn.ico svg{margin:0;display:block}
 #lfav.on{color:var(--acc)}
 #lfav.on.fx{color:#0a0d12}
+
+/* ana sayfa: Tüm kanallar kartı, kanal kartlarıyla aynı boyda */
+#hlive .lc.more{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;text-align:center}
+#hlive .lc.more b{font-size:17px}
+#hlive .lc.more small{color:var(--mut);font-size:13px}
