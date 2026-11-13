@@ -283,3 +283,10 @@ html.tv [data-f]{transition:transform .1s ease}
 /* açılış: her parça ayrı katman, GPU ile hareket eder */
 .helm2{position:relative;width:150px;height:203px;margin:0 auto 22px}
 .pc2{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;will-change:transform,opacity;animation:pin .8s cubic-bezier(.2,.9,.25,1.08) forwards}
+
+/* ---- 1.2: TV için ek hafifletme ---- */
+html.tv #vid,html.tv #lv{animation:none!important;background:none!important}
+[data-f]{transition:transform .12s ease-out}
+html.tv [data-f]{transition:transform .12s ease-out}
+img[data-src]{visibility:hidden}
+.ep.done .th img{filter:none;opacity:.55}
