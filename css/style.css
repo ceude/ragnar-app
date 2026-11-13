@@ -290,3 +290,16 @@ html.tv #vid,html.tv #lv{animation:none!important;background:none!important}
 html.tv [data-f]{transition:transform .12s ease-out}
 img[data-src]{visibility:hidden}
 .ep.done .th img{filter:none;opacity:.55}
+
+/* ---- 1.3 ---- */
+/* kod yüklenmeden önce de tam ekran: açılış animasyonu köşede küçük başlamasın */
+@media (min-width:1900px) and (max-width:1940px){#stage{zoom:1.5}}
+@media (min-width:3800px) and (max-width:3880px){#stage{zoom:3}}
+/* yan menü: sayfayı yeniden dizmek yerine GPU ile kaydır */
+#app.sopen{--sl:110px}
+#view{will-change:transform;transition:transform .18s ease-out}
+html.tv #view{transition:transform .18s ease-out!important}
+#app.sopen #view{transform:translateX(170px)}
+/* oynatıcı: sarma çubuğu seçiliyken belirgin */
+.trk{transition:height .12s}
+#player.sk.ui .trk{height:8px;box-shadow:0 0 0 2px var(--acc)}

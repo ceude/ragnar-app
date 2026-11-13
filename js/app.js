@@ -266,7 +266,7 @@ function sideCur(v,a){const sv={diag:'settings',cat:a&&a.t==='vod'?'films':'seri
 async function render(v,a,push=true,sel){if(push||!nav.length)nav.push([v,a]);else nav[nav.length-1]=[v,a];if(cv==='tv'||v!=='tv')miniStop();cv=v;GRID=null;BR=null;
  $('#catov').classList.remove('on');const w=$('#view'),tok=++RT;w.className=v==='home'||v==='series'||v==='films'?'home':v==='tv'?'tvv':'';w.innerHTML=V[v](a);w.scrollTop=0;sideCur(v,a);focus((sel&&$('#view '+sel))||$('#view [data-f]'));
  if(AF[v]){try{await AF[v](a,tok,sel)}catch(e){if(tok===RT)toast('Yüklenemedi',e.message);LOG.add('api',e.message,{gorunum:v})}}}
-function exit(){AV.close();clearTimeout(SLEEP);go('app');const[v,a]=nav[nav.length-1]||['home'];render(v,a,false,retSel)}
+function exit(){scanStop();LRN=null;AV.close();clearTimeout(SLEEP);go('app');const[v,a]=nav[nav.length-1]||['home'];render(v,a,false,retSel)}
 function back(){if(scr!=='app')return;if($('#catov').classList.contains('on')){$('#catov').classList.remove('on');return focus($('[data-act=catpick]'))}if(nav.length>1){nav.pop();const[v,a]=nav[nav.length-1];render(v,a,false)}else if(cur&&!cur.closest('#side'))focus($('.sn.cur')||$('.sn'));else{$('#exitov').classList.add('on');focus($('[data-act=noquit]'))}}
 const selOf=e=>{const d=e.dataset;return`[data-act="${d.act}"]`+(d.key?`[data-key="${d.key}"]`:'')};
 let IO=null;const VSET=new Set();
@@ -290,9 +290,12 @@ function focus(e){if(!e)return;if(!PAD&&!e.closest('#'+scr)&&!e.closest('#toast,
  if(GRID&&e.parentElement&&e.parentElement.id==='vg'&&tail(e,13)<13)gridMore()}
 function move(d){if(!cur||!cur.isConnected)return focus(vis()[0]);
  if((d==='l'||d==='r')&&cur.parentElement&&cur.parentElement.matches(HROW)){let n=d==='r'?cur.nextElementSibling:cur.previousElementSibling;
-  while(n&&!n.hasAttribute('data-f'))n=d==='r'?n.nextElementSibling:n.previousElementSibling;if(n)return focus(n);if(d==='r')return}const c=cur.getBoundingClientRect(),cx=c.x+c.width/2,cy=c.y+c.height/2;let best=null,bd=1e9;
- for(const e of vis()){if(e===cur)continue;const r=e.getBoundingClientRect(),dx=r.x+r.width/2-cx,dy=r.y+r.height/2-cy;
-  if(!{l:dx<-4,r:dx>4,u:dy<-4,d:dy>4}[d])continue;const h=d==='l'||d==='r',s=(h?Math.abs(dx):Math.abs(dy))+(h?Math.abs(dy):Math.abs(dx))*2.5;if(s<bd){bd=s;best=e}}focus(best)}
+  while(n&&!n.hasAttribute('data-f'))n=d==='r'?n.nextElementSibling:n.previousElementSibling;if(n)return focus(n);if(d==='r')return}const c=cur.getBoundingClientRect(),cx=c.x+c.width/2,cy=c.y+c.height/2,ver=d==='u'||d==='d',inSide=!!cur.closest('#side');
+ const pickFrom=L=>{let best=null,bd=1e9;for(const e of L){if(e===cur)continue;if(ver&&scr==='app'&&!PAD&&(!!e.closest('#side'))!==inSide)continue;const r=e.getBoundingClientRect(),dx=r.x+r.width/2-cx,dy=r.y+r.height/2-cy;
+  if(!{l:dx<-4,r:dx>4,u:dy<-4,d:dy>4}[d])continue;const h=!ver,sc=(h?Math.abs(dx):Math.abs(dy))+(h?Math.abs(dy):Math.abs(dx))*2.5;if(sc<bd){bd=sc;best=e}}return best};
+ let best=pickFrom(vis());
+ if(!best&&IO&&!PAD&&!$('#exitov').classList.contains('on')&&!$('#'+scr+' .ov.on'))best=pickFrom($$('#'+scr+' [data-f]').filter(e=>e.offsetParent!==null));
+ focus(best)}
 
 /* ---------- giriş ---------- */
 function parseLogin(a,u,p){a=a.trim();u=u.trim();p=p.trim();if(!a)throw new Error('Sunucu adresini veya M3U linkini gir. Örnek: http://sunucu.com:8080');
@@ -379,14 +382,42 @@ const AV={st:'none',cb:{},url:'',v:null,lt:-1,same:0,buf:false,
  seek(ms){try{isTV?webapis.avplay.seekTo(Math.floor(ms),()=>{},()=>{}):(this.v.currentTime=ms/1000)}catch(e){}},
  time(){try{return isTV?webapis.avplay.getCurrentTime():this.v.currentTime*1000}catch(e){return 0}},
  dur(){try{return isTV?webapis.avplay.getDuration():(isFinite(this.v.duration)?this.v.duration*1000:0)}catch(e){return 0}},
- tracks(t){if(!isTV)return[];try{return webapis.avplay.getTotalTrackInfo().filter(x=>x.type===t).map(x=>{let o={};try{o=JSON.parse(x.extra_info)}catch(e){}return{i:x.index,lang:String(o.language||o.track_lang||'').toLowerCase(),ch:o.channels||'',codec:o.fourCC||''}})}catch(e){return[]}},
+ tracks(t){if(!isTV)return[];try{return webapis.avplay.getTotalTrackInfo().filter(x=>x.type===t).map(x=>{let o={};const raw=String(x.extra_info||'');try{o=JSON.parse(raw)}catch(e){}let lang=String(o.language||o.track_lang||o.lang||'').toLowerCase();if(!lang){const m=raw.match(/lang(?:uage)?"?\s*[:=]\s*"?([A-Za-z]{2,3})\b/);if(m)lang=m[1].toLowerCase()}if(lang==='und'||lang==='unk'||lang==='zxx')lang='';return{i:x.index,lang,ch:o.channels||'',codec:o.fourCC||'',raw:raw.slice(0,160)}})}catch(e){return[]}},
  sel(t,i){try{webapis.avplay.setSelectTrack(t,i)}catch(e){}},
  silent(on){try{webapis.avplay.setSilentSubtitle(on)}catch(e){}},
  mode(fit){try{webapis.avplay.setDisplayMethod(fit?'PLAYER_DISPLAY_MODE_LETTER_BOX':'PLAYER_DISPLAY_MODE_FULL_SCREEN')}catch(e){}},
  close(){if(this.st==='none')return;this.url='';try{if(isTV){webapis.avplay.stop();webapis.avplay.close()}else{this.v.pause();this.v.removeAttribute('src');this.v.load()}}catch(e){}this.st='none';this.cb={}},
  suspend(){try{isTV&&this.st!=='none'&&webapis.avplay.suspend()}catch(e){}},restore(){try{isTV&&this.st!=='none'&&webapis.avplay.restore()}catch(e){}}};
-const LN={tur:'Türkçe',tr:'Türkçe',eng:'English',en:'English',ger:'Deutsch',deu:'Deutsch',de:'Deutsch',fre:'Français',fra:'Français',fr:'Français',spa:'Español',es:'Español',ita:'Italiano',it:'Italiano',rus:'Русский',ru:'Русский',ara:'العربية',ar:'العربية',und:'Bilinmiyor'};
+const LN={tur:'Türkçe',tr:'Türkçe',eng:'English',en:'English',ger:'Deutsch',deu:'Deutsch',de:'Deutsch',fre:'Français',fra:'Français',fr:'Français',spa:'Español',es:'Español',ita:'Italiano',it:'Italiano',rus:'Русский',ru:'Русский',ara:'العربية',ar:'العربية',
+ por:'Português',pt:'Português',nld:'Nederlands',dut:'Nederlands',nl:'Nederlands',pol:'Polski',pl:'Polski',ron:'Română',rum:'Română',ro:'Română',swe:'Svenska',sv:'Svenska',nor:'Norsk',nob:'Norsk',no:'Norsk',dan:'Dansk',da:'Dansk',ces:'Čeština',cze:'Čeština',cs:'Čeština',hun:'Magyar',hu:'Magyar',fin:'Suomi',fi:'Suomi',ind:'Bahasa Indonesia',id:'Bahasa Indonesia',hrv:'Hrvatski',hr:'Hrvatski',
+ ukr:'Українська',uk:'Українська',bul:'Български',bg:'Български',srp:'Srpski',sr:'Srpski',ell:'Ελληνικά',gre:'Ελληνικά',el:'Ελληνικά',heb:'עברית',he:'עברית',fas:'فارسی',per:'فارسی',fa:'فارسی',jpn:'日本語',ja:'日本語',kor:'한국어',ko:'한국어',zho:'中文',chi:'中文',zh:'中文',tha:'ไทย',th:'ไทย',hin:'हिन्दी',hi:'हिन्दी'};
 const lname=c=>LN[c]||(c?c.toUpperCase():'Bilinmeyen dil');
+/* altyazı metninden dil tanıma */
+const LANGS=[['tur',/[ğışİ]/g,'bir ve bu ne için değil evet hayır ben sen var yok çok ama mi mı de da şey gibi daha beni seni nasıl neden tamam'],
+ ['eng',null,"the you and is it to of that what i'm don't this are was we he she have my your not yes i"],
+ ['deu',/[ßä]/g,'und ich nicht das ist du der die ein wir sie es was mit mir dich ja nein auf haben'],
+ ['fra',/[éèêàçùœ]/g,"je vous est pas que les une des et le la tu nous ce oui non mais pour dans c'est"],
+ ['spa',/[ñ¿¡]/g,'que no es el la los una está de y en por qué sí pero con para lo me te'],
+ ['ita',/[ìò]/g,'che non è il per sono una di mi ti ma sì cosa lo con hai ho questo'],
+ ['por',/[ãõ]/g,'não você que uma está de e o os para com eu isso sim mas ele ela meu'],
+ ['nld',null,'ik het een niet je dat van en de is wat hij ze maar voor met ja nee dit heb'],
+ ['pol',/[łżśćęąńź]/g,'nie się to jest że co na ja ty tak jak ale mnie ci dla'],
+ ['ron',/[șțăşţ]/g,'nu este și să că ce un eu tu da cu la pe'],
+ ['swe',/[å]/g,'och jag inte det är du en att vi har ja nej vad för som'],
+ ['nor',/[øæ]/g,'og jeg ikke det er du en at vi har ja nei hva for som'],
+ ['dan',/[øæ]/g,'og jeg ikke det er du en at vi har ja nej hvad af som'],
+ ['ces',/[řěů]/g,'je to se na že ne co já ty ale jak ano'],
+ ['hun',/[őű]/g,'nem és hogy egy az is én te igen de van mit'],
+ ['fin',null,'ei on ja että minä sinä se hän mitä niin kyllä ole en olen'],
+ ['ind',null,'yang tidak aku kau ini itu dan di apa saya kamu ada dengan untuk'],
+ ['hrv',/[đ]/g,'je ne da se što to sam si ja ti ali kako nije']].map(([c,r,w])=>[c,r,w.split(' '),['tur','pol','ces','hun','ron'].indexOf(c)>=0?3:1.5]);
+function detectLang(t,n){t=String(t||'').replace(/<[^>]+>/g,' ');const cnt=re=>(t.match(re)||[]).length;
+ if(cnt(/[\u0400-\u04FF]/g)>3)return /[їєі]/i.test(t)&&!/[ыэъ]/i.test(t)?'ukr':/[ђћџљњ]/i.test(t)?'srp':/ъ/i.test(t)&&!/[ыэё]/i.test(t)?'bul':'rus';
+ if(cnt(/[\u0600-\u06FF]/g)>3)return /[پچژگ]/.test(t)?'fas':'ara';if(cnt(/[\u0590-\u05FF]/g)>3)return'heb';if(cnt(/[\u0370-\u03FF]/g)>3)return'ell';
+ if(cnt(/[\u3040-\u30FF]/g)>1)return'jpn';if(cnt(/[\uAC00-\uD7AF]/g)>1)return'kor';if(cnt(/[\u4E00-\u9FFF]/g)>1)return'zho';if(cnt(/[\u0E00-\u0E7F]/g)>3)return'tha';if(cnt(/[\u0900-\u097F]/g)>3)return'hin';
+ if(cnt(/[A-Za-z\u00C0-\u024F]/g)<30&&n<4)return null;const w=' '+t.toLowerCase().replace(/[^a-z\u00C0-\u024F'’]+/g,' ').replace(/’/g,"'")+' ';
+ const sc=LANGS.map(([c,r,ws,cw])=>{let v=r?cnt(r)*cw:0;for(const x of ws){let k=-1,q=' '+x+' ';while((k=w.indexOf(q,k+1))>=0)v+=3}return[c,v]}).sort((a,b)=>b[1]-a[1]);
+ if(sc[0][1]>=9&&sc[0][1]>=sc[1][1]*1.3)return sc[0][0];return n>=8&&sc[0][1]>0?sc[0][0]:null}
 const pref=k=>PF[k]||(PF[k]={a:null,s:null,size:'m',color:'#fff',bg:'semi',pos:'alt',fit:1,hls:0});
 const savePF=()=>save('rg-pf',PF);
 
@@ -404,11 +435,29 @@ function startPlay(t){$('#rs').classList.remove('on');$('#perr').classList.remov
   time:ms=>{if(SK==null)drawT(ms/1000)},end:()=>{histSet(PL,AV.dur()/1000,AV.dur()/1000);const n=nextEp();n?openPlayer(n,0):exit()},sub:(tx,d)=>showSub(tx,d),
   error:er=>{loadingOff('player');LOG.add('player','Film/dizi açılamadı: '+((er&&(er.name||er.message||er.code))||(typeof er==='string'?er:'bilinmeyen hata')),{deneme:tryN,tur:PL.k,ad:PL.name,url:API.url(PL),sure:Math.round(AV.time()/1000)});if(tryN++<1){const cb0=AV.cb,at=Math.max(0,AV.time()/1000||PL.start||0);AV.close();loadingOn('player','Yeniden bağlanılıyor');setTimeout(()=>{if(scr==='player')AV.open(API.url(PL),null,Object.assign(cb0,{start:at}))},1500);return}
    $('#perrt').textContent='Sunucu bu içeriği şu an açamadı. İnternet bağlantını kontrol edip tekrar deneyebilirsin. (Kod: '+((er&&(er.name||er.message||er.code))||er||'-')+')';$('#perr').classList.add('on');focus($('[data-act=retry]'))}})}
-function applyTracks(){const pr=pref(PK),au=AV.tracks('AUDIO'),tx=AV.tracks('TEXT');TRK={au,tx,ca:au[0]?au[0].i:-1,cs:-1};
+let TLD={},SC=null,LRN=null;
+const tlang=x=>x?(x.lang||TLD[x.i]||''):'';
+const tname=(x,j)=>{const l=tlang(x);return l?lname(l):'Altyazı '+(j+1)};
+const wantSub=()=>{const pr=pref(PK);return pr.s||['tur','off','eng'][ST.sub||0]};
+function applyTracks(){const pr=pref(PK),au=AV.tracks('AUDIO'),tx=AV.tracks('TEXT');TRK={au,tx,ca:au[0]?au[0].i:-1,cs:-1};scanStop();LRN=null;TLD=Object.assign({},pr.tl||{});
+ if(au.length||tx.length)LOG.add('info','Parçalar: '+clean(PL.k==='ep'?PL.sname:PL.name),{ses:au.map(x=>x.raw).join(' | ').slice(0,700),altyazi:tx.map(x=>x.raw).join(' | ').slice(0,1200)});
  const want=pr.a||(ST.aud?null:'tur');const ta=want&&au.find(x=>lname(x.lang)===lname(want));if(ta){AV.sel('AUDIO',ta.i);TRK.ca=ta.i}
- const ws=pr.s||['tur','off','eng'][ST.sub||0];const ts=ws!=='off'&&tx.find(x=>lname(x.lang)===lname(ws));if(ts){AV.silent(false);AV.sel('TEXT',ts.i);TRK.cs=ts.i}else AV.silent(true);trkLabel()}
-function trkLabel(){const a=TRK.au.find(x=>x.i===TRK.ca),s=TRK.tx.find(x=>x.i===TRK.cs);$('#trk').textContent=`${a?lname(a.lang)+' ses':'Varsayılan ses'}, ${s?lname(s.lang)+' altyazı':'altyazı kapalı'}`}
-function showSub(tx,d){if(TRK.cs<0)return;const el=$('#sub'),pr=pref(PK);clearTimeout(subT);if(!tx){el.style.display='none';return}
+ const ws=wantSub();const ts=ws!=='off'&&tx.find(x=>tlang(x)&&lname(tlang(x))===lname(ws));
+ if(ts){AV.silent(false);AV.sel('TEXT',ts.i);TRK.cs=ts.i;if(!ts.lang)LRN={i:ts.i,txt:'',n:0,verify:ws}}
+ else{AV.silent(true);if(ws!=='off'&&tx.some(x=>!tlang(x)))scanStart(ws)}
+ trkLabel()}
+function trkLabel(){const a=TRK.au.find(x=>x.i===TRK.ca),j=TRK.tx.findIndex(x=>x.i===TRK.cs);$('#trk').textContent=`${a?lname(a.lang)+' ses':'Varsayılan ses'}, ${SC?'altyazı dilleri tanınıyor':j>=0?tname(TRK.tx[j],j)+' altyazı':'altyazı kapalı'}`}
+/* dili yazmayan altyazıları sırayla dinleyip tanı; istenen dil bulununca onu aç */
+function scanStart(want,restore){scanStop();const q=TRK.tx.filter(x=>!tlang(x)).map(x=>x.i);if(!q.length)return;SC={q,want:want||null,restore:restore==null?-1:restore,cur:-1,txt:'',n:0,t:null};$('#sub').style.display='none';AV.silent(false);scanNext();trkLabel()}
+function scanNext(){if(!SC)return;clearTimeout(SC.t);if(!SC.q.length)return scanEnd(SC.restore);SC.cur=SC.q.shift();SC.txt='';SC.n=0;AV.sel('TEXT',SC.cur);SC.t=setTimeout(scanNext,14000)}
+function scanEnd(sel){const c=SC;if(!c)return;clearTimeout(c.t);SC=null;const t=TRK.tx.find(x=>x.i===sel);if(t){AV.silent(false);AV.sel('TEXT',t.i);TRK.cs=t.i}else{AV.silent(true);TRK.cs=-1;$('#sub').style.display='none'}
+ pref(PK).tl=Object.assign({},TLD);savePF();trkLabel();if(scr==='player'&&!$('#pan').classList.contains('hide')&&!panLive){const f=cur&&cur.dataset.k?`#pan [data-k="${cur.dataset.k}"][data-v="${cur.dataset.v}"]`:null;drawPan();focus((f&&$(f))||$('#pan [data-f]'))}}
+function scanStop(){if(SC){clearTimeout(SC.t);SC=null}}
+function subLearn(tx){if(SC){if(!tx)return true;SC.txt+=' '+tx;SC.n++;const g=detectLang(SC.txt,SC.n);if(g){TLD[SC.cur]=g;if(SC.want&&lname(g)===lname(SC.want)){const i=SC.cur;scanEnd(i);osd(lname(g)+' altyazı bulundu')}else scanNext()}return true}
+ if(LRN&&tx&&LRN.i===TRK.cs){LRN.txt+=' '+tx;LRN.n++;const g=detectLang(LRN.txt,LRN.n);if(g){const L=LRN;LRN=null;TLD[L.i]=g;if(L.setPref)pref(PK).s=g;pref(PK).tl=Object.assign({},TLD);savePF();trkLabel();
+   if(L.verify&&lname(g)!==lname(L.verify)){$('#sub').style.display='none';AV.silent(true);TRK.cs=-1;scanStart(L.verify);return true}}}
+ return false}
+function showSub(tx,d){if(scr==='player'&&subLearn(tx))return;if(TRK.cs<0)return;const el=$('#sub'),pr=pref(PK);clearTimeout(subT);if(!tx){el.style.display='none';return}
  el.innerHTML=esc(String(tx).replace(/<[^>]+>/g,'')).replace(/\n/g,'<br>');el.style.display='block';el.className='p-'+pr.pos;el.style.fontSize={s:'22px',m:'28px',l:'36px'}[pr.size];el.style.color=pr.color;
  el.style.background={none:'transparent',semi:'rgba(0,0,0,.55)',box:'#000'}[pr.bg];el.style.textShadow=pr.bg==='none'?'0 2px 6px #000,0 0 2px #000':'none';subT=setTimeout(()=>el.style.display='none',Math.max(1200,+d||3000))}
 function drawT(t){const d=AV.dur()/1000;$('#t1').textContent=fmt(t);$('#t2').textContent=d?fmt(d):'';$('#fl').style.width=d?Math.min(100,t/d*100)+'%':'0'}
@@ -432,14 +481,14 @@ function openPan(){panLive=scr==='live';$('#'+scr).append($('#pan'));drawPan();$
 function hidePan(){$('#pan').classList.add('hide')}
 function drawPan(){const k=panLive?'l:'+LV.id:PK,pr=pref(k),au=TRK.au,tx=TRK.tx;let g=[];
  g.push(['Ses','audio',au.length?au.map(x=>[x.i,lname(x.lang),[x.codec,x.ch?x.ch+' kanal':''].filter(Boolean).join(', ')]):[[-1,'Varsayılan','Yayında tek ses var']],TRK.ca]);
- g.push(['Altyazı','sub',[[-1,'Kapalı'],...tx.map(x=>[x.i,lname(x.lang)])],TRK.cs]);
+ g.push(['Altyazı','sub',[[-1,'Kapalı'],...tx.map((x,j)=>[x.i,panLive?(x.lang?lname(x.lang):'Altyazı '+(j+1)):tname(x,j)+(SC&&!tlang(x)?' (tanınıyor)':'')]),...(!panLive&&!SC&&tx.some(x=>!tlang(x))?[['scan','Dilleri tanı (1-2 dk)']]:[])],TRK.cs]);
  if(!panLive){g.push(['Boyut','size',[['s','Küçük'],['m','Orta'],['l','Büyük']],pr.size],['Renk','color',[['#fff'],['#ffd84a'],['#7fdcff'],['#b6f08a']],pr.color],['Arka plan','bg',[['none','Yok'],['semi','Yarı saydam'],['box','Kutu']],pr.bg],['Konum','pos',[['alt','Alt'],['mid','Yukarı'],['top','Üst']],pr.pos])}
  else g.push(['Görüntü','fit',[[1,'Sığdır'],[0,'Doldur']],pr.fit],['Akış türü','hls',[[0,'TS'],[1,'HLS']],pr.hls],['Uyku zamanlayıcısı','sleep',[[0,'Kapalı'],[30,'30 dk'],[60,'60 dk'],[90,'90 dk']],ST.sleepSel||0],['Favori kanal','fav',[[0,'Favori değil'],[1,'Favorilerde']],isFav(LV.id)?1:0]);
  $('#pan').innerHTML=`<div class="btn sm" data-f data-act="panx" style="float:right">Kapat</div><h2>${panLive?'Kanal ayarları':'Ses ve altyazı'}</h2><small>Seçimlerin bu ${panLive?'kanal':PL&&PL.k==='ep'?'dizi':'film'} için hatırlanır</small>`+g.map(([t,k,o,sel])=>`<div class="lbl">${t}</div><div class="${k==='audio'||k==='sub'&&o.length>3?'':'opts'}">${o.map(x=>{const s=String(x[0])===String(sel)?' sel':'';
   return k==='audio'?`<div class="op au${s}" data-f data-k="${k}" data-v="${x[0]}"><span>${esc(x[1])}</span><small>${esc(x[2]||'')}</small></div>`:k==='color'?`<div class="op sw${s}" data-f data-k="${k}" data-v="${x[0]}" style="background:${x[0]}"></div>`:`<div class="op${s}${k==='sub'&&o.length>3?' au':''}" data-f data-k="${k}" data-v="${x[0]}">${esc(x[1])}</div>`}).join('')}</div>`).join('')}
 function pick(k,v){const pk=panLive?'l:'+LV.id:PK,pr=pref(pk);
  if(k==='audio'){const t=TRK.au.find(x=>String(x.i)===v);if(t){AV.sel('AUDIO',t.i);TRK.ca=t.i;pr.a=t.lang}}
- else if(k==='sub'){if(v==='-1'){AV.silent(true);TRK.cs=-1;pr.s='off';$('#sub').style.display='none'}else{const t=TRK.tx.find(x=>String(x.i)===v);if(t){AV.silent(false);AV.sel('TEXT',t.i);TRK.cs=t.i;pr.s=t.lang}}}
+ else if(k==='sub'){if(v==='scan'){const keep=TRK.cs;scanStart(null,keep);drawPan();return focus($('#pan [data-k="sub"]'))}scanStop();LRN=null;if(v==='-1'){AV.silent(true);TRK.cs=-1;pr.s='off';$('#sub').style.display='none'}else{const t=TRK.tx.find(x=>String(x.i)===v);if(t){AV.silent(false);AV.sel('TEXT',t.i);TRK.cs=t.i;if(panLive)pr.s=t.lang;else{const l=tlang(t);if(l)pr.s=l;else LRN={i:t.i,txt:'',n:0,setPref:1}}}}}
  else if(k==='fit'){pr.fit=+v;AV.mode(+v===1)}
  else if(k==='hls'){pr.hls=+v;savePF();drawPan();tuneLive(LV,true);return focus($(`#pan [data-k="${k}"][data-v="${v}"]`))}
  else if(k==='sleep'){ST.sleepSel=+v;clearTimeout(SLEEP);if(+v)SLEEP=setTimeout(()=>{exit();toast('Uyku zamanlayıcısı','Yayın kapatıldı.')},+v*60000)}
@@ -447,12 +496,13 @@ function pick(k,v){const pk=panLive?'l:'+LV.id:PK,pr=pref(pk);
  else pr[k]=v;
  savePF();if(!panLive)trkLabel();drawPan();focus($(`#pan [data-k="${k}"][data-v="${v}"]`))}
 
-function pKey(e,m,b,cu,cd,pp,ff,rw){wake();const pan=!$('#pan').classList.contains('hide'),ov=$('#player .ov.on'),nx=$('#nx').classList.contains('on');
+const skMark=()=>$('#player').classList.toggle('sk',!cur);
+function pKey(e,m,b,cu,cd,pp,ff,rw){wake();setTimeout(skMark,0);const pan=!$('#pan').classList.contains('hide'),ov=$('#player .ov.on'),nx=$('#nx').classList.contains('on');
  if(b){if(pan){hidePan();return unf()}if(nx){$('#nx').classList.remove('on');return unf()}if(cur&&!ov)return unf();histSet(PL,AV.time()/1000,AV.dur()/1000);return exit()}
  if(pan||ov){if(m)move(m);else if(e.keyCode===13)ok(cur);return}
  if(pp)return pause();if(ff||rw)return seek(ff?30:-30);
  if(cu||cd){const n=cu?nextEp():prevEp();if(n){histSet(PL,AV.time()/1000,AV.dur()/1000);return openPlayer(n,0)}return osd(PL.k!=='ep'?'Film':cu?'Son bölüm':'İlk bölüm')}
- if(cur){if(m){const pv=cur;move(m);if(cur===pv&&(m==='u'||m==='d'))unf();return}if(e.keyCode===13)return ok(cur)}
+ if(cur){if(m){const bot=cur.closest('.cbot'),top=cur.closest('.ctop');if((m==='u'&&bot)||(m==='d'&&top)){unf();return skMark()}if((m==='u'&&top)||(m==='d'&&bot))return;move(m);return}if(e.keyCode===13)return ok(cur)}
  if(m==='l'||m==='r'){if(!e.repeat)hold=0;hold++;const st=hold<5?10:hold<15?30:60;return seek(m==='r'?st:-st)}
  if(m==='u')return focus($('#player [data-act=back]'));
  if(m==='d'||e.keyCode===13)return focus($('#bpp'))}
@@ -651,7 +701,7 @@ let STS=1,STX=0,STY=0;
 function fit(){const de=document.documentElement,W=innerWidth||de.clientWidth||1920,H=innerHeight||de.clientHeight||1080,s=Math.min(W/1280,H/720),st=$('#stage');
  STS=s;STX=Math.round((W-1280*s)/2);STY=Math.round((H-720*s)/2);
  if(Math.abs(W/H-16/9)<0.02&&'zoom' in st.style){st.style.transform='';st.style.zoom=s;STX=0;STY=0}
- else{st.style.zoom='';st.style.transform=`translate(${STX}px,${STY}px) scale(${s})`}}
+ else{st.style.zoom='1';st.style.transform=`translate(${STX}px,${STY}px) scale(${s})`}}
 addEventListener('resize',fit);fit();setTimeout(fit,300);setTimeout(fit,1500);clock();
 /* TV'de: HTML5 yedek videoyu kaldır (AVPlay görüntüsünü örtmesin), AVPlay yüzeyini ekle */
 if(isTV){document.documentElement.classList.add('tv');const hv=$('#hv');if(hv)hv.remove();
