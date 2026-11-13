@@ -303,3 +303,7 @@ html.tv #view{transition:transform .18s ease-out!important}
 /* oynatıcı: sarma çubuğu seçiliyken belirgin */
 .trk{transition:height .12s}
 #player.sk.ui .trk{height:8px;box-shadow:0 0 0 2px var(--acc)}
+
+/* ---- 1.3.1: satırlar yüklenirken yer tutsun, sayfa zıplamasın ---- */
+#brows .row,#hmore .row{min-height:251px}
+#hmore #hlive{min-height:0}

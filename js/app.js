@@ -278,13 +278,19 @@ function vis(){if(PAD)return $$('#pad [data-f]');if($('#exitov').classList.conta
  return $$('#'+scr+' [data-f]').filter(e=>e.offsetParent!==null)}
 const HROW='.row,.lvrow,.lvcats,.chips,.bt,.seas';
 function unf(){cur&&cur.classList.remove('fx');cur=null}
-let HT=null,REP=false;
+let HT=null,REP=false,KT=0;
+/* afiş satırları: odaklanan satır hep aynı yükseklikte dursun, yatayda sadece gerekince kay */
+function rowScroll(e,beh){const rw=e.parentElement,box=rw&&rw.classList.contains('row')&&rw.parentElement;if(!box||!box.scrollTo||(!box.classList.contains('rows')&&box.id!=='brows'&&box.id!=='hmore'&&box.id!=='hrows'))return false;
+ const sc=e.closest('.rows');if(!sc)return false;const sr=sc.getBoundingClientRect(),rt=rw.previousElementSibling,top=(rt&&rt.classList.contains('rt')?rt:rw).getBoundingClientRect(),z=sr.height/(sc.clientHeight||1)||1;
+ const ty=Math.max(0,Math.round(sc.scrollTop+(top.top-sr.top)/z-6));if(Math.abs(ty-sc.scrollTop)>2)try{sc.scrollTo({top:ty,behavior:beh})}catch(x){sc.scrollTop=ty}
+ const rr=rw.getBoundingClientRect(),er=e.getBoundingClientRect(),zx=rr.width/(rw.clientWidth||1)||1;let tx=null;if(er.left<rr.left+4)tx=rw.scrollLeft+(er.left-rr.left)/zx-24;else if(er.right>rr.right-4)tx=rw.scrollLeft+(er.right-rr.right)/zx+24;
+ if(tx!=null)try{rw.scrollTo({left:Math.max(0,Math.round(tx)),behavior:beh})}catch(x){rw.scrollLeft=tx}return true}
 const tail=(e,n)=>{let c=0,x=e;while(c<n&&(x=x.nextElementSibling))c++;return c};
-function focus(e){if(!e)return;if(!PAD&&!e.closest('#'+scr)&&!e.closest('#toast,#exitov,#pad'))return;const ae=document.activeElement;if(ae&&ae.tagName==='INPUT'&&ae!==e)ae.blur();cur&&cur.classList.remove('fx');cur=e;e.classList.add('fx');try{e.scrollIntoView({block:'nearest',inline:'nearest',behavior:REP||ST.anim===1?'auto':'smooth'})}catch(x){}
+function focus(e){if(!e)return;if(!PAD&&!e.closest('#'+scr)&&!e.closest('#toast,#exitov,#pad'))return;const ae=document.activeElement;if(ae&&ae.tagName==='INPUT'&&ae!==e)ae.blur();cur&&cur.classList.remove('fx');cur=e;e.classList.add('fx');const now=Date.now(),beh=REP||ST.anim===1||now-KT<260?'auto':'smooth';KT=now;rowScroll(e,beh)||(()=>{try{e.scrollIntoView({block:'nearest',inline:'nearest',behavior:beh})}catch(x){}})();
  if(scr!=='app'||PAD)return;const so=!!e.closest('#side');if(so)$('#catov').classList.remove('on');$('#side').classList.toggle('open',so);$('#app').classList.toggle('sopen',so);const d=e.dataset;
  if(d.pv)miniDraw(REG.get(d.key));
  if(d.act==='cat'){clearTimeout(CT);if(!e.classList.contains('sel')&&!(d.ad&&pinOn()&&!UNL))CT=setTimeout(()=>{if(cur===e)loadCat(d.t,d.c)},350)}
- if(BR){const rw=e.closest('#brows .row');if(rw&&tail(rw,4)<4)browseMore()}
+ if(BR){const rw=e.closest('#brows .row');if(rw&&tail(rw,8)<8)browseMore()}
  if((cv==='home'||cv==='series'||cv==='films')&&d.key&&e.closest('.rows')){clearTimeout(HT);HT=setTimeout(()=>{const it=REG.get(d.key);if(it&&it.k!=='live')setHero(it)},550)}
  if(CTX.length>LCN&&e.parentElement&&e.parentElement.id==='chl'&&tail(e,7)<7){e.parentElement.insertAdjacentHTML('beforeend',CTX.slice(LCN,LCN+40).map(lcc).join(''));LCN+=40}
  if(GRID&&e.parentElement&&e.parentElement.id==='vg'&&tail(e,13)<13)gridMore()}
@@ -425,7 +431,7 @@ const savePF=()=>save('rg-pf',PF);
 let PL=null,PK='',paused=false,osdT,hold=0,wT,SK=null,SKT,nxOn=0,nxC=0,TRK={au:[],tx:[]},subT,saveT=0,tryN=0;
 function openPlayer(it,start){if(scr!=='player')retSel=cur?selOf(cur):null;PL=it;PK=it.k==='ep'?'s:'+it.sid:'v:'+it.id;miniStop();
  go('player');paused=false;nxOn=0;SK=null;$('#player').classList.add('ui');$('#pt').textContent=clean(it.k==='ep'?it.sname:it.name);
- $('#pe').textContent=it.k==='ep'?`Sezon ${it.season}, Bölüm ${it.num}: ${it.name}`:'';$('#beps').style.display=it.k==='ep'?'':'none';
+ $('#pe').textContent=it.k==='ep'?`Sezon ${it.season}, Bölüm ${it.num}: ${it.name}`:'';$('#beps').style.display='none';
  $('#player').append($('#pan'));hidePan();unf();['#nx','#rs','#perr'].forEach(s=>$(s).classList.remove('on'));$('#sub').style.display='none';$('#player .osd').style.display='none';
  $('#t1').textContent='0:00';$('#t2').textContent='';$('#fl').style.width='0';$('#trk').textContent='';drawPP();
  const h=HIST[it.k+':'+it.id];if(start==null&&h&&h.t>30&&h.t<h.d*.92){$('#rst').textContent=`${fmt(h.t)} noktasında kalmıştın.`;$('[data-act=rsY]').innerHTML=IC.play+' Kaldığın yerden devam et';$('[data-act=rsY]').dataset.t=h.t;$('#rs').classList.add('on');return focus($('[data-act=rsY]'))}
@@ -444,14 +450,15 @@ function applyTracks(){const pr=pref(PK),au=AV.tracks('AUDIO'),tx=AV.tracks('TEX
  const want=pr.a||(ST.aud?null:'tur');const ta=want&&au.find(x=>lname(x.lang)===lname(want));if(ta){AV.sel('AUDIO',ta.i);TRK.ca=ta.i}
  const ws=wantSub();const ts=ws!=='off'&&tx.find(x=>tlang(x)&&lname(tlang(x))===lname(ws));
  if(ts){AV.silent(false);AV.sel('TEXT',ts.i);TRK.cs=ts.i;if(!ts.lang)LRN={i:ts.i,txt:'',n:0,verify:ws}}
- else{AV.silent(true);if(ws!=='off'&&tx.some(x=>!tlang(x)))scanStart(ws)}
+ else{AV.silent(true);if(tx.some(x=>!tlang(x)))scanStart(ws==='off'?null:ws)}
  trkLabel()}
 function trkLabel(){const a=TRK.au.find(x=>x.i===TRK.ca),j=TRK.tx.findIndex(x=>x.i===TRK.cs);$('#trk').textContent=`${a?lname(a.lang)+' ses':'Varsayılan ses'}, ${SC?'altyazı dilleri tanınıyor':j>=0?tname(TRK.tx[j],j)+' altyazı':'altyazı kapalı'}`}
 /* dili yazmayan altyazıları sırayla dinleyip tanı; istenen dil bulununca onu aç */
-function scanStart(want,restore){scanStop();const q=TRK.tx.filter(x=>!tlang(x)).map(x=>x.i);if(!q.length)return;SC={q,want:want||null,restore:restore==null?-1:restore,cur:-1,txt:'',n:0,t:null};$('#sub').style.display='none';AV.silent(false);scanNext();trkLabel()}
-function scanNext(){if(!SC)return;clearTimeout(SC.t);if(!SC.q.length)return scanEnd(SC.restore);SC.cur=SC.q.shift();SC.txt='';SC.n=0;AV.sel('TEXT',SC.cur);SC.t=setTimeout(scanNext,14000)}
+function scanStart(want,restore,pan){scanStop();const q=TRK.tx.filter(x=>!tlang(x)).map(x=>x.i);if(!q.length)return;SC={q,want:want||null,restore:restore==null?-1:restore,pan:pan?1:0,miss:0,cur:-1,txt:'',n:0,t:null};$('#sub').style.display='none';AV.silent(false);scanNext();trkLabel()}
+function panRefresh(){if(scr==='player'&&!$('#pan').classList.contains('hide')&&!panLive){const f=cur&&cur.dataset.k?`#pan [data-k="${cur.dataset.k}"][data-v="${cur.dataset.v}"]`:null;drawPan();focus((f&&$(f))||$('#pan [data-f]'))}}
+function scanNext(timeout){if(!SC)return;clearTimeout(SC.t);if(timeout===true&&SC.cur>=0&&!TLD[SC.cur]&&SC.miss<TRK.tx.length*2){SC.miss++;SC.q.push(SC.cur)}if(!SC.q.length)return scanEnd(SC.restore);SC.cur=SC.q.shift();SC.txt='';SC.n=0;AV.sel('TEXT',SC.cur);SC.t=setTimeout(()=>scanNext(true),12000);panRefresh()}
 function scanEnd(sel){const c=SC;if(!c)return;clearTimeout(c.t);SC=null;const t=TRK.tx.find(x=>x.i===sel);if(t){AV.silent(false);AV.sel('TEXT',t.i);TRK.cs=t.i}else{AV.silent(true);TRK.cs=-1;$('#sub').style.display='none'}
- pref(PK).tl=Object.assign({},TLD);savePF();trkLabel();if(scr==='player'&&!$('#pan').classList.contains('hide')&&!panLive){const f=cur&&cur.dataset.k?`#pan [data-k="${cur.dataset.k}"][data-v="${cur.dataset.v}"]`:null;drawPan();focus((f&&$(f))||$('#pan [data-f]'))}}
+ pref(PK).tl=Object.assign({},TLD);savePF();trkLabel();panRefresh()}
 function scanStop(){if(SC){clearTimeout(SC.t);SC=null}}
 function subLearn(tx){if(SC){if(!tx)return true;SC.txt+=' '+tx;SC.n++;const g=detectLang(SC.txt,SC.n);if(g){TLD[SC.cur]=g;if(SC.want&&lname(g)===lname(SC.want)){const i=SC.cur;scanEnd(i);osd(lname(g)+' altyazı bulundu')}else scanNext()}return true}
  if(LRN&&tx&&LRN.i===TRK.cs){LRN.txt+=' '+tx;LRN.n++;const g=detectLang(LRN.txt,LRN.n);if(g){const L=LRN;LRN=null;TLD[L.i]=g;if(L.setPref)pref(PK).s=g;pref(PK).tl=Object.assign({},TLD);savePF();trkLabel();
@@ -477,18 +484,18 @@ async function ensureEps(it){if(it.k!=='ep'||EPS.some(e=>e.id===it.id))return;tr
 
 /* ---------- ses/altyazı ve kanal ayarları paneli ---------- */
 let panLive=false,SLEEP=null;
-function openPan(){panLive=scr==='live';$('#'+scr).append($('#pan'));drawPan();$('#pan').classList.remove('hide');clearTimeout(hideT);focus($('#pan .sel')||$('#pan [data-f]'))}
-function hidePan(){$('#pan').classList.add('hide')}
+function openPan(){panLive=scr==='live';$('#'+scr).append($('#pan'));if(!panLive&&!SC&&TRK.tx.some(x=>!tlang(x)))scanStart(null,TRK.cs,1);drawPan();$('#pan').classList.remove('hide');clearTimeout(hideT);focus($('#pan .sel')||$('#pan [data-f]'))}
+function hidePan(){$('#pan').classList.add('hide');if(SC&&SC.pan)scanEnd(SC.restore)}
 function drawPan(){const k=panLive?'l:'+LV.id:PK,pr=pref(k),au=TRK.au,tx=TRK.tx;let g=[];
  g.push(['Ses','audio',au.length?au.map(x=>[x.i,lname(x.lang),[x.codec,x.ch?x.ch+' kanal':''].filter(Boolean).join(', ')]):[[-1,'Varsayılan','Yayında tek ses var']],TRK.ca]);
- g.push(['Altyazı','sub',[[-1,'Kapalı'],...tx.map((x,j)=>[x.i,panLive?(x.lang?lname(x.lang):'Altyazı '+(j+1)):tname(x,j)+(SC&&!tlang(x)?' (tanınıyor)':'')]),...(!panLive&&!SC&&tx.some(x=>!tlang(x))?[['scan','Dilleri tanı (1-2 dk)']]:[])],TRK.cs]);
+ g.push(['Altyazı','sub',[[-1,'Kapalı'],...tx.map((x,j)=>[x.i,panLive?(x.lang?lname(x.lang):'Altyazı '+(j+1)):tname(x,j)+(SC&&!tlang(x)?' (tanınıyor)':'')])],SC?SC.restore:TRK.cs]);
  if(!panLive){g.push(['Boyut','size',[['s','Küçük'],['m','Orta'],['l','Büyük']],pr.size],['Renk','color',[['#fff'],['#ffd84a'],['#7fdcff'],['#b6f08a']],pr.color],['Arka plan','bg',[['none','Yok'],['semi','Yarı saydam'],['box','Kutu']],pr.bg],['Konum','pos',[['alt','Alt'],['mid','Yukarı'],['top','Üst']],pr.pos])}
  else g.push(['Görüntü','fit',[[1,'Sığdır'],[0,'Doldur']],pr.fit],['Akış türü','hls',[[0,'TS'],[1,'HLS']],pr.hls],['Uyku zamanlayıcısı','sleep',[[0,'Kapalı'],[30,'30 dk'],[60,'60 dk'],[90,'90 dk']],ST.sleepSel||0],['Favori kanal','fav',[[0,'Favori değil'],[1,'Favorilerde']],isFav(LV.id)?1:0]);
  $('#pan').innerHTML=`<div class="btn sm" data-f data-act="panx" style="float:right">Kapat</div><h2>${panLive?'Kanal ayarları':'Ses ve altyazı'}</h2><small>Seçimlerin bu ${panLive?'kanal':PL&&PL.k==='ep'?'dizi':'film'} için hatırlanır</small>`+g.map(([t,k,o,sel])=>`<div class="lbl">${t}</div><div class="${k==='audio'||k==='sub'&&o.length>3?'':'opts'}">${o.map(x=>{const s=String(x[0])===String(sel)?' sel':'';
   return k==='audio'?`<div class="op au${s}" data-f data-k="${k}" data-v="${x[0]}"><span>${esc(x[1])}</span><small>${esc(x[2]||'')}</small></div>`:k==='color'?`<div class="op sw${s}" data-f data-k="${k}" data-v="${x[0]}" style="background:${x[0]}"></div>`:`<div class="op${s}${k==='sub'&&o.length>3?' au':''}" data-f data-k="${k}" data-v="${x[0]}">${esc(x[1])}</div>`}).join('')}</div>`).join('')}
 function pick(k,v){const pk=panLive?'l:'+LV.id:PK,pr=pref(pk);
  if(k==='audio'){const t=TRK.au.find(x=>String(x.i)===v);if(t){AV.sel('AUDIO',t.i);TRK.ca=t.i;pr.a=t.lang}}
- else if(k==='sub'){if(v==='scan'){const keep=TRK.cs;scanStart(null,keep);drawPan();return focus($('#pan [data-k="sub"]'))}scanStop();LRN=null;if(v==='-1'){AV.silent(true);TRK.cs=-1;pr.s='off';$('#sub').style.display='none'}else{const t=TRK.tx.find(x=>String(x.i)===v);if(t){AV.silent(false);AV.sel('TEXT',t.i);TRK.cs=t.i;if(panLive)pr.s=t.lang;else{const l=tlang(t);if(l)pr.s=l;else LRN={i:t.i,txt:'',n:0,setPref:1}}}}}
+ else if(k==='sub'){scanStop();LRN=null;if(v==='-1'){AV.silent(true);TRK.cs=-1;pr.s='off';$('#sub').style.display='none'}else{const t=TRK.tx.find(x=>String(x.i)===v);if(t){AV.silent(false);AV.sel('TEXT',t.i);TRK.cs=t.i;if(panLive)pr.s=t.lang;else{const l=tlang(t);if(l)pr.s=l;else LRN={i:t.i,txt:'',n:0,setPref:1}}}}}
  else if(k==='fit'){pr.fit=+v;AV.mode(+v===1)}
  else if(k==='hls'){pr.hls=+v;savePF();drawPan();tuneLive(LV,true);return focus($(`#pan [data-k="${k}"][data-v="${v}"]`))}
  else if(k==='sleep'){ST.sleepSel=+v;clearTimeout(SLEEP);if(+v)SLEEP=setTimeout(()=>{exit();toast('Uyku zamanlayıcısı','Yayın kapatıldı.')},+v*60000)}
