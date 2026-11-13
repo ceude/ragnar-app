@@ -54,7 +54,9 @@ const API={C:{},
    er.again=!again&&(er.retry||e.name==='AbortError');throw er}
   finally{clearTimeout(t);this.free()}},
  async getR(url,ms){try{return await this.get(url,ms,true)}catch(e){if(!e.again&&!e.retry)throw e;await new Promise(r=>setTimeout(r,1500));return this.get(url,ms,true)}},
- async once(k,fn){if(this.C[k])return this.C[k];const p=fn();this.C[k]=p;try{return await p}catch(e){delete this.C[k];throw e}},
+ trim(){const ks=Object.keys(this.C).filter(k=>k[0]==='i');for(let i=0;i<ks.length-40;i++)delete this.C[ks[i]]},
+ purge(big){Object.keys(this.C).forEach(k=>{if(k[0]==='a'||k[0]==='e'||(big&&k[0]==='i'))delete this.C[k]})},
+ async once(k,fn){if(this.C[k])return this.C[k];if(k[0]==='i')this.trim();const p=fn();this.C[k]=p;try{return await p}catch(e){delete this.C[k];throw e}},
  async login(){const j=await this.getR(this.q(''));if(!j||!j.user_info)throw new Error('Bu adres bir Xtream sunucusu gibi yanıt vermedi');const u=j.user_info;
   if(+u.auth===0)throw new Error('Kullanıcı adı veya şifre hatalı');if(u.status&&u.status!=='Active')throw new Error('Abonelik aktif değil ('+u.status+')');return u},
  cats(k){return this.once('c'+k,async()=>{if(ACC.type==='m3u')return M3U.cats(k);const ck='rg-c-'+k+'-'+(ACC.u||''),cc=load(ck,null);if(cc&&Date.now()-cc.t<432e5)return cc.v;const j=await this.getR(this.q({live:'get_live_categories',vod:'get_vod_categories',series:'get_series_categories'}[k]));const v=(Array.isArray(j)?j:[]).map(c=>({id:String(c.category_id),name:c.category_name||''}));save(ck,{t:Date.now(),v});return v})},
@@ -193,12 +195,17 @@ V.series=()=>browseView('series','Diziler');V.films=()=>browseView('vod','Filmle
 async function browseAF(k,tok){const cs=visCats(k,await API.cats(k));if(tok!==RT)return;BR={k,cs,shown:0,tok,busy:0};$('#brows').innerHTML=cs.length?'':'<div class="empty">Bu listede içerik yok.</div>';
  await browseMore();if(tok===RT&&(!cur||!cur.isConnected||cur.closest('#view')))focus($('#hero [data-f]')||$('#brows [data-f]'))}
 AF.series=(a,t)=>browseAF('series',t);AF.films=(a,t)=>browseAF('vod',t);
+async function rowFill(B,cid,nm){const tok=B.tok;let it=[];try{it=await API.items(B.k,cid)}catch(e){}if(tok!==RT)return;const row=$(`#brows .row[data-cat="${CSS.escape(cid)}"]`);if(!row||row.dataset.cold)return;
+ if(!it.length){row.previousElementSibling.remove();row.remove();return}if(B.k==='vod')it=[...it].sort((a,b)=>b.added-a.added);row.dataset.n=nm;
+ row.innerHTML=it.slice(0,16).map(poster).join('')+`<div class="more" data-f data-act="catall" data-t="${B.k}" data-c="${esc(cid)}" data-n="${esc(nm)}"><b>Tümünü gör</b><small>${it.length} ${B.k==='vod'?'film':'dizi'}</small></div>`;
+ if(!HKEY&&it[0])setHero(it[0])}
+/* bellek: odaktan uzak satırların içini boşalt, yaklaşınca geri doldur */
+let COLDR=null;
+function rowsTrim(rw){if(!BR||rw===COLDR)return;COLDR=rw;const rows=[...$('#brows').children].filter(x=>x.classList.contains('row')&&x.dataset.cat),i=rows.indexOf(rw);
+ rows.forEach((r,j)=>{const far=j<i-5||j>i+8;if(far&&!r.dataset.cold&&r.dataset.n){r.dataset.cold='1';r.innerHTML=''}else if(!far&&r.dataset.cold){delete r.dataset.cold;rowFill(BR,r.dataset.cat,r.dataset.n)}})}
 async function browseMore(){if(!BR||BR.busy||BR.shown>=BR.cs.length)return;BR.busy=1;const B=BR,tok=B.tok,part=B.cs.slice(B.shown,B.shown+5);B.shown+=part.length;const box=$('#brows');if(!box){B.busy=0;return}
  box.insertAdjacentHTML('beforeend',part.map(c=>`<div class="rt">${catLocked(c)?IC.lock+' ':''}${esc(catNm(c))}</div><div class="row" data-cat="${esc(c.id)}">${catLocked(c)?`<div class="lockc" data-f data-act="catall" data-t="${B.k}" data-c="${esc(c.id)}" data-n="${esc(catNm(c))}" data-ad="1">${IC.lock}<b>PIN ile aç</b><small>Yetişkin içerik</small></div>`:'<div class="spin sm"></div>'}</div>`).join(''));
- await Promise.all(part.filter(c=>!catLocked(c)).map(async c=>{let it=[];try{it=await API.items(B.k,c.id)}catch(e){}if(tok!==RT)return;const row=$(`#brows .row[data-cat="${CSS.escape(c.id)}"]`);if(!row)return;
-  if(!it.length){row.previousElementSibling.remove();row.remove();return}if(B.k==='vod')it=[...it].sort((a,b)=>b.added-a.added);
-  row.innerHTML=it.slice(0,16).map(poster).join('')+`<div class="more" data-f data-act="catall" data-t="${B.k}" data-c="${esc(c.id)}" data-n="${esc(catNm(c))}"><b>Tümünü gör</b><small>${it.length} ${B.k==='vod'?'film':'dizi'}</small></div>`;
-  if(!HKEY&&it[0])setHero(it[0])}));B.busy=0;if(tok===RT&&$('#brows')&&$('#brows').scrollHeight<=$('#brows').clientHeight+40)browseMore()}
+ await Promise.all(part.filter(c=>!catLocked(c)).map(c=>rowFill(B,c.id,catNm(c))));B.busy=0;if(tok===RT&&$('#brows')&&$('#brows').scrollHeight<=$('#brows').clientHeight+40)browseMore()}
 V.cat=a=>`<div class="hrow"><h1>${esc(a.n||'Kategori')}</h1>${srchBtn(a.t,(a.t==='series'?'Dizilerde':'Filmlerde')+' ara')}</div><div class="vgrid full" id="vg"><div class="spin"></div></div>`;
 AF.cat=async(a,tok)=>{let it=await API.items(a.t,a.c);if(tok!==RT)return;if(a.t==='vod')it=[...it].sort((x,y)=>y.added-x.added);GRID={k:a.t,items:it,n:0};$('#vg').innerHTML=it.length?'':'<div class="empty">Bu kategoride içerik yok.</div>';gridMore();focus($('#vg [data-f]'))};
 async function catPick(t){const cs=visCats(t,await API.cats(t));$('#catov h2').textContent={live:'Kanal kategorileri',vod:'Film kategorileri',series:'Dizi kategorileri'}[t];
@@ -265,7 +272,7 @@ function drawCats(t,cs,sel){const h=ST['h_'+t]||[],o=visCats(t,cs.filter(c=>true
 /* ---------- gezinme ---------- */
 function go(s){const was=scr;scr=s;if(s==='login'){if(was!=='login'||!PAIR.t)PAIR.start()}else PAIR.stop();$$('.scr').forEach(x=>x.classList.toggle('on',x.id===s));document.documentElement.classList.toggle('vid',s==='player'||s==='live')}
 function sideCur(v,a){const sv={diag:'settings',cat:a&&a.t==='vod'?'films':'series',tv:'live',detail:REG.get(a)&&REG.get(a).k==='vod'?'films':'series',cats:'settings',search:a==='live'?'live':a==='vod'?'films':a==='series'?'series':'search'}[v]||v;$$('.sn').forEach(s=>s.classList.toggle('cur',s.dataset.v===sv))}
-async function render(v,a,push=true,sel){if(push||!nav.length)nav.push([v,a]);else nav[nav.length-1]=[v,a];if(cv==='tv'||v!=='tv')miniStop();cv=v;GRID=null;BR=null;
+async function render(v,a,push=true,sel){if(push||!nav.length)nav.push([v,a]);else nav[nav.length-1]=[v,a];if(cv==='tv'||v!=='tv')miniStop();if(cv==='search'&&v!=='search'&&v!=='detail')API.purge();if(REG.size>6000&&(v==='home'||v==='tv'||v==='series'||v==='films'))REG.clear();cv=v;GRID=null;BR=null;COLDR=null;
  $('#catov').classList.remove('on');const w=$('#view'),tok=++RT;w.className=v==='home'||v==='series'||v==='films'?'home':v==='tv'?'tvv':'';w.innerHTML=V[v](a);w.scrollTop=0;sideCur(v,a);focus((sel&&$('#view '+sel))||$('#view [data-f]'));
  if(AF[v]){try{await AF[v](a,tok,sel)}catch(e){if(tok===RT)toast('Yüklenemedi',e.message);LOG.add('api',e.message,{gorunum:v})}}}
 function exit(){scanStop();LRN=null;AV.close();clearTimeout(SLEEP);go('app');const[v,a]=nav[nav.length-1]||['home'];render(v,a,false,retSel)}
@@ -292,7 +299,7 @@ function focus(e){if(!e)return;if(!PAD&&!e.closest('#'+scr)&&!e.closest('#toast,
  if(scr!=='app'||PAD)return;const so=!!e.closest('#side');if(so)$('#catov').classList.remove('on');$('#side').classList.toggle('open',so);$('#app').classList.toggle('sopen',so);const d=e.dataset;
  if(d.pv)miniDraw(REG.get(d.key));
  if(d.act==='cat'){clearTimeout(CT);if(!e.classList.contains('sel')&&!(d.ad&&pinOn()&&!UNL))CT=setTimeout(()=>{if(cur===e)loadCat(d.t,d.c)},350)}
- if(BR){const rw=e.closest('#brows .row');if(rw&&tail(rw,8)<8)browseMore()}
+ if(BR){const rw=e.closest('#brows .row');if(rw){if(tail(rw,8)<8)browseMore();rowsTrim(rw)}}
  if((cv==='home'||cv==='series'||cv==='films')&&d.key&&e.closest('.rows')){clearTimeout(HT);HT=setTimeout(()=>{const it=REG.get(d.key);if(it&&it.k!=='live')setHero(it)},550)}
  if(CTX.length>LCN&&e.parentElement&&e.parentElement.id==='chl'&&tail(e,7)<7){e.parentElement.insertAdjacentHTML('beforeend',CTX.slice(LCN,LCN+40).map(lcc).join(''));LCN+=40}
  if(GRID&&e.parentElement&&e.parentElement.id==='vg'&&tail(e,13)<13)gridMore()}
@@ -714,7 +721,8 @@ function fit(){const de=document.documentElement,W=innerWidth||de.clientWidth||1
  else{st.style.zoom='1';st.style.transform=`translate(${STX}px,${STY}px) scale(${s})`}}
 addEventListener('resize',fit);fit();setTimeout(fit,300);setTimeout(fit,1500);clock();
 /* TV'de: HTML5 yedek videoyu kaldır (AVPlay görüntüsünü örtmesin), AVPlay yüzeyini ekle */
-if(isTV){document.documentElement.classList.add('tv');const hv=$('#hv');if(hv)hv.remove();
+if(isTV){try{tizen.systeminfo.addPropertyValueChangeListener('MEMORY',m=>{if(m&&m.status==='WARNING'){API.purge(true);IMG.bad.clear();LOG.add('warn','TV bellek uyarısı verdi, önbellekler boşaltıldı',{})}})}catch(e){}
+ document.documentElement.classList.add('tv');const hv=$('#hv');if(hv)hv.remove();
  if(!$('#avp')){const o=document.createElement('object');o.id='avp';o.type='application/avplayer';o.style.cssText='position:fixed;left:0;top:0;width:100%;height:100%;z-index:-2';document.body.insertBefore(o,document.body.firstChild)}}
 (async()=>{scr='login';$$('.scr').forEach(x=>x.classList.toggle('on',x.id==='login'));if(!ACC)PAIR.start();focus($('#in1'));
  if(ACC){$('#in1').value=ACC.type==='xt'?ACC.srv:ACC.url;$('#in2').value=ACC.u||'';$('#in3').value=ACC.p||'';const wait=new Promise(r=>setTimeout(r,2200));
