@@ -333,3 +333,15 @@ html.tv #view{transition:transform .18s ease-out!important}
 /* odak: büyütme ve geçiş yok, sadece çerçeve (TV'de katman oluşturup yeniden çizdiriyordu) */
 html.tv .fx,html.tv .lcc.fx{transform:none}
 html.tv [data-f]{transition:none!important}
+
+/* ---- 1.5.1: vitrin başlığı sayfa başlığına taşmasın ---- */
+.tl{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;padding-bottom:.08em}
+.tl.m{font-size:52px;line-height:1}
+.tl.s{font-size:38px;line-height:1.06}
+.hc .ds{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+
+/* favori yıldızı */
+.btn.ico{padding-left:12px;padding-right:12px;min-width:0}
+.btn.ico svg{margin:0;display:block}
+#lfav.on{color:var(--acc)}
+#lfav.on.fx{color:#0a0d12}

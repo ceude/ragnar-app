@@ -7,8 +7,9 @@ const load=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==nul
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ic=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
-const IC={home:ic('<path d="M3 11l9-8 9 8v9h-6v-6H9v6H3z"/>'),live:ic('<rect x="2" y="5" width="20" height="13" rx="2"/><path d="M8 21h8"/>'),series:ic('<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M6 5h12"/>'),films:ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>'),search:ic('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'),settings:ic('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>'),au:ic('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 9a4 4 0 010 6"/>'),cc:ic('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10.5 10.2a2 2 0 100 3.6M16.5 10.2a2 2 0 100 3.6"/>'),
+const IC={starf:'',home:ic('<path d="M3 11l9-8 9 8v9h-6v-6H9v6H3z"/>'),live:ic('<rect x="2" y="5" width="20" height="13" rx="2"/><path d="M8 21h8"/>'),series:ic('<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M6 5h12"/>'),films:ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>'),search:ic('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'),settings:ic('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>'),au:ic('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 9a4 4 0 010 6"/>'),cc:ic('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10.5 10.2a2 2 0 100 3.6M16.5 10.2a2 2 0 100 3.6"/>'),
  play:ic('<path d="M7 5l12 7-12 7z" fill="currentColor"/>'),pause:ic('<path d="M8 5v14M16 5v14" stroke-width="2.6"/>'),prev:ic('<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/>'),guide:ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/>'),lock:ic('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>'),bell:ic('<path d="M6 16v-5a6 6 0 0112 0v5l2 2H4z"/><path d="M10 21h4"/>'),re:ic('<path d="M4 4v6h6"/><path d="M5 15a8 8 0 102-8.5L4 10"/>'),star:ic('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'),check:ic('<path d="M5 12.5l4.5 4.5L19 7" stroke-width="2.4"/>')};
+IC.starf=IC.star.replace(/fill="none"/,'fill="currentColor"');
 const isTV=typeof webapis!=='undefined'&&!!webapis.avplay;
 const U=s=>String(s||'').toLocaleUpperCase('tr');
 const fmt=s=>{s=Math.max(0,Math.floor(s||0));return(s>=3600?(s/3600|0)+':':'')+String((s%3600)/60|0).padStart(s>=3600?2:1,'0')+':'+String(s%60).padStart(2,'0')};
@@ -88,9 +89,11 @@ const M3U={d:null,
 
 /* kategoriler: sıra, gizleme, yetişkin kilidi */
 function visCats(k,cs){const o=ST['o_'+k]||[],h=ST['h_'+k]||[],pos=id=>{const i=o.indexOf(id);return i<0?1e6:i};
- return cs.map((c,i)=>({...c,i,adult:isAdult(c.name)})).filter(c=>!h.includes(c.id)).sort((a,b)=>pos(a.id)-pos(b.id)||a.i-b.i)}
+ const L=cs.map((c,i)=>({...c,i,adult:isAdult(c.name)})).filter(c=>!h.includes(c.id)).sort((a,b)=>pos(a.id)-pos(b.id)||a.i-b.i);
+ if(!ST.clean){const g={};L.forEach(c=>{const n=clean(c.name);(g[n]=g[n]||[]).push(c)});for(const n in g){const a=g[n];if(a.length<2)continue;const seen={};a.forEach(c=>{const q=(String(c.name).replace(/[\u1D2C-\u1D6A]/g,m=>({'ᴿ':'R','ᴬ':'A','ᵂ':'W','ᴴ':'H','ᴰ':'D','ᶠ':'F','ᵁ':'U'}[m]||'')).match(/\b(8K|4K|UHD|FHD|HD|SD|HEVC|H\.?265|RAW|60FPS|50FPS|1080P|720P)\b/gi)||[]).map(x=>x.toUpperCase()).filter((x,i,r)=>r.indexOf(x)===i).join(' ');let lab=q?n+' · '+q:n;seen[lab]=(seen[lab]||0)+1;if(seen[lab]>1)lab+=' ('+seen[lab]+')';c.nm=lab})}}
+ return L}
 const catLocked=c=>pinOn()&&c.adult&&!UNL;
-const catNm=c=>!ST.clean&&isAdult(c.name)?'Yetişkin':clean(c.name);
+const catNm=c=>!ST.clean&&isAdult(c.name)?'Yetişkin':(c.nm||clean(c.name));
 async function adultSet(k){const cs=await API.cats(k);return new Set(cs.filter(c=>isAdult(c.name)).map(c=>c.id))}
 
 /* ---------- kayıt defteri, geçmiş, favoriler ---------- */
@@ -100,7 +103,9 @@ function histSet(it,t,d){if(!it||it.k==='live'||!d||d<60)return;const k=it.k+':'
  if(isDone(t,d,it.k==='ep')){const i=EPS.findIndex(e=>e.id===it.id),n=i>=0?EPS[i+1]:null;if(n)HIST['nx:'+it.sid]={k:'nx',id:n.id,name:n.name,icon:n.icon,ext:n.ext,url:n.url,sid:n.sid,sname:n.sname,scover:n.scover,season:n.season,num:n.num,t:0,d:1,ts:Date.now()+1};else delete HIST['nx:'+it.sid]}}
  const ks=Object.keys(HIST);if(ks.length>400)ks.sort((a,b)=>HIST[a].ts-HIST[b].ts).slice(0,ks.length-400).forEach(x=>delete HIST[x]);save('rg-hist',HIST)}
 function cwList(){const seen=new Set();return Object.values(HIST).filter(h=>h.k==='nx'||(h.k!=='sl'&&hPart(h))).sort((a,b)=>b.ts-a.ts).filter(h=>{const g=h.sid?'s'+h.sid:h.k+h.id;if(seen.has(g))return false;seen.add(g);return true}).slice(0,20)}
+const isInfoCh=it=>/bilgilendirme|l[uü]tfen\s*oku|duyuru|announcement|read\s*me|^[\s#=*_\-|]{3,}/i.test((it&&it.name)||'');
 const isFav=id=>FAVL.some(f=>f.id===id);
+function favDraw(){const b=$('#lfav');if(b&&LV){const on=isFav(LV.id);b.innerHTML=on?IC.starf:IC.star;b.classList.toggle('on',on);b.setAttribute('aria-label',on?'Favorilerden çıkar':'Favorilere ekle')}}
 function favToggle(it){if(isFav(it.id))FAVL=FAVL.filter(f=>f.id!==it.id);else FAVL.push({k:'live',id:it.id,name:it.name,icon:it.icon,num:it.num,cat:it.cat,arch:it.arch,url:it.url});save('rg-fav',FAVL)}
 const inMy=it=>MYL.some(m=>m.k===it.k&&m.id===it.id);
 
@@ -128,9 +133,14 @@ const cwCard=h=>{const ep=h.k==='ep'||h.k==='nx',it=ep?{k:'ep',id:h.id,name:h.na
 const lcCard=it=>`<div class="lc" data-f data-act="live" data-key="${reg(it)}"><i></i><b>${it.num||''}</b><div>${esc(clean(it.name))}</div>${img(it.icon)}</div>`;
 const tvi=it=>`<div class="tvi" data-f data-act="live" data-key="${reg(it)}" data-pv="1">${img(it.icon)}<span>${it.num||''}</span><div><b>${esc(clean(it.name))}</b><small>${it.arch?'Arşiv var':''}</small></div>${isFav(it.id)?`<em>${IC.star}</em>`:''}</div>`;
 const srchBtn=(s,t)=>`<div class="btn sm" data-f data-act="srch" data-s="${s}">${IC.search} ${t}</div>`;
+/* 01:45:10 -> 1 sa 45 dk, 00:50:24 -> 50 dk */
+const fmtDur=d=>{const m=String(d||'').match(/^(\d{1,2}):(\d{2}):(\d{2})$/);if(!m)return d||'';const h=+m[1],mi=+m[2]+(+m[3]>=30?1:0);return h?`${h} sa ${mi} dk`:`${mi} dk`};
+/* 'Run Away - S01E01 - Görmek İnanmaktır' -> 'Görmek İnanmaktır' */
+const epTitle=e=>{let t=String(e.name||'');const sn=String(e.sname||'');if(sn&&t.toLowerCase().indexOf(sn.toLowerCase())===0)t=t.slice(sn.length);const tr=x=>x.replace(/^[\s\-–:.|]+|[\s\-–:.|]+$/g,'');t=tr(tr(t.replace(/\bS\d{1,2}\s*[.\-_ ]?\s*E\d{1,3}\b/i,'')).replace(/^\d{1,2}x\d{1,3}\b/i,'')).trim();return t&&!/^\d+$/.test(t)&&!/^b[öo]l[üu]m\s*\d+$/i.test(t)?t:''};
 function heroHTML(it,btns){const bd=it.bd||'',pic=bd||it.icon;
- const meta=[it.year,it.rating&&+it.rating?'Puan '+(+it.rating).toFixed(1):'',it.genre,it.dur].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('');
- return`<div class="bd" style="background:${artN(it.name)}">${img(pic,bd?'':'pb2',bd?'w1280':'w342')}</div><div class="hc"><div class="tl">${esc(clean(it.name))}</div><div class="meta">${meta}</div>${it.plot?`<p class="ds">${esc(it.plot.length>260?it.plot.slice(0,257)+'…':it.plot)}</p>`:'<p class="ds"></p>'}${btns||''}</div>`}
+ let nm=clean(it.name),dt='';const dm=nm.match(/^(.*?)\s*\(?(\d{2}\.\d{2}\.\d{4})\)?\s*$/);if(dm&&dm[1].length>2){nm=dm[1].replace(/[\s:\-]+$/,'');dt=dm[2]}
+ const meta=[it.year,it.rating&&+it.rating?'Puan '+(+it.rating).toFixed(1):'',it.genre,fmtDur(it.dur),dt].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('');
+ return`<div class="bd" style="background:${artN(it.name)}">${img(pic,bd?'':'pb2',bd?'w1280':'w342')}</div><div class="hc"><div class="tl${nm.length>38?' s':nm.length>20?' m':''}">${esc(nm)}</div><div class="meta">${meta}</div>${it.plot?`<p class="ds">${esc(it.plot.length>260?it.plot.slice(0,257)+'…':it.plot)}</p>`:'<p class="ds"></p>'}${btns||''}</div>`}
 const heroBtns=it=>{const k=reg(it);if(it.k==='ep'){const h=HIST['ep:'+it.id],go=h&&h.t>30;const sk=reg({k:'series',id:it.sid,name:it.sname,icon:it.scover});
   return`<div class="bt"><div class="btn pri" data-f data-act="cw" data-key="${k}">${IC.play} ${go?'Devam et':'İzle'} S${it.season}:B${it.num}</div><div class="btn" data-f data-act="open" data-key="${sk}">Bölümler</div></div>`}
  const h=HIST[it.k+':'+it.id],go=hPart(h);return`<div class="bt"><div class="btn pri" data-f data-act="${it.k==='vod'?'playv':'open'}" data-key="${k}">${IC.play} ${it.k==='series'?'Bölümler':go?'Devam et':'Oynat'}</div><div class="btn" data-f data-act="open" data-key="${k}">Ayrıntılar</div></div>`};
@@ -145,7 +155,7 @@ let HL=[];
 AF.home=async(a,tok)=>{const cw=cwList();let first=null,n=0;
  const put=h=>{if(tok!==RT||!$('#hmore'))return;const sp=$('#hmore > .spin');if(sp)sp.remove();$('#hmore').insertAdjacentHTML('beforeend',h);n++;if(!cur||!cur.isConnected)focus($('#view [data-f]'))};
  if(cw.length){const h=REG.get($('#hrows .ls').dataset.key);if(h)setHero(h)}
- try{const lcs=visCats('live',await API.cats('live')).filter(c=>!catLocked(c));if(lcs[0]){HL=(await API.items('live',lcs[0].id)).slice(0,14);if(tok!==RT)return;if(HL.length)put(`<div class="rt">Şimdi canlı</div><div class="row" id="hlive">${HL.map(lcCard).join('')}</div>`)}}catch(e){}
+ try{const lcs=visCats('live',await API.cats('live')).filter(c=>!catLocked(c));if(lcs[0]){HL=(await API.items('live',lcs[0].id)).filter(c=>!isInfoCh(c)).slice(0,14);if(tok!==RT)return;if(HL.length)put(`<div class="rt">Şimdi canlı</div><div class="row" id="hlive">${HL.map(lcCard).join('')}</div>`)}}catch(e){}
  for(const k of['vod','series']){let cs;try{cs=visCats(k,await API.cats(k)).filter(c=>!catLocked(c))}catch(e){continue}if(tok!==RT)return;if(!cs.length)continue;
   let it=await API.items(k,cs[0].id).catch(()=>[]);if(tok!==RT)return;if(k==='vod')it=[...it].sort((x,y)=>y.added-x.added);
   if(!first&&it[0]){first=it[0];if(!cw.length)setHero(first)}
@@ -163,7 +173,7 @@ V.tv=()=>`<div class="lvhero"><div id="mv"></div><div class="lvfade"></div><div 
 AF.tv=async(a,tok,sel)=>{const cs=visCats('live',await API.cats('live'));if(tok!==RT)return;
  const items=[...(FAVL.length?[{id:'__fav',name:'Favoriler',star:1}]:[]),...cs];
  $('#catl').innerHTML=items.map(c=>`<div class="chip" data-f data-act="cat" data-t="live" data-c="${esc(c.id)}"${c.adult?' data-ad="1"':''}>${c.star?IC.star:catLocked(c)?IC.lock:''}${esc(c.star?c.name:catNm(c))}</div>`).join('')||'<div class="empty">Kanal kategorisi yok.</div>';
- const want=ST.lastCat&&items.find(c=>c.id===ST.lastCat&&!catLocked(c))?ST.lastCat:(items.find(c=>!catLocked(c))||{}).id;
+ const want=FAVL.length?'__fav':ST.lastCat&&items.find(c=>c.id===ST.lastCat&&!catLocked(c))?ST.lastCat:(items.find(c=>!catLocked(c))||{}).id;
  if(want!=null)await loadCat('live',want,tok);if(tok!==RT)return;
  if(sel&&$('#view '+sel))focus($('#view '+sel));else if(!cur||!cur.isConnected||cur.closest('#view'))focus($('#chl [data-f]')||$('#catl [data-f]'))};
 const lcc=it=>`<div class="lcc" data-f data-act="live" data-key="${reg(it)}" data-pv="1"><div class="lct">${img(it.icon)}<span>${it.num||''}</span>${isFav(it.id)?`<em>${IC.star}</em>`:''}</div><b>${esc(clean(it.name))}</b><small class="lnow" data-id="${esc(it.id)}">${it.arch?'Arşiv var':'&nbsp;'}</small><div class="pg"><div></div></div></div>`;
@@ -240,7 +250,7 @@ function drawSeason(s,focusSel){const{ss,it}=SEAS,nx=HIST['nx:'+it.id],nxId=nx&&
  const L=EPS.filter(e=>e.season===s),cnt={done:0,prog:0,new:0};
  const rows=L.map(e=>{const{st,h}=epState(e);cnt[st]++;const isNx=st!=='done'&&e.id===nxId,left=h?Math.max(1,Math.round((h.d-h.t)/60)):0;
   const lab=st==='done'?'<span class="st d">İzlendi</span>':st==='prog'?`<span class="st p">Yarım kaldı, ${left} dk kaldı</span>`:isNx?'<span class="st p">Sıradaki bölüm</span>':'<span class="st n">İzlenmedi</span>';
-  return`<div class="ep ${st}${isNx?' nxt':''}" data-f data-act="playe" data-key="${reg(e)}"><div class="th" style="background:${artN(e.name)}">${img(e.icon,0,'w300')}${st==='done'?`<div class="ck">${IC.check}</div>`:''}${isNx?'<span class="tag2">Sıradaki</span>':''}${st==='prog'?`<div class="pb"><div style="width:${Math.min(100,h.t/h.d*100)}%"></div></div>`:''}</div><div><div class="n">${e.num}. Bölüm${e.dur?', '+esc(e.dur):''} · ${lab}</div><b>${esc(e.name)}</b><p>${esc(e.plot.slice(0,180))}</p></div></div>`}).join('');
+  return`<div class="ep ${st}${isNx?' nxt':''}" data-f data-act="playe" data-key="${reg(e)}"><div class="th" style="background:${artN(e.name)}">${img(e.icon,0,'w300')}${st==='done'?`<div class="ck">${IC.check}</div>`:''}${isNx?'<span class="tag2">Sıradaki</span>':''}${st==='prog'?`<div class="pb"><div style="width:${Math.min(100,h.t/h.d*100)}%"></div></div>`:''}</div><div><div class="n">${e.num}. Bölüm${e.dur?', '+esc(fmtDur(e.dur)):''} · ${lab}</div><b>${esc(epTitle(e)||e.num+'. Bölüm')}</b><p>${esc(e.plot.slice(0,180))}</p></div></div>`}).join('');
  const sum=L.length?`<p class="esum">${L.length} bölüm: ${cnt.done} izlendi, ${cnt.prog} yarım kaldı, ${cnt.new} izlenmedi</p>`:'';
  $('#dmore').innerHTML=`<div class="seas">${chips}</div>${sum}`+(rows||'<p class="empty">Bu sezonda bölüm yok.</p>');if(focusSel)focus($('#dmore '+focusSel))}
 
@@ -450,7 +460,7 @@ const savePF=()=>save('rg-pf',PF);
 let PL=null,PK='',paused=false,osdT,hold=0,wT,SK=null,SKT,nxOn=0,nxC=0,TRK={au:[],tx:[]},subT,saveT=0,tryN=0;
 function openPlayer(it,start){if(scr!=='player')retSel=cur?selOf(cur):null;PL=it;PK=it.k==='ep'?'s:'+it.sid:'v:'+it.id;miniStop();
  go('player');paused=false;nxOn=0;SK=null;$('#player').classList.add('ui');$('#pt').textContent=clean(it.k==='ep'?it.sname:it.name);
- $('#pe').textContent=it.k==='ep'?`Sezon ${it.season}, Bölüm ${it.num}: ${it.name}`:'';$('#beps').style.display='none';
+ $('#pe').textContent=it.k==='ep'?`Sezon ${it.season}, Bölüm ${it.num}${epTitle(it)?': '+epTitle(it):''}`:'';$('#beps').style.display='none';
  $('#player').append($('#pan'));hidePan();unf();['#nx','#rs','#perr'].forEach(s=>$(s).classList.remove('on'));$('#sub').style.display='none';$('#player .osd').style.display='none';
  $('#t1').textContent='0:00';$('#t2').textContent='';$('#fl').style.width='0';$('#trk').textContent='';drawPP();
  const h=HIST[it.k+':'+it.id];if(start==null&&hPart(h)){$('#rst').textContent=`${fmt(h.t)} noktasında kalmıştın.`;$('[data-act=rsY]').innerHTML=IC.play+' Kaldığın yerden devam et';$('[data-act=rsY]').dataset.t=h.t;$('#rs').classList.add('on');return focus($('[data-act=rsY]'))}
@@ -518,7 +528,7 @@ function pick(k,v){const pk=panLive?'l:'+LV.id:PK,pr=pref(pk);
  else if(k==='fit'){pr.fit=+v;AV.mode(+v===1)}
  else if(k==='hls'){pr.hls=+v;savePF();drawPan();tuneLive(LV,true);return focus($(`#pan [data-k="${k}"][data-v="${v}"]`))}
  else if(k==='sleep'){ST.sleepSel=+v;clearTimeout(SLEEP);if(+v)SLEEP=setTimeout(()=>{exit();toast('Uyku zamanlayıcısı','Yayın kapatıldı.')},+v*60000)}
- else if(k==='fav'){favToggle(LV);liveDraw()}
+ else if(k==='fav'){favToggle(LV);favDraw()}
  else pr[k]=v;
  savePF();if(!panLive)trkLabel();drawPan();focus($(`#pan [data-k="${k}"][data-v="${v}"]`))}
 
@@ -557,7 +567,7 @@ function liveOpen(){const it=LV,pr=pref('l:'+it.id);$('#lerr2').classList.remove
 function zap(d){const L=CTX.length?CTX:[LV];let p=L.findIndex(c=>c.id===LV.id);if(p<0)p=0;tuneLive(L[(p+d+L.length)%L.length])}
 function liveDraw(){const L=CTX.length?CTX:[LV],n=L.length,p=Math.max(0,L.findIndex(c=>c.id===LV.id));
  $('#strip').innerHTML=(n>1?[-2,-1,0,1,2]:[0]).map(o=>{const c=L[(p+o+n*5)%n];return`<div class="chi${o?'':' cur'}" data-key="${reg(c)}"><span>${c.num||''}</span>${esc(clean(c.name))}</div>`}).join('');
- $('#bn').innerHTML=img(LV.icon)||String(LV.num||'');$('#bt').textContent=(isFav(LV.id)?'★ ':'')+clean(LV.name);$('#lvl').textContent='';
+ $('#bn').innerHTML=img(LV.icon)||String(LV.num||'');favDraw();$('#bt').textContent=(isFav(LV.id)?'★ ':'')+clean(LV.name);$('#lvl').textContent='';
  $('#bnow').textContent='…';$('#bnowt').textContent='';$('#bnext').textContent='';$('#bp').style.width='0';drawLag();showBand();const it=LV;
  LEPG=[];clearTimeout(liveDraw.t);liveDraw.t=setTimeout(()=>API.epg(it.id,4).then(ep=>{if(LV!==it)return;LEPG=ep;bandEpg()}).catch(()=>{}),800)}
 function bandEpg(){const t=Date.now()-lag*1000,n=LEPG.find(e=>e.s<=t&&e.e>t),x=LEPG.find(e=>e.s>t);
@@ -646,6 +656,7 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
  case'panx':hidePan();return panLive?focus($('[data-act=lset]')):unf();
  case'lpp':return lpause();case'prevch':return prevLV&&tuneLive(prevLV);case'num':return pad('ch',c=>tuneLive(c));
  case'lretry':ltry=0;LREC=[];return liveOpen();
+ case'lfav':if(LV){favToggle(LV);favDraw();osd(isFav(LV.id)?'Favorilere eklendi':'Favorilerden çıkarıldı')}return;
  case'epg':return openEpg();case'epgx':return closeEpg();
  case'tune':closeEpg();return it.id===LV.id?(lag=0,liveOpen()):tuneLive(it);
  case'catch':{if(!it.arch)return osd('Bu kanalda arşiv yok');closeEpg();if(it.id!==LV.id){prevLV=LV;LV=it;liveDraw()}lag=Math.round((Date.now()-+d.s)/1000);drawLag();liveOpen();return osd('Arşivden oynatılıyor')}
