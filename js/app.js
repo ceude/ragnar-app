@@ -145,13 +145,15 @@ AF.home=async(a,tok)=>{const cw=cwList();let first=null,n=0;
  for(const k of['vod','series']){let cs;try{cs=visCats(k,await API.cats(k)).filter(c=>!catLocked(c))}catch(e){continue}if(tok!==RT)return;if(!cs.length)continue;
   let it=await API.items(k,cs[0].id).catch(()=>[]);if(tok!==RT)return;if(k==='vod')it=[...it].sort((x,y)=>y.added-x.added);
   if(!first&&it[0]){first=it[0];if(!cw.length)setHero(first)}
-  if(it.length)put(row(`${k==='vod'?'Filmler':'Diziler'}, ${esc(catNm(cs[0]))}`,it.slice(0,30).map(poster)))}
+  if(it.length)put(row(`${k==='vod'?'Filmler':'Diziler'}, ${esc(catNm(cs[0]))}`,it.slice(0,16).map(poster)))}
  if(tok!==RT)return;const sp=$('#hmore > .spin');if(sp)sp.remove();if(!n&&!cw.length&&!FAVL.length)$('#hmore').innerHTML='<div class="empty">Bu listede film veya dizi bulunamadı. Sol menüden Canlı TV’ye geçebilirsin.</div>';
  if(!cur||!cur.isConnected)focus($('#view [data-f]'))};
 function setHero(it){const k=reg(it);if(HKEY===k||!$('#hero'))return;HKEY=k;let v=it;
  if(it.k==='ep'){const sr=REG.get('series:'+it.sid)||{},h=HIST['ep:'+it.id],nx=!(h&&h.t>30);v={k:'series',id:it.sid,name:it.sname,icon:it.scover,bd:sr.bd,year:sr.year,genre:sr.genre,rating:sr.rating,dur:nx?`Sıradaki bölüm: S${it.season}:B${it.num}`:`S${it.season}:B${it.num}, ${Math.max(1,Math.round((h.d-h.t)/60))} dk kaldı`,plot:sr.plot||it.name}}
  else if(it.k==='vod'){const h=HIST['vod:'+it.id];if(h&&h.t>30&&h.t<h.d*.92)v={...it,dur:`${Math.max(1,Math.round((h.d-h.t)/60))} dk kaldı`}}
- $('#hero').innerHTML=heroHTML(v,it.k==='live'?'':heroBtns(it))}
+ const html=heroHTML(v,it.k==='live'?'':heroBtns(it)),put=()=>{if(HKEY!==k||!$('#hero'))return;const hadF=cur&&cur.closest('#hero')?cur.dataset.act:null;$('#hero').innerHTML=html;if(hadF)focus($('#hero [data-act="'+hadF+'"]')||$('#hero [data-f]'))};
+ const pic=v.bd||v.icon,src=pic&&!IMG.bad.has(pic)?isz(pic,v.bd?'w1280':'w342'):'';if(!src||!window.Image)return put();
+ const im=new Image();let done=0;const fin=()=>{if(done)return;done=1;put()};im.decoding='async';im.onerror=fin;im.src=src;setTimeout(fin,1800);if(im.decode)im.decode().then(fin,fin);else im.onload=fin}
 
 V.tv=()=>`<div class="lvhero"><div id="mv"></div><div class="lvfade"></div><div class="lvinfo" id="mi"></div></div><div class="btop"><h1>Canlı TV</h1><div class="btn sm" data-f data-act="catpick" data-t="live">${IC.guide} Kategoriler</div>${srchBtn('live','Kanallarda ara')}</div><div class="lvbot"><div class="lvcats" id="catl"><div class="spin sm"></div></div><div class="lvrow" id="chl"></div></div>`;
 AF.tv=async(a,tok,sel)=>{const cs=visCats('live',await API.cats('live'));if(tok!==RT)return;
@@ -195,7 +197,7 @@ async function browseMore(){if(!BR||BR.busy||BR.shown>=BR.cs.length)return;BR.bu
  box.insertAdjacentHTML('beforeend',part.map(c=>`<div class="rt">${catLocked(c)?IC.lock+' ':''}${esc(catNm(c))}</div><div class="row" data-cat="${esc(c.id)}">${catLocked(c)?`<div class="lockc" data-f data-act="catall" data-t="${B.k}" data-c="${esc(c.id)}" data-n="${esc(catNm(c))}" data-ad="1">${IC.lock}<b>PIN ile aç</b><small>Yetişkin içerik</small></div>`:'<div class="spin sm"></div>'}</div>`).join(''));
  await Promise.all(part.filter(c=>!catLocked(c)).map(async c=>{let it=[];try{it=await API.items(B.k,c.id)}catch(e){}if(tok!==RT)return;const row=$(`#brows .row[data-cat="${CSS.escape(c.id)}"]`);if(!row)return;
   if(!it.length){row.previousElementSibling.remove();row.remove();return}if(B.k==='vod')it=[...it].sort((a,b)=>b.added-a.added);
-  row.innerHTML=it.slice(0,24).map(poster).join('')+`<div class="more" data-f data-act="catall" data-t="${B.k}" data-c="${esc(c.id)}" data-n="${esc(catNm(c))}"><b>Tümünü gör</b><small>${it.length} ${B.k==='vod'?'film':'dizi'}</small></div>`;
+  row.innerHTML=it.slice(0,16).map(poster).join('')+`<div class="more" data-f data-act="catall" data-t="${B.k}" data-c="${esc(c.id)}" data-n="${esc(catNm(c))}"><b>Tümünü gör</b><small>${it.length} ${B.k==='vod'?'film':'dizi'}</small></div>`;
   if(!HKEY&&it[0])setHero(it[0])}));B.busy=0;if(tok===RT&&$('#brows')&&$('#brows').scrollHeight<=$('#brows').clientHeight+40)browseMore()}
 V.cat=a=>`<div class="hrow"><h1>${esc(a.n||'Kategori')}</h1>${srchBtn(a.t,(a.t==='series'?'Dizilerde':'Filmlerde')+' ara')}</div><div class="vgrid full" id="vg"><div class="spin"></div></div>`;
 AF.cat=async(a,tok)=>{let it=await API.items(a.t,a.c);if(tok!==RT)return;if(a.t==='vod')it=[...it].sort((x,y)=>y.added-x.added);GRID={k:a.t,items:it,n:0};$('#vg').innerHTML=it.length?'':'<div class="empty">Bu kategoride içerik yok.</div>';gridMore();focus($('#vg [data-f]'))};
@@ -644,6 +646,7 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
    ========================================================= */
 const KEYS=['MediaPlayPause','MediaPlay','MediaPause','MediaStop','MediaFastForward','MediaRewind','ChannelUp','ChannelDown','ChannelList','0','1','2','3','4','5','6','7','8','9','ColorF0Red','ColorF1Green','ColorF2Yellow','ColorF3Blue','Info'];
 try{KEYS.forEach(k=>{try{tizen.tvinputdevice.registerKey(k)}catch(e){}})}catch(e){}
+let MQ=null;function qmove(d){if(MQ){MQ=d;return}MQ=d;requestAnimationFrame(()=>{const x=MQ;MQ=null;move(x)})}
 addEventListener('keydown',e=>{REP=e.repeat;const kc=e.keyCode,inp=e.target.tagName==='INPUT';if(inp&&(kc===65376||kc===65385)){e.target.blur();return}if(inp&&![38,40,27,13,10009].includes(kc))return;
  const m={37:'l',39:'r',38:'u',40:'d'}[kc],b=kc===10009||kc===27||(kc===8&&!inp),cu=kc===427||kc===33,cd=kc===428||kc===34,pp=kc===10252||kc===415||kc===19||(kc===32&&!inp),ff=kc===417,rw=kc===412,dg=kc>=48&&kc<=57&&!inp?String(kc-48):null;
  if(m||b||cu||cd||pp||ff||rw||kc===13)e.preventDefault();
@@ -653,7 +656,7 @@ addEventListener('keydown',e=>{REP=e.repeat;const kc=e.keyCode,inp=e.target.tagN
  if(kc===13&&e.repeat)return;
  if(scr==='live'&&dg&&!$('#epg').classList.contains('on')){pad('ch',c=>tuneLive(c));return padKey(dg)}
  if(scr==='player')return pKey(e,m,b,cu,cd,pp,ff,rw);if(scr==='live')return lKey(e,m,b,cu,cd,pp,ff,rw);
- if(m)move(m);else if(kc===13)ok(cur);else if(b){if(scr==='app')back();else if(scr==='login'){$('#exitov').classList.add('on');focus($('[data-act=noquit]'))}}});
+ if(m)qmove(m);else if(kc===13)ok(cur);else if(b){if(scr==='app')back();else if(scr==='login'){$('#exitov').classList.add('on');focus($('[data-act=noquit]'))}}});
 document.addEventListener('click',e=>{const f=e.target.closest('[data-f]'),sd=e.target.closest('#side'),op=$('#side').classList.contains('open');
  if(PAD){if(f){focus(f);ok(f)}else if(!e.target.closest('.pbox'))closePad();return}
  const co=$('#catov');if(co.classList.contains('on')&&!e.target.closest('.catbox')){co.classList.remove('on');if(!sd){focus($('[data-act=catpick]'));return}}
