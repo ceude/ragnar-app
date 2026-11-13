@@ -357,3 +357,15 @@ html.tv [data-f]{transition:none!important}
 .osd.ic{left:50%!important;top:46%!important;right:auto;bottom:auto;transform:translate(-50%,-50%)!important;border-left:0;padding:14px 18px!important;background:rgba(10,13,18,.72)!important}
 .osd.ic svg{width:44px;height:44px;display:block}
 .lbl .pnote{display:block;font-size:12px;font-weight:600;color:var(--mut);margin-top:4px;letter-spacing:0;text-transform:none;line-height:1.35}
+
+/* favori kanal kartı: sağ üstte dolu yıldız */
+.lc .fst{position:absolute;right:13px;top:12px;width:18px;height:18px;color:var(--acc);line-height:0}
+.lc .fst svg{width:18px;height:18px}
+
+/* Tüm kanallar kartı: kanal kartıyla birebir aynı ölçü */
+#hlive .lc.more{width:236px;height:124px;min-height:0;padding:16px;box-sizing:border-box;flex:none}
+
+/* yan menü logosu: kapalıyken miğfer simgelerin hizasında ortalı, açıkken miğfer + RAGNAR */
+#side .brand{display:flex;align-items:center;gap:14px;height:46px;margin:0 0 26px 0;padding:0 0 0 11px;letter-spacing:.3em;font-size:17px;overflow:hidden;width:48px;box-sizing:content-box}
+#side .brand svg{width:26px;height:40px;flex:none;display:block}
+#side.open .brand{width:206px}
