@@ -63,8 +63,8 @@ const API={C:{},
  async login(){const j=await this.getR(this.q(''));if(!j||!j.user_info)throw new Error('Bu adres bir Xtream sunucusu gibi yanıt vermedi');const u=j.user_info;
   if(+u.auth===0)throw new Error('Kullanıcı adı veya şifre hatalı');if(u.status&&u.status!=='Active')throw new Error('Abonelik aktif değil ('+u.status+')');return u},
  cats(k){return this.once('c'+k,async()=>{if(ACC.type==='m3u')return M3U.cats(k);const ck='rg-c-'+k+'-'+(ACC.u||''),cc=load(ck,null);if(cc&&Date.now()-cc.t<432e5)return cc.v;const j=await this.getR(this.q({live:'get_live_categories',vod:'get_vod_categories',series:'get_series_categories'}[k]));const v=(Array.isArray(j)?j:[]).map(c=>({id:String(c.category_id),name:c.category_name||''}));save(ck,{t:Date.now(),v});return v})},
- items(k,cat){return this.once('i'+k+'|'+cat,async()=>{if(ACC.type==='m3u')return M3U.items(k,cat);const j=await this.getR(this.q({live:'get_live_streams',vod:'get_vod_streams',series:'get_series'}[k],'&category_id='+encodeURIComponent(cat)),45000);return(Array.isArray(j)?j:[]).map({live:nL,vod:nV,series:nS}[k])})},
- all(k){return this.once('a'+k,async()=>{if(ACC.type==='m3u')return M3U.all(k);const j=await this.getR(this.q({live:'get_live_streams',vod:'get_vod_streams',series:'get_series'}[k]),120000);return(Array.isArray(j)?j:[]).map({live:nL,vod:nV,series:nS}[k])})},
+ items(k,cat){return this.once('i'+k+'|'+cat,async()=>{if(ACC.type==='m3u')return noInfo(k,M3U.items(k,cat));const j=await this.getR(this.q({live:'get_live_streams',vod:'get_vod_streams',series:'get_series'}[k],'&category_id='+encodeURIComponent(cat)),45000);return noInfo(k,(Array.isArray(j)?j:[]).map({live:nL,vod:nV,series:nS}[k]))})},
+ all(k){return this.once('a'+k,async()=>{if(ACC.type==='m3u')return noInfo(k,M3U.all(k));const j=await this.getR(this.q({live:'get_live_streams',vod:'get_vod_streams',series:'get_series'}[k]),120000);return noInfo(k,(Array.isArray(j)?j:[]).map({live:nL,vod:nV,series:nS}[k]))})},
  vodInfo(id){return this.once('vi'+id,()=>this.getR(this.q('get_vod_info','&vod_id='+id)))},
  seriesInfo(id){return this.once('si'+id,()=>this.getR(this.q('get_series_info','&series_id='+id),30000))},
  async epg(id,n){if(ACC.type==='m3u')return[];n=n||4;const k='e'+id+'_'+n,c=this.C[k];if(c&&Date.now()-c.t<300000)return c.v;
@@ -103,6 +103,7 @@ function histSet(it,t,d){if(!it||it.k==='live'||!d||d<60)return;const k=it.k+':'
  if(isDone(t,d,it.k==='ep')){const i=EPS.findIndex(e=>e.id===it.id),n=i>=0?EPS[i+1]:null;if(n)HIST['nx:'+it.sid]={k:'nx',id:n.id,name:n.name,icon:n.icon,ext:n.ext,url:n.url,sid:n.sid,sname:n.sname,scover:n.scover,season:n.season,num:n.num,t:0,d:1,ts:Date.now()+1};else delete HIST['nx:'+it.sid]}}
  const ks=Object.keys(HIST);if(ks.length>400)ks.sort((a,b)=>HIST[a].ts-HIST[b].ts).slice(0,ks.length-400).forEach(x=>delete HIST[x]);save('rg-hist',HIST)}
 function cwList(){const seen=new Set();return Object.values(HIST).filter(h=>(Date.now()-(h.ts||0)<2592e6)&&(h.k==='nx'||(h.k!=='sl'&&hPart(h)))).sort((a,b)=>b.ts-a.ts).filter(h=>{const g=h.sid?'s'+h.sid:h.k+h.id;if(seen.has(g))return false;seen.add(g);return true}).slice(0,20)}
+const noInfo=(k,L)=>k==='live'&&Array.isArray(L)?L.filter(c=>!isInfoCh(c)):L;
 const isInfoCh=it=>/bilgilendirme|l[uü]tfen\s*oku|duyuru|announcement|read\s*me|^[\s#=*_\-|]{3,}/i.test((it&&it.name)||'');
 const isFav=id=>FAVL.some(f=>f.id===id);
 function favDraw(){const b=$('#lfav');if(b&&LV){const on=isFav(LV.id);b.innerHTML=on?IC.starf:IC.star;b.classList.toggle('on',on);b.setAttribute('aria-label',on?'Favorilerden çıkar':'Favorilere ekle')}}
@@ -272,11 +273,14 @@ AF.search=async(sc,tok)=>{sc=sc||'all';const D={};SDATA={sc,D};for(const k of SC
   for(let i=0;i<all.length;i++){const it=all[i];if(!hid.has(it.cat)&&!(pinOn()&&!UNL&&ad.has(it.cat)))out.push([U(clean(it.name)),it]);if(i%1500===1499){await yieldT();if(tok!==RT)return}}
   D[k]=out;SIDX[k]={ck,v:out}}catch(e){D[k]=[]}if(tok!==RT)return;if(Q)drawSearch()}
  if(tok!==RT)return;drawSearch()};
+let SF=null;
 function drawSearch(){$('#qbox').innerHTML=Q?esc(Q):`<span style="color:var(--dim)">Aramak için yaz</span>`;if(!SDATA)return;const{D}=SDATA,R={};let tot=0;
- for(const k in D){const a=[];if(Q){const L=D[k];for(let i=0;i<L.length&&a.length<48;i++)if(L[i][0].includes(Q))a.push(L[i][1])}R[k]=a;tot+=a.length}
+ const N={};for(const k in D){const a=[];let n=0;if(Q){const L=D[k];for(let i=0;i<L.length;i++)if(L[i][0].includes(Q)){n++;if(a.length<48)a.push(L[i][1])}}R[k]=a;N[k]=n;tot+=n}
+ if(SF&&!N[SF])SF=null;for(const k in R)if(SF&&k!==SF)R[k]=[];
  const chips=(h,a)=>a.length?`<div class="rt" style="margin:0 0 10px;font-size:16px;color:var(--mut)">${h}</div><div class="chips" style="margin-bottom:16px">${a.map(x=>`<div class="chip" data-f data-act="rq" data-q="${esc(x)}">${esc(x)}</div>`).join('')}</div>`:'';
  let h='';if(!Q)h=chips('Son aramalar',ST.rec)+'<p class="empty">Ekrandaki klavyeyle yazmaya başla. Sonuçlar yazdıkça gelir.</p>';
- else{h=`<div class="rt" style="margin:0 0 12px">${tot} sonuç${tot>=48?' (ilk sonuçlar)':''}</div>`;if(!tot)h+='<p class="empty">Bu adla bir sonuç yok. Farklı bir kelime dene.</p>';
+ else{const kinds=[['vod','Film'],['series','Dizi'],['live','Kanal']].filter(([k])=>N[k]);
+  h=kinds.length>1?`<div class="chips sfil" style="margin:0 0 16px"><div class="chip${!SF?' sel':''}" data-f data-act="sfil" data-k="">Tümü (${tot})</div>${kinds.map(([k,l])=>`<div class="chip${SF===k?' sel':''}" data-f data-act="sfil" data-k="${k}">${l} (${N[k]})</div>`).join('')}</div>`:`<div class="rt" style="margin:0 0 12px">${tot} sonuç</div>`;if(!tot)h+='<p class="empty">Bu adla bir sonuç yok. Farklı bir kelime dene.</p>';
   if(R.vod&&R.vod.length)h+=`${SDATA.sc==='all'?'<div class="rt" style="margin:0 0 10px">Filmler</div>':''}<div class="grid">${R.vod.map(poster).join('')}</div>`;
   if(R.series&&R.series.length)h+=`${SDATA.sc==='all'?'<div class="rt" style="margin:18px 0 10px">Diziler</div>':''}<div class="grid">${R.series.map(poster).join('')}</div>`;
   if(R.live&&R.live.length)h+=`${SDATA.sc==='all'?'<div class="rt" style="margin:18px 0 10px">Kanallar</div>':''}<div class="grid">${R.live.map(i=>`<div class="tvi" data-f data-act="live" data-key="${reg(i)}" style="width:300px">${img(i.icon)}<span>${i.num||''}</span><div><b>${esc(clean(i.name))}</b></div></div>`).join('')}</div>`}
@@ -473,7 +477,7 @@ const savePF=()=>save('rg-pf',PF);
 /* ---------- film ve dizi oynatıcı ---------- */
 let PL=null,PK='',paused=false,osdT,hold=0,wT,SK=null,SKT,nxOn=0,nxC=0,TRK={au:[],tx:[]},subT,saveT=0,tryN=0;
 function openPlayer(it,start){if(scr!=='player')retSel=cur?selOf(cur):null;PL=it;PK=it.k==='ep'?'s:'+it.sid:'v:'+it.id;miniStop();
- go('player');paused=false;nxOn=0;SK=null;$('#player').classList.add('ui');$('#pt').textContent=clean(it.k==='ep'?it.sname:it.name);
+ go('player');paused=false;nxOn=0;SK=null;$('#player').classList.add('ui');$('#pt').textContent=dispName(it.k==='ep'?it.sname:it.name).t;
  $('#pe').textContent=it.k==='ep'?`Sezon ${it.season}, Bölüm ${it.num}${epTitle(it)?': '+epTitle(it):''}`:'';$('#beps').style.display='none';
  $('#player').append($('#pan'));hidePan();unf();['#nx','#rs','#perr'].forEach(s=>$(s).classList.remove('on'));$('#sub').style.display='none';$('#player .osd').style.display='none';
  $('#t1').textContent='0:00';$('#t2').textContent='';$('#fl').style.width='0';$('#trk').textContent='';drawPP();
@@ -498,11 +502,14 @@ const OS={res:null,busy:false,left:null,
  async ids(it){const o={};try{if(it.k==='vod'){const j=await API.vodInfo(it.id);const i=(j&&j.info)||{};o.tmdb=i.tmdb_id||i.tmdb||'';o.year=String(i.releasedate||i.release_date||'').slice(0,4)}
    else if(it.k==='ep'){const j=await API.seriesInfo(it.sid);const i=(j&&j.info)||{};o.ptmdb=i.tmdb_id||i.tmdb||''}}catch(e){}return o},
  qname(n){return clean(String(n||'')).replace(/\(\d{4}\).*$/,'').replace(/\b(NF|AMZN|DSNP|HMAX|ATVP|TVBU|4K|FHD|HD|UHD)\b/gi,'').replace(/\s+/g,' ').trim()},
- async search(it,lang){const id=await this.ids(it),L=this.iso2(lang||'tur'),q=new URLSearchParams();q.set('languages',L);q.set('order_by','download_count');
-  if(it.k==='ep'){if(id.ptmdb)q.set('parent_tmdb_id',id.ptmdb);else q.set('query',this.qname(it.sname));q.set('season_number',it.season);q.set('episode_number',it.num)}
-  else{if(id.tmdb)q.set('tmdb_id',id.tmdb);else{q.set('query',this.qname(it.name));const y=(String(it.name).match(/\((\d{4})\)/)||[])[1]||id.year;if(y)q.set('year',y)}}
-  const j=await this.get('/subtitles?'+q.toString());
-  return((j&&j.data)||[]).map(d=>{const a=d.attributes||{},f=(a.files||[])[0]||{};return{fid:f.file_id,rel:a.release||f.file_name||'',dl:a.download_count||0,hi:!!a.hearing_impaired,ai:!!(a.ai_translated||a.machine_translated),lang:normLang(a.language)||lang}}).filter(x=>x.fid).sort((a,b)=>(a.ai-b.ai)||(a.hi-b.hi)||(b.dl-a.dl)).slice(0,8)},
+ qs(o){return Object.keys(o).filter(k=>o[k]!==''&&o[k]!=null).sort().map(k=>k+'='+encodeURIComponent(String(o[k]).toLowerCase())).join('&')},
+ /* önce kimlikle (TMDB), olmazsa adla ara; parametreler OpenSubtitles'ın istediği gibi sıralı ve küçük harf */
+ async search(it,lang){const id=await this.ids(it),L=this.iso2(lang||'tur'),tries=[],base={languages:L,order_by:'download_count'};
+  if(it.k==='ep'){const ep={season_number:it.season,episode_number:it.num};if(id.ptmdb)tries.push(Object.assign({parent_tmdb_id:id.ptmdb},base,ep));tries.push(Object.assign({query:this.qname(it.sname),type:'episode'},base,ep))}
+  else{if(id.tmdb)tries.push(Object.assign({tmdb_id:id.tmdb},base));const y=(String(it.name).match(/\((\d{4})\)/)||[])[1]||id.year;tries.push(Object.assign({query:this.qname(it.name),type:'movie'},base,y?{year:y}:{}))}
+  for(const q of tries){const qs=this.qs(q);const j=await this.get('/subtitles?'+qs);const r=((j&&j.data)||[]).map(d=>{const a=d.attributes||{},f=(a.files||[])[0]||{};return{fid:f.file_id,rel:a.release||f.file_name||'',dl:a.download_count||0,hi:!!a.hearing_impaired,ai:!!(a.ai_translated||a.machine_translated),lang:normLang(a.language)||lang}}).filter(x=>x.fid).sort((a,b)=>(a.ai-b.ai)||(a.hi-b.hi)||(b.dl-a.dl)).slice(0,8);
+   this.lastQ=qs;this.lastN=((j&&j.total_count)||0);if(r.length)return r}
+  return[]},
  async fetchSub(fid){const ck='rg-os-'+fid;try{const c=localStorage.getItem(ck);if(c)return c}catch(e){}
   const j=await this.post('/download',{file_id:fid,sub_format:'srt'});if(j.remaining!=null)this.left=j.remaining;if(!j.link)throw new Error(j.message||'İndirme bağlantısı alınamadı');
   const r=await fetch(j.link);if(!r.ok)throw new Error('Altyazı dosyası indirilemedi');const tx=await r.text();
@@ -521,9 +528,9 @@ function subPaint(tx){const el=$('#sub'),pr=pref(PK);if(!tx){el.style.display='n
  el.style.background={none:'transparent',semi:'rgba(0,0,0,.55)',box:'#000'}[pr.bg];el.style.textShadow=pr.bg==='none'?'0 2px 6px #000,0 0 2px #000':'none'}
 async function osAuto(){const pr=pref(PK);if(!OS.on()||!PL)return;if(pr.os){const me=PL;OS.fetchSub(pr.os).then(tx=>{if(PL!==me)return;const c=parseSrt(tx);if(c.length){extStart(c,{fid:pr.os,lang:wantSub(),rel:''});osd(lname(wantSub())+' altyazı internetten eklendi')}}).catch(()=>osFind(true));return}osFind(true)}
 async function osFind(auto){if(!OS.on()||OS.busy||!PL||PL.k==='live')return;OS.busy=true;const me=PL,ws=wantSub(),lang=ws==='off'?'tur':ws;
- try{OS.fb=null;const r=await OS.search(PL,lang);if(PL!==me)return;OS.res=r;LOG.add('info','İnternette altyazı arandı',{dil:lang,sonuc:r.length,otomatik:!!auto});
-  if(!r.length&&lang!=='eng'){const r2=await OS.search(PL,'eng');if(PL!==me)return;if(r2.length){OS.res=r2;OS.fb=lang;LOG.add('info','İngilizce yedek altyazı bulundu',{sonuc:r2.length});if(auto)await osUse(r2[0],true);return}}
-  if(!r.length){if(!auto)osd('İnternette '+lname(lang)+' altyazı bulunamadı');return}
+ try{OS.fb=null;const r=await OS.search(PL,lang);if(PL!==me)return;OS.res=r;LOG.add('info','İnternette altyazı arandı',{dil:lang,sonuc:r.length,otomatik:!!auto,sorgu:OS.lastQ||'',toplam:OS.lastN});
+  if(!r.length&&lang!=='eng'){const r2=await OS.search(PL,'eng');if(PL!==me)return;if(r2.length){OS.res=r2;OS.fb=lang;LOG.add('info','İngilizce yedek altyazı bulundu',{sonuc:r2.length,sorgu:OS.lastQ||''});if(auto)await osUse(r2[0],true);return}}
+  if(!r.length){LOG.add('info','İnternette altyazı yok',{dil:lang,sorgu:OS.lastQ||''});if(!auto)osd('İnternette '+lname(lang)+(lang!=='eng'?' ve İngilizce':'')+' altyazı bulunamadı');return}
   if(auto)await osUse(r[0],true)}catch(e){LOG.add('warn','İnternet altyazısı hatası: '+e.message,{});if(!auto)osd('Altyazı aranamadı: '+e.message)}
  finally{OS.busy=false;panRefresh()}}
 async function osUse(x,auto){const me=PL;try{const tx=await OS.fetchSub(x.fid);if(PL!==me)return;const c=parseSrt(tx);if(!c.length)throw new Error('Altyazı dosyası okunamadı');
@@ -748,8 +755,9 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
  case'login':{let acc;try{acc=parseLogin($('#in1').value,$('#in2').value,$('#in3').value)}catch(x){$('#lerr').textContent=x.message;return focus($('#in1'))}return doLogin(acc)}
  case'logout':AV.close();ACC=null;save('rg-acc',null);API.C={};go('login');return focus($('#in1'));
  case'reload':API.C={};['live','vod','series'].forEach(k=>save('rg-c-'+k+'-'+(ACC.u||''),null));toast('Liste yenileniyor','');return(ACC.type==='m3u'?M3U.load(ACC.url):Promise.resolve()).then(()=>render('home')).catch(x=>toast('Yenilenemedi',x.message));
- case'nav':if(d.v==='search')Q='';render(d.v==='live'?'tv':d.v);return focus($(`.sn[data-v="${d.v}"]`));
- case'srch':Q='';return render('search',d.s);
+ case'nav':if(d.v==='search'){Q='';SF=null}render(d.v==='live'?'tv':d.v);return focus($(`.sn[data-v="${d.v}"]`));
+ case'srch':Q='';SF=null;return render('search',d.s);
+ case'sfil':SF=d.k||null;drawSearch();return focus($(`#sres [data-act=sfil][data-k="${d.k||''}"]`));
  case'rq':Q=d.q;return drawSearch();
  case'key':Q=d.v==='DEL'?Q.slice(0,-1):(Q+d.v).slice(0,24);return drawSearch();
  case'cat':{const lockd=d.ad&&pinOn()&&!UNL;const goIn=()=>{const f=$(d.t==='live'?'#chl [data-f]':'#vg [data-f]');if(f)focus(f)};
