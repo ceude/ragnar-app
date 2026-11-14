@@ -17,7 +17,8 @@ const hhmm=ms=>{const d=new Date(ms);return String(d.getHours()).padStart(2,'0')
 const b64=s=>{try{return decodeURIComponent(escape(atob(s||'')))}catch(e){return s||''}};
 
 /* ---------- kalıcı durum ---------- */
-let PROFS=load('rg-profs',null)||[{id:'p1',name:'Ben',col:0}],PID=load('rg-pid','p1');if(!PROFS.some(p=>p.id===PID))PID=PROFS[0].id;
+let PROFS=load('rg-profs',null)||[{id:'p1',name:'Ben',col:0}],PID=load('rg-pid','p1');
+PROFS.forEach(p=>{if(p.kid&&p.kcv!==2){delete p.kc;p.kcv=2}});save('rg-profs',PROFS);if(!PROFS.some(p=>p.id===PID))PID=PROFS[0].id;
 const pkey=k=>PID==='p1'?k:k+'@'+PID;
 let ACC=load('rg-acc',null),ST=load('rg-st',{}),PF=load(pkey('rg-pf'),{}),HIST=load(pkey('rg-hist'),{}),FAVL=load(pkey('rg-fav'),[]),MYL=load(pkey('rg-my'),[]),REM=load('rg-rem',[]);
 /* izlendi kuralı: jenerik payı sürenin %8'i, dizide en fazla 2 dk, filmde en fazla 3 dk */
@@ -26,11 +27,13 @@ ST.rec=ST.rec||[];
 const saveST=()=>{save('rg-st',ST);const p=PROF();if(p&&(p.sub!==ST.sub||p.aud!==ST.aud)){p.sub=ST.sub;p.aud=ST.aud;save('rg-profs',PROFS)}};
 const PCOL=['#f0b23a','#4f86c6','#5bbf7a','#d4607a','#9a7ad8','#e58b3a'];
 const PROF=()=>PROFS.find(p=>p.id===PID)||PROFS[0];
-const KIDRX=/[çc]ocuk|kids?\b|child|cartoon|[çc]izgi|animas|animat|disney|nick|family|aile|baby|bebek|minika|tr[tl]\s*[çc]ocuk|cbeebies|jr\b|junior/i;
-const kidOK=(k,c)=>{const p=PROF();if(!p.kid)return true;if(c.adult||isAdult(c.name))return false;const a=p.kc&&p.kc[k];return a?a.indexOf(c.id)>=0:KIDRX.test(c.name)};
+/* varsayılan çocuk kategorileri: yalnızca adında açıkça çocuk geçenler. Disney, aile, animasyon gibi karışık kategoriler bilerek yok */
+const KIDRX=/[çc]ocuk|\bkids?\b|child|cartoon|[çc]izgi\s*film|\bbaby\b|bebek|minika|cbeebies|nick\s*jr|nickelodeon|junior|\bkika\b|disney\s*junior|disney\s*jr|baby\s*tv|cartoon\s*network|boomerang|duck\s*tv|tr[tl]\s*[çc]ocuk/i;
+const KIDBAD=/xxx|adult|\+18|18\+|yeti[şs]kin|erotik|marvel|star\s*wars|horror|korku|gerilim|thriller|crime|su[çc]/i;
+const kidOK=(k,c)=>{const p=PROF();if(!p.kid)return true;if(c.adult||isAdult(c.name)||KIDBAD.test(c.name))return false;const a=p.kc&&p.kc[k];return a?a.indexOf(c.id)>=0:KIDRX.test(c.name)};
 const av=(p,sz)=>`<i class="av${sz?' '+sz:''}" style="background:${PCOL[(p.col||0)%PCOL.length]}">${esc((p.name||'?').trim().charAt(0).toLocaleUpperCase('tr-TR'))}</i>`;
 function useProfile(id){PID=id;PGOK=false;save('rg-pid',id);const p=PROF();PF=load(pkey('rg-pf'),{});HIST=load(pkey('rg-hist'),{});FAVL=load(pkey('rg-fav'),[]);MYL=load(pkey('rg-my'),[]);
- if(p.sub!=null)ST.sub=p.sub;if(p.aud!=null)ST.aud=p.aud;save('rg-st',ST);UNL=false;SIDX={};API.C=Object.fromEntries(Object.entries(API.C).filter(([k])=>k[0]!=='c'));drawSide();LOG.add('info','Profil: '+(p.kid?'çocuk':'yetişkin'),{})}
+ if(p.sub!=null)ST.sub=p.sub;if(p.aud!=null)ST.aud=p.aud;save('rg-st',ST);UNL=false;SIDX={};drawSide();LOG.add('info','Profil: '+(p.kid?'çocuk':'yetişkin'),{})}
 let PGOK=false;
 function profGate(cb){const p=PROF();if(p.kid&&!PGOK)return pad('pin',()=>{PGOK=true;cb()});cb()}
 let nav=[],cv='home',cur=null,scr='login',PAD=null,UNL=false,RT=0,retSel=null;
@@ -315,9 +318,9 @@ V.profs=()=>`<h1>Profiller</h1><p class="sub2">Her profilin kendi izleme geçmi�
 let PNAME='',PEDIT=null;
 V.pname=()=>`<h1>${PEDIT&&PEDIT.id?'Profil adı':PEDIT&&PEDIT.kid?'Çocuk profili':'Yeni profil'}</h1><div class="srch"><div><div class="qbox" id="pnbox">${esc(PNAME)||'<span style="color:var(--dim)">Ad yaz</span>'}</div><div class="kb">${[...'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ0123456789'].map(k=>`<div class="key" data-f data-act="pkey" data-v="${k}">${k}</div>`).join('')}<div class="key w" data-f data-act="pkey" data-v=" ">Boşluk</div><div class="key w" data-f data-act="pkey" data-v="DEL">Sil</div></div><div class="btn" data-f data-act="psave" style="margin-top:16px">Kaydet</div></div></div>`;
 let KCK='vod';
-V.kidcats=id=>{const p=PROFS.find(x=>x.id===id);return`<h1>${esc(p.name)}: kategoriler</h1><p class="sub2">İşaretli kategoriler bu profilde görünür. Hiçbirini işaretlemezsen adında çocuk, çizgi film, animasyon, aile geçen kategoriler gösterilir. Yetişkin kategoriler hiçbir durumda görünmez.</p><div class="chips">${[['live','Canlı TV'],['vod','Filmler'],['series','Diziler']].map(([k,n])=>`<div class="chip${KCK===k?' sel':''}" data-f data-act="kck" data-k="${k}" data-id="${id}">${n}</div>`).join('')}</div><div id="kcbox"><div class="spin"></div></div>`};
+V.kidcats=id=>{const p=PROFS.find(x=>x.id===id);return`<h1>${esc(p.name)}: kategoriler</h1><p class="sub2">İşaretli kategoriler bu profilde görünür. Hiçbirini işaretlemezsen yalnızca adında açıkça çocuk geçen kategoriler gösterilir (çocuk, kids, çizgi film, Disney Junior, Minika gibi). Disney, aile ya da animasyon gibi karışık kategorileri açarsan içlerindeki her şey görünür; Marvel veya Star Wars içerenler gibi. Yetişkin, korku ve gerilim kategorileri hiçbir durumda görünmez.</p><div class="chips">${[['live','Canlı TV'],['vod','Filmler'],['series','Diziler']].map(([k,n])=>`<div class="chip${KCK===k?' sel':''}" data-f data-act="kck" data-k="${k}" data-id="${id}">${n}</div>`).join('')}</div><div id="kcbox"><div class="spin"></div></div>`};
 AF.kidcats=async(id,tok)=>{const p=PROFS.find(x=>x.id===id);let cs=[];try{cs=await API.cats(KCK)}catch(e){}if(tok!==RT)return;const sel=p.kc&&p.kc[KCK];
- $('#kcbox').innerHTML=cs.filter(c=>!isAdult(c.name)).map(c=>{const on=sel?sel.indexOf(c.id)>=0:KIDRX.test(c.name);return`<div class="set" data-f data-act="kct" data-id="${id}" data-c="${esc(c.id)}">${esc(clean(c.name))}<span>${on?'Görünür':'Gizli'}</span></div>`}).join('')||'<p class="empty">Kategori yok.</p>'};
+ $('#kcbox').innerHTML=cs.filter(c=>!isAdult(c.name)&&!KIDBAD.test(c.name)).map(c=>{const on=sel?sel.indexOf(c.id)>=0:KIDRX.test(c.name);return`<div class="set" data-f data-act="kct" data-id="${id}" data-c="${esc(c.id)}">${esc(clean(c.name))}<span>${on?'Görünür':'Gizli'}</span></div>`}).join('')||'<p class="empty">Kategori yok.</p>'};
 let RECQ='',RECUP=false;
 V.pinrec=()=>{const ks=RECUP?'ABCDEFGHIJKLMNOPQRSTUVWXYZ':'abcdefghijklmnopqrstuvwxyz';return`<h1>PIN'i sıfırla</h1><p class="sub2">IPTV hesabının şifresini gir (listeyi eklerken kullandığın şifre). Doğruysa PIN sıfırlanır ve yenisini belirlersin.</p><div class="srch"><div><div class="qbox" id="rbox">${'●'.repeat(RECQ.length)||'<span style="color:var(--dim)">Şifre</span>'}</div><div class="kb">${[...ks+'0123456789-_.@!'].map(k=>`<div class="key" data-f data-act="rkey" data-v="${esc(k)}">${esc(k)}</div>`).join('')}<div class="key w" data-f data-act="rkey" data-v="SH">${RECUP?'küçük harf':'BÜYÜK HARF'}</div><div class="key w" data-f data-act="rkey" data-v="DEL">Sil</div></div><div class="btn" data-f data-act="rok" style="margin-top:16px">Onayla</div></div></div>`};
 V.diag=()=>{const b=load('rg-logbuf',[]);return`<h1>Son hatalar</h1><p class="sub2">Bir sorun olduğunda bu ekranın fotoğrafını göndermen yeterli. Sürüm ${APPV} (${APPSRC}), cihaz ${DEV}. Akıcılık: ${PERF.text()}${ACC&&ACC.ui&&ACC.ui.max_connections?`, bağlantı hakkı ${ACC.ui.max_connections}`:''}.</p>`+(b.length?b.map(x=>`<div class="set" data-f><b style="font-weight:700;max-width:640px">${esc(x.m)}</b><span>${esc(x.l)} · ${hhmm(x.t)}</span></div>`).join(''):'<p class="empty">Kayıtlı hata yok.</p>')}
@@ -516,7 +519,7 @@ async function startPlay(t){$('#rs').classList.remove('on');$('#perr').classList
   time:ms=>{if(SK==null&&$('#player').classList.contains('ui'))drawT(ms/1000)},end:()=>{histSet(PL,AV.dur()/1000,AV.dur()/1000);const n=nextEp();n?openPlayer(n,0):exit()},sub:(tx,d)=>showSub(tx,d),
   error:er=>{loadingOff('player');LOG.add('player','Film/dizi açılamadı: '+((er&&(er.name||er.message||er.code))||(typeof er==='string'?er:'bilinmeyen hata')),{deneme:tryN,tur:PL.k,ad:PL.name,url:API.url(PL),sure:Math.round(AV.time()/1000)});if(tryN++<1){const cb0=AV.cb,at=Math.max(0,AV.time()/1000||PL.start||0);AV.close();loadingOn('player','Yeniden bağlanılıyor');setTimeout(()=>{if(scr==='player')AV.open(API.url(PL),null,Object.assign(cb0,{start:at}))},1500);return}
    $('#perrt').textContent='Sunucu bu içeriği şu an açamadı. İnternet bağlantını kontrol edip tekrar deneyebilirsin. (Kod: '+((er&&(er.name||er.message||er.code))||er||'-')+')';$('#perr').classList.add('on');focus($('[data-act=retry]'))}})}
-let TLD={},SC=null,LRN=null,MKN={},MKOK=false;
+let TLD={},SC=null,LRN=null,MKN={},MKOK=false,MKCHK=0;
 /* ---- harici altyazı: OpenSubtitles ---- */
 const OS_KEY='sk0Yo9XUSwGQmCFwfIBUVST3UIFzpPLm';
 const OS={res:null,busy:false,left:null,
@@ -615,14 +618,14 @@ const normLang=c=>{c=String(c||'').toLowerCase().split(/[-_]/)[0];return({is:'is
 const tlang=x=>x?(x.lang||TLD[x.i]||''):'';
 const tname=(x,j)=>{const l=tlang(x);if(!l)return'Altyazı '+(j+1);const m=MKN[x.i];if(m&&(m.forced||m.sdh))return lname(l)+(m.forced?' (yalnız yabancı konuşmalar)':' (işitme engelli)');const same=TRK.tx.filter(y=>lname(tlang(y))===lname(l)&&!(MKN[y.i]&&(MKN[y.i].forced||MKN[y.i].sdh)));const k=same.indexOf(x);return lname(l)+(same.length>1&&k>0?' '+(k+1):'')};
 const wantSub=()=>{const pr=pref(PK);return pr.s||['tur','off','eng'][ST.sub||0]};
-function applyTracks(){extStop();OS.res=null;const pr=pref(PK),au=AV.tracks('AUDIO'),tx=AV.tracks('TEXT');TRK={au,tx,ca:au[0]?au[0].i:-1,cs:-1};scanStop();LRN=null;if(pr.tlv!==2){delete pr.tl;pr.tlv=2}TLD=Object.assign({},pr.tl||{});MKN={};MKOK=false;
- if(pr.mk&&tx.length){const txt=pr.mk.filter(m=>!m.codec||/^S_TEXT|^tx3g|^wvtt|^text|^stpp/i.test(m.codec)),L=pr.mk.length===tx.length?pr.mk:txt.length===tx.length?txt:null;
-  if(L){TLD={};tx.forEach((x,j)=>{const m=L[j];if(m.lang)TLD[x.i]=m.lang;MKN[x.i]=m});MKOK=tx.every(x=>!!tlang(x))}
+function applyTracks(){extStop();OS.res=null;const pr=pref(PK),au=AV.tracks('AUDIO'),tx=AV.tracks('TEXT');TRK={au,tx,ca:au[0]?au[0].i:-1,cs:-1};scanStop();LRN=null;MKCHK=0;if(pr.tlv!==2){delete pr.tl;pr.tlv=2}TLD=Object.assign({},pr.tl||{});MKN={};MKOK=false;
+ if(pr.mk&&tx.length){const txt=pr.mk.filter(m=>!m.codec||/^S_TEXT|^tx3g|^wvtt|^text|^stpp/i.test(m.codec)),trunc=txt.length>tx.length&&tx.length>=20,L=pr.mk.length===tx.length?pr.mk:txt.length===tx.length?txt:trunc?txt.slice(0,tx.length):null;
+  if(L){TLD={};tx.forEach((x,j)=>{const m=L[j];if(m.lang)TLD[x.i]=m.lang;MKN[x.i]=m});MKOK=tx.every(x=>!!tlang(x));if(trunc)MKCHK=1}
   else{LOG.add('warn','Altyazı sayısı tutmadı',{dosyada:pr.mk.length,metin:txt.length,tv:tx.length,kodekler:[...new Set(pr.mk.map(m=>m.codec))].join(' ')});delete pr.mk;delete pr.mkx;savePF()}}
  if(au.length||tx.length)LOG.add('info','Parçalar: '+clean(PL.k==='ep'?PL.sname:PL.name),{ses:au.map(x=>x.raw).join(' | ').slice(0,700),altyazi:tx.map(x=>x.raw).join(' | ').slice(0,1200)});
  const want=pr.a||(ST.aud?null:'tur');const ta=want&&au.find(x=>lname(x.lang)===lname(want));if(ta){AV.sel('AUDIO',ta.i);TRK.ca=ta.i}
  const ws=wantSub(),same=ws!=='off'?tx.filter(x=>tlang(x)&&lname(tlang(x))===lname(ws)):[];const ts=same.find(x=>!(MKN[x.i]&&(MKN[x.i].forced||MKN[x.i].sdh)))||same[0];
- if(ts){AV.silent(false);AV.sel('TEXT',ts.i);TRK.cs=ts.i;if(!ts.lang)LRN={i:ts.i,txt:'',n:0,verify:ws}}
+ if(ts){AV.silent(false);AV.sel('TEXT',ts.i);TRK.cs=ts.i;if(!ts.lang)LRN={i:ts.i,txt:'',n:0,verify:ws,chk:MKCHK}}
  else{AV.silent(true);if(tx.some(x=>!tlang(x)))scanStart(ws==='off'?null:ws);else if(ws!=='off')osAuto()}
  trkLabel()}
 function trkLabel(){const a=TRK.au.find(x=>x.i===TRK.ca),j=TRK.tx.findIndex(x=>x.i===TRK.cs);$('#trk').textContent=`${a?lname(a.lang)+' ses':'Varsayılan ses'}, ${EXT?lname(EXT.info.lang)+' altyazı (internet)':SC?'altyazı dilleri tanınıyor':j>=0?tname(TRK.tx[j],j)+' altyazı':'altyazı kapalı'}`}
@@ -635,7 +638,8 @@ function scanEnd(sel){const c=SC;if(!c)return;clearTimeout(c.t);SC=null;if(c.wan
 function scanStop(){if(SC){clearTimeout(SC.t);SC=null}}
 function subLearn(tx){tx=tx&&subClean(tx);if(SC){if(!tx)return true;const nt=String(tx).trim();if(Date.now()-(SC.sw||0)<1200||nt===SC.prev||(SC.seen&&SC.seen[nt]))return true;SC.seen=SC.seen||{};SC.seen[nt]=1;SC.txt+=' '+tx;SC.n++;const g=detectLang(SC.txt,SC.n);if(g){TLD[SC.cur]=g;if(SC.want&&lname(g)===lname(SC.want)){const i=SC.cur;scanEnd(i);osd(lname(g)+' altyazı bulundu')}else scanNext()}return true}
  if(LRN&&tx&&LRN.i===TRK.cs){LRN.txt+=' '+tx;LRN.n++;const g=detectLang(LRN.txt,LRN.n);if(g){const L=LRN;LRN=null;TLD[L.i]=g;if(L.setPref)pref(PK).s=g;pref(PK).tl=Object.assign({},TLD);savePF();trkLabel();
-   if(L.verify&&lname(g)!==lname(L.verify)){$('#sub').style.display='none';AV.silent(true);TRK.cs=-1;scanStart(L.verify);return true}}}
+   if(L.chk)LOG.add(lname(g)===lname(L.verify)?'info':'warn','Kırpılmış altyazı eşlemesi '+(lname(g)===lname(L.verify)?'doğrulandı':'tutmadı'),{beklenen:L.verify,bulunan:g});
+   if(L.verify&&lname(g)!==lname(L.verify)){if(L.chk){const pr0=pref(PK);delete pr0.mk;pr0.mkx=2;savePF();MKN={};MKOK=false;TLD={}}$('#sub').style.display='none';AV.silent(true);TRK.cs=-1;scanStart(L.verify);return true}}}
  return false}
 const subClean=t=>String(t||'').replace(/\{\\[^}]*\}/g,'').replace(/\\[Nn]/g,'\n').replace(/\\h/g,' ').replace(/<[^>]+>/g,'').trim();
 function showSub(tx,d){if(SC&&tx)SC.lastTx=String(tx).trim();if(scr==='player'&&subLearn(tx))return;if(EXT||TRK.cs<0)return;const sd=scr==='player'?(pref(PK).sd||0):0;if(sd>0){setTimeout(()=>{if(!EXT&&TRK.cs>=0)showSub0(tx,d)},sd*1000);return}showSub0(tx,d)}
@@ -708,14 +712,15 @@ const fmtKey=()=>'fmt_'+((ACC&&ACC.srv)||'');let LREC=[];
 function recOK(){const n=Date.now();LREC=LREC.filter(t=>n-t<300000);if(LREC.length>=2)return false;LREC.push(n);return true}
 const erTx=er=>(er&&(er.name||er.message||er.code))||(typeof er==='string'?er:'bilinmeyen hata');
 function liveFail(it,er){loadingOff('live');$('#lerrt').textContent=`${clean(it.name)} şu an açılamıyor. Kanal yayında olmayabilir ya da sunucu yoğun olabilir. (Kod: ${erTx(er)})`;$('#lerr2').classList.add('on');focus($('[data-act=lretry]'))}
-function liveOpen(){const it=LV,pr=pref('l:'+it.id);$('#lerr2').classList.remove('on');loadingOn('live','');TRK={au:[],tx:[],ca:-1,cs:-1};
- const arch=lag>0&&it.arch,pf=pr.hls===1||ST[fmtKey()]==='m3u8',alt=ltry===1?!pf:pf,url=arch?API.tsUrl(it,Date.now()-lag*1000,Math.max(60,Math.ceil(lag/60)+30)):API.url(it,alt),t0=Date.now();let ready=false;
+let LRC=0;
+function liveOpen(rc){const it=LV,pr=pref('l:'+it.id);LRC=rc||0;$('#lerr2').classList.remove('on');loadingOn('live','');TRK={au:[],tx:[],ca:-1,cs:-1};
+ const arch=lag>0&&it.arch,pf=pr.hls===1||ST[fmtKey()]==='m3u8',alt=LRC?pf:ltry===1?!pf:pf,url=arch?API.tsUrl(it,Date.now()-lag*1000,Math.max(60,Math.ceil(lag/60)+30)):API.url(it,alt),t0=Date.now();let ready=false;
  AV.open(url,null,{ready:()=>{ready=true;loadingOff('live');AV.mode(pr.fit!==0);const au=AV.tracks('AUDIO'),tx=AV.tracks('TEXT');TRK={au,tx,ca:au[0]?au[0].i:-1,cs:-1};const w=pr.a&&au.find(x=>lname(x.lang)===lname(pr.a));if(w){AV.sel('AUDIO',w.i);TRK.ca=w.i}AV.silent(true);
    if(!arch&&!it.url&&ltry===1){ST[fmtKey()]=alt?'m3u8':'ts';saveST()}
-   LOG.add('info','Kanal açıldı: '+clean(it.name),{ms:Date.now()-t0,bicim:arch?'arsiv':alt?'m3u8':'ts',deneme:ltry})},
+   LOG.add('info',(LRC?'Kopan yayın geri geldi: ':'Kanal açıldı: ')+clean(it.name),{ms:Date.now()-t0,bicim:arch?'arsiv':alt?'m3u8':'ts',deneme:LRC||ltry});LRC=0},
   buf:b=>b?loadingOn('live','Arabelleğe alınıyor'):loadingOff('live'),
-  error:er=>{if(LV!==it)return;LOG.add('player','Canlı yayın hatası ('+clean(it.name)+'): '+erTx(er),{deneme:ltry,acildi:ready,ms:Date.now()-t0,bicim:alt?'m3u8':'ts',url:url,arsiv:arch});AV.close();
-   if(ready){if(recOK()){loadingOn('live','Yeniden bağlanılıyor');setTimeout(()=>{if(LV===it)liveOpen()},1500);return}return liveFail(it,er)}
+  error:er=>{if(LV!==it)return;const rc=LRC;LOG.add('player','Canlı yayın hatası ('+clean(it.name)+'): '+erTx(er)+(ready?'':rc?' · yeniden bağlanma '+rc:''),{deneme:rc||ltry,acildi:ready,ms:Date.now()-t0,bicim:alt?'m3u8':'ts',url:url,arsiv:arch});AV.close();
+   if(ready||rc){const n=ready?1:rc+1;if(ready&&!recOK())return liveFail(it,er);if(n<=3){loadingOn('live','Bağlantı koptu, yeniden bağlanılıyor ('+n+'/3)');setTimeout(()=>{if(LV===it&&scr==='live')liveOpen(n)},[2000,5000,10000][n-1]);return}LRC=0;return liveFail(it,er)}
    if(ltry<1&&!arch&&!it.url){ltry=1;loadingOn('live','Diğer yayın biçimi deneniyor');setTimeout(()=>{if(LV===it)liveOpen()},1200);return}
    liveFail(it,er)}})}
 function zap(d){const L=CTX.length?CTX:[LV];let p=L.findIndex(c=>c.id===LV.id);if(p<0)p=0;tuneLive(L[(p+d+L.length)%L.length])}
@@ -792,7 +797,7 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
  case'pask':ST.noAsk=!ST.noAsk;saveST();render('profs');return focus($('[data-act=pask]'));
  case'pkc':KCK='vod';return render('kidcats',d.id);
  case'kck':KCK=d.k;render('kidcats',d.id);return focus($(`[data-act=kck][data-k="${d.k}"]`));
- case'kct':{const p=PROFS.find(x=>x.id===d.id);p.kc=p.kc||{};API.cats(KCK).then(cs=>{if(!p.kc[KCK])p.kc[KCK]=cs.filter(c=>!isAdult(c.name)&&KIDRX.test(c.name)).map(c=>c.id);const L=p.kc[KCK],i=L.indexOf(d.c);i>=0?L.splice(i,1):L.push(d.c);save('rg-profs',PROFS);e.querySelector('span').textContent=i>=0?'Gizli':'Görünür'});return}
+ case'kct':{const p=PROFS.find(x=>x.id===d.id);p.kc=p.kc||{};API.cats(KCK).then(cs=>{if(!p.kc[KCK])p.kc[KCK]=cs.filter(c=>!isAdult(c.name)&&!KIDBAD.test(c.name)&&KIDRX.test(c.name)).map(c=>c.id);const L=p.kc[KCK],i=L.indexOf(d.c);i>=0?L.splice(i,1):L.push(d.c);save('rg-profs',PROFS);e.querySelector('span').textContent=i>=0?'Gizli':'Görünür'});return}
  case'pforgot':{closePad();RECQ='';RECUP=false;render('pinrec');return focus($('#view [data-act=rkey]'))}
  case'rkey':if(d.v==='SH'){RECUP=!RECUP;render('pinrec');return focus($('#view [data-act=rkey][data-v="SH"]'))}RECQ=d.v==='DEL'?RECQ.slice(0,-1):(RECQ+d.v).slice(0,40);$('#rbox').innerHTML='●'.repeat(RECQ.length)||'<span style="color:var(--dim)">Şifre</span>';return;
  case'rok':{const ok2=ACC&&((ACC.p&&RECQ===ACC.p)||(!ACC.p&&ACC.u&&RECQ===ACC.u));LOG.add('info','PIN sıfırlama denemesi',{basarili:!!ok2});if(!ok2){RECQ='';$('#rbox').innerHTML='<span style="color:#ff8a8a">Şifre tutmadı, tekrar dene</span>';return}
