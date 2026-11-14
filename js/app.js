@@ -193,7 +193,7 @@ V.tv=()=>`<div class="lvhero"><div id="mv"></div><div class="lvfade"></div><div 
 AF.tv=async(a,tok,sel)=>{const cs=visCats('live',await API.cats('live'));if(tok!==RT)return;
  const items=[...(FAVL.length?[{id:'__fav',name:'Favoriler',star:1}]:[]),...cs];
  $('#catl').innerHTML=items.map(c=>`<div class="chip" data-f data-act="cat" data-t="live" data-c="${esc(c.id)}"${c.adult?' data-ad="1"':''}>${c.star?IC.star:catLocked(c)?IC.lock:''}${esc(c.star?c.name:catNm(c))}</div>`).join('')||'<div class="empty">Kanal kategorisi yok.</div>';
- const want=FAVL.length?'__fav':ST.lastCat&&items.find(c=>c.id===ST.lastCat&&!catLocked(c))?ST.lastCat:(items.find(c=>!catLocked(c))||{}).id;
+ const want=ST.lastCat&&items.find(c=>c.id===ST.lastCat&&!catLocked(c))?ST.lastCat:(items.find(c=>c.id!=='__fav'&&!catLocked(c))||{}).id;
  if(want!=null)await loadCat('live',want,tok);if(tok!==RT)return;
  if(sel&&$('#view '+sel))focus($('#view '+sel));else if(!cur||!cur.isConnected||cur.closest('#view'))focus($('#chl [data-f]')||$('#catl [data-f]'))};
 const lcc=it=>`<div class="lcc" data-f data-act="live" data-key="${reg(it)}" data-pv="1"><div class="lct">${img(it.icon)}<span>${it.num||''}</span>${isFav(it.id)?`<em>${IC.star}</em>`:''}</div><b>${esc(clean(it.name))}</b><small class="lnow" data-id="${esc(it.id)}">${it.arch?'Arşiv var':'&nbsp;'}</small><div class="pg"><div></div></div></div>`;
@@ -407,6 +407,9 @@ function startApp(){go('app');nav=[];LOG.add('info','Uygulama açıldı',{kaynak
    TELEFONLA EŞLEŞTİRME (Supabase + GitHub Pages)
    ========================================================= */
 const HELM='<path fill="#e0a028" d="M95 10C66 14 44 40 38 86L36 104L95 113Z"/><path fill="#c98a1c" d="M105 10C134 14 156 40 162 86L164 104L105 113Z"/><path fill="#f2b84a" d="M96 3L104 3L109 113L104 160L100 170L96 160L91 113Z"/><g><path fill="#e0a028" d="M35 109L90 119L90 137L75 147L49 142L35 127Z"/><path fill="#000" d="M49 121L88 130L83 137L54 130Z"/></g><g><path fill="#c98a1c" d="M165 109L110 119L110 137L125 147L151 142L165 127Z"/><path fill="#000" d="M151 121L112 130L117 137L146 130Z"/></g><path fill="#e0a028" d="M33 131L49 146L57 198L51 208L39 186L31 147Z"/><path fill="#c98a1c" d="M167 131L151 146L143 198L149 208L161 186L169 147Z"/><path fill="#f2b84a" d="M62 157L90 148L100 157L110 148L138 157L129 180L110 164L100 170L90 164L71 180Z"/><path fill="#e0a028" d="M59 173L76 171L81 228L68 240Z"/><path fill="#e0a028" d="M80 174L92 176L94 252L83 239Z"/><path fill="#f2b84a" d="M96 177L104 177L104 258L100 268L96 258Z"/><path fill="#c98a1c" d="M108 176L120 174L117 239L106 252Z"/><path fill="#c98a1c" d="M124 171L141 173L132 240L119 228Z"/>';
+/* açılış: RAGNAR ve slogan, doğru yazı tipi inene kadar bekler (en fazla 1,5 sn); yazı tipi sonradan değişmez */
+(()=>{const sp=document.getElementById('splash');if(!sp||!document.fonts||!document.fonts.load)return;sp.classList.add('fw');const done=()=>sp.classList.remove('fw');
+ Promise.all([document.fonts.load('600 56px Oswald','RAGNAR'),document.fonts.load('700 13px Manrope','NEW GENERATION TV')]).then(done,done);setTimeout(done,1500)})();
 const APPBASE=((document.currentScript&&document.currentScript.src)||'').replace(/js\/app\.js.*$/,'');
 function needQR(cb){if(window.qrcode)return cb();const sc=document.createElement('script');sc.src=APPBASE+'js/qr.js';sc.onload=()=>cb();sc.onerror=()=>cb();document.head.appendChild(sc)}
 function qrSvg(text){const q=qrcode(0,'H');q.addData(text);q.make();const n=q.getModuleCount(),L=Math.round(n*.26),o=(n-L)/2;let d='';
@@ -715,7 +718,8 @@ function pKey(e,m,b,cu,cd,pp,ff,rw){wake();setTimeout(skMark,0);const pan=!$('#p
 
 /* ---------- canlı tv ---------- */
 let LV=null,prevLV=null,hideT,lag=0,lpaused=false,pausedAt=0,LGT,LEPG=[],ltry=0;
-function openLive(key,ctx){const it=REG.get(key);if(!it)return;const hadMini=scr==='app'&&AV.st!=='none';if(scr!=='live')retSel=cur?selOf(cur):null;if(ctx)CTX=ctx;else if(!CTX.some(c=>c.id===it.id))CTX=[it];
+function openLive(key,ctx){const it=REG.get(key);if(!it)return;
+ if(it.cat&&ACC&&ACC.type==='xt')API.items('live',it.cat).then(L=>{if(!LV||LV.id!==it.id||!L.length||!L.some(c=>c.id===it.id))return;CTX=L.slice().sort((a,b)=>(a.num||1e9)-(b.num||1e9));if(scr==='live')liveDraw()}).catch(()=>{});const hadMini=scr==='app'&&AV.st!=='none';if(scr!=='live')retSel=cur?selOf(cur):null;if(ctx)CTX=ctx;else if(!CTX.some(c=>c.id===it.id))CTX=[it];
  miniStop();go('live');$('#live').append($('#pan'));hidePan();$('#epg').classList.remove('on');$('#lerr2').classList.remove('on');unf();
  if(hadMini){LV=null;liveDraw0(it);setTimeout(()=>tuneLive(it),900)}else tuneLive(it)}
 function liveDraw0(it){LV=it;liveDraw();loadingOn('live','')}

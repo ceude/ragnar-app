@@ -14,8 +14,8 @@
 @font-face{font-family:'Bodoni Moda';font-style:normal;font-display:swap;font-weight:700;src:url(../fonts/bodoni-moda-latin-700-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 @font-face{font-family:'Oswald';font-style:normal;font-display:swap;font-weight:500;src:url(../fonts/oswald-latin-ext-500-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:'Oswald';font-style:normal;font-display:swap;font-weight:500;src:url(../fonts/oswald-latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:'Oswald';font-style:normal;font-display:swap;font-weight:600;src:url(../fonts/oswald-latin-ext-600-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
-@font-face{font-family:'Oswald';font-style:normal;font-display:swap;font-weight:600;src:url(../fonts/oswald-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Oswald';font-style:normal;font-display:block;font-weight:600;src:url(../fonts/oswald-latin-ext-600-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Oswald';font-style:normal;font-display:block;font-weight:600;src:url(../fonts/oswald-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 :root{color-scheme:dark;--bg:#0a0d12;--s1:#12161d;--s2:#1c222c;--tx:#f3f1ec;--mut:#a3a9b3;--dim:#666d79;--acc:#f0b23a;--fd:"Bodoni Moda",Georgia,serif;--fo:Oswald,Impact,sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a0d12}}
 :root[data-theme="dark"]{--bg:#0a0d12}
@@ -402,3 +402,15 @@ html.tv [data-f]{transition:none!important}
 #rnew.gone,#rnewt.gone{max-height:0;opacity:0;margin-top:0;margin-bottom:0;padding-top:0;padding-bottom:0}
 
 .po.sk{display:grid;place-items:center}.po.sk span{color:var(--mut);font-size:13px;font-weight:600}
+
+/* odaktaki öğede yazı her zaman koyu: açık zemin üstünde açık yazı kalmasın */
+#side .snp.fx,#side .snp.fx span{color:#0a0d12}
+#epg .pgm.fx,#epg .pgm.fx small,#epg .pgm.fx svg{color:#0a0d12!important;stroke:currentColor}
+#epg .pgm.fx{opacity:1}
+
+/* yazı tipi beklenirken açılışın yazı kısmı ve kapanışı durur */
+#splash.fw,#splash.fw .wm span,#splash.fw .slg,#splash.fw .ln{animation-play-state:paused}
+
+/* açılış imzası: en altta ortada, soluk gri */
+#splash .sby{position:absolute;left:0;right:0;bottom:34px;text-align:center;font-family:Manrope,system-ui,sans-serif;font-weight:700;font-size:13px;letter-spacing:.28em;margin-right:-.28em;color:#8a909a;opacity:.45;transition:opacity .3s}
+#splash.fw .sby{opacity:0}
