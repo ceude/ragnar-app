@@ -375,3 +375,21 @@ html.tv [data-f]{transition:none!important}
 #view:not(.home) .hero .tl{font-size:60px}
 #view:not(.home) .hero .tl.m{font-size:48px}
 #view:not(.home) .hero .tl.s{font-size:36px}
+
+/* ---- profiller ---- */
+.av{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;font-style:normal;font-weight:800;font-size:14px;color:#0a0d12;flex:none}
+.av.s{width:24px;height:24px;font-size:12px}
+.av.l{width:132px;height:132px;font-size:56px;border-radius:14px;font-family:var(--fd)}
+.who{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:600px;text-align:center}
+.who h1{font-size:44px;margin-bottom:40px}
+.whos{display:flex;gap:34px;margin-bottom:46px}
+.wp{display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px;border-radius:16px;width:170px}
+.wp b{font-size:20px}.wp small{color:var(--mut);font-size:13px;min-height:16px}
+.wp.fx .av.l{box-shadow:0 0 0 4px var(--acc)}
+.prow{display:flex;align-items:center;gap:14px}
+.prow .btn{flex:none}
+.snp .av{margin-left:-1px}
+
+/* yan menü: profil en altta; kapalıyken renkli simge, açıkken simge + ad */
+#side .snp{margin-top:auto;margin-bottom:30px;color:var(--tx)}
+#side .snp .av.s{width:24px;height:24px;font-size:12px}
