@@ -7,7 +7,7 @@ const load=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==nul
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ic=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
-const IC={starf:'',home:ic('<path d="M3 11l9-8 9 8v9h-6v-6H9v6H3z"/>'),live:ic('<rect x="2" y="5" width="20" height="13" rx="2"/><path d="M8 21h8"/>'),series:ic('<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M6 5h12"/>'),films:ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>'),search:ic('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'),settings:ic('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>'),au:ic('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 9a4 4 0 010 6"/>'),cc:ic('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10.5 10.2a2 2 0 100 3.6M16.5 10.2a2 2 0 100 3.6"/>'),
+const IC={starf:'',radio:ic('<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8l10-4"/><circle cx="15.5" cy="14" r="2.5"/><path d="M6 12h4M6 16h4"/>'),amb:ic('<path d="M12 3c1 3.5 4.5 5 4.5 9.5a4.5 4.5 0 0 1-9 0c0-2 1-3.3 2-4.3.3 1.8 1.3 2.8 2.5 2.8 0-3 0-5.5 0-8z"/>'),team:ic('<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>'),home:ic('<path d="M3 11l9-8 9 8v9h-6v-6H9v6H3z"/>'),live:ic('<rect x="2" y="5" width="20" height="13" rx="2"/><path d="M8 21h8"/>'),series:ic('<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M6 5h12"/>'),films:ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>'),search:ic('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'),settings:ic('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>'),au:ic('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 9a4 4 0 010 6"/>'),cc:ic('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10.5 10.2a2 2 0 100 3.6M16.5 10.2a2 2 0 100 3.6"/>'),
  play:ic('<path d="M7 5l12 7-12 7z" fill="currentColor"/>'),pause:ic('<path d="M8 5v14M16 5v14" stroke-width="2.6"/>'),prev:ic('<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/>'),guide:ic('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/>'),lock:ic('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>'),bell:ic('<path d="M6 16v-5a6 6 0 0112 0v5l2 2H4z"/><path d="M10 21h4"/>'),re:ic('<path d="M4 4v6h6"/><path d="M5 15a8 8 0 102-8.5L4 10"/>'),star:ic('<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>'),check:ic('<path d="M5 12.5l4.5 4.5L19 7" stroke-width="2.4"/>')};
 IC.starf=IC.star.replace(/fill="none"/,'fill="currentColor"');
 const isTV=typeof webapis!=='undefined'&&!!webapis.avplay;
@@ -23,7 +23,7 @@ const pkey=k=>PID==='p1'?k:k+'@'+PID;
 let ACC=load('rg-acc',null),ST=load('rg-st',{}),PF=load(pkey('rg-pf'),{}),HIST=load(pkey('rg-hist'),{}),FAVL=load(pkey('rg-fav'),[]),MYL=load(pkey('rg-my'),[]),REM=load('rg-rem',[]);
 /* izlendi kuralı: jenerik payı sürenin %8'i, dizide en fazla 2 dk, filmde en fazla 3 dk */
 const tail8=(d,ep)=>Math.min(d*.08,ep?120:180),isDone=(t,d,ep)=>d>0&&d-t<=tail8(d,ep),isPart=(t,d,ep)=>t>30&&!isDone(t,d,ep),hDone=h=>!!h&&isDone(h.t,h.d,h.k==='ep'),hPart=h=>!!h&&isPart(h.t,h.d,h.k==='ep');
-ST.rec=ST.rec||[];
+ST.rec=ST.rec||[];let RECS=load(pkey('rg-rec'),ST.rec);
 const saveST=()=>{save('rg-st',ST);const p=PROF();if(p&&(p.sub!==ST.sub||p.aud!==ST.aud)){p.sub=ST.sub;p.aud=ST.aud;save('rg-profs',PROFS)}};
 const PCOL=['#f0b23a','#4f86c6','#5bbf7a','#d4607a','#9a7ad8','#e58b3a'];
 const PROF=()=>PROFS.find(p=>p.id===PID)||PROFS[0];
@@ -32,7 +32,7 @@ const KIDRX=/[çc]ocuk|\bkids?\b|child|cartoon|[çc]izgi\s*film|\bbaby\b|bebek|m
 const KIDBAD=/xxx|adult|\+18|18\+|yeti[şs]kin|erotik|marvel|star\s*wars|horror|korku|gerilim|thriller|crime|su[çc]/i;
 const kidOK=(k,c)=>{const p=PROF();if(!p.kid)return true;if(c.adult||isAdult(c.name)||KIDBAD.test(c.name))return false;const a=p.kc&&p.kc[k];return a?a.indexOf(c.id)>=0:KIDRX.test(c.name)};
 const av=(p,sz)=>`<i class="av${sz?' '+sz:''}" style="background:${PCOL[(p.col||0)%PCOL.length]}">${esc((p.name||'?').trim().charAt(0).toLocaleUpperCase('tr-TR'))}</i>`;
-function useProfile(id){PID=id;PGOK=false;save('rg-pid',id);const p=PROF();PF=load(pkey('rg-pf'),{});HIST=load(pkey('rg-hist'),{});FAVL=load(pkey('rg-fav'),[]);MYL=load(pkey('rg-my'),[]);
+function useProfile(id){PID=id;PGOK=false;save('rg-pid',id);const p=PROF();PF=load(pkey('rg-pf'),{});RECS=load(pkey('rg-rec'),[]);HIST=load(pkey('rg-hist'),{});FAVL=load(pkey('rg-fav'),[]);MYL=load(pkey('rg-my'),[]);
  if(p.sub!=null)ST.sub=p.sub;if(p.aud!=null)ST.aud=p.aud;save('rg-st',ST);UNL=false;SIDX={};drawSide();LOG.add('info','Profil: '+(p.kid?'çocuk':'yetişkin'),{})}
 let PGOK=false;
 function profGate(cb){const p=PROF();if(p.kid&&!PGOK)return pad('pin',()=>{PGOK=true;cb()});cb()}
@@ -47,13 +47,13 @@ const clean=s=>{if(ST.clean)return String(s||'');const c=cleanRaw(s);return c||S
 const isAdult=s=>/xxx|adult|18\s?\+|\+\s?18|porn|erotic|yetişkin/i.test(s||'');
 
 /* ---------- ayar listesi ---------- */
-const SET=[['aud','Varsayılan ses',['Türkçe dublaj','Orijinal dil']],['sub','Varsayılan altyazı',['Türkçe','Kapalı','English']],['buf','Oynatıcı tamponu',['Dengeli','Güçlü, takılmaya karşı','Hızlı kanal geçişi']],['start','Açılışta',['Ana sayfa','Son izlenen kanal']],['mini','Kanal önizleme (2 bağlantı hakkı gerekir)',['Kapalı','Açık']],['pin','Ebeveyn kilidi',['Açık: yetişkin kategoriler','Kapalı']],['clean','Kanal ve kategori adlarını temizle',['Açık','Kapalı']],['clock','Saat',['Göster','Gizle']],['anim','Yumuşak kaydırma',['Açık','Kapalı']],['snd','Açılış sesi',['Açık','Kapalı']],['logs','Hata raporlarını gönder',['Açık','Kapalı']]];
+const SET=[['aud','Varsayılan ses',['Türkçe dublaj','Orijinal dil']],['sub','Varsayılan altyazı',['Türkçe','Kapalı','English']],['buf','Oynatıcı tamponu',['Dengeli','Güçlü, takılmaya karşı','Hızlı kanal geçişi']],['start','Açılışta',['Ana sayfa','Son izlenen kanal']],['mini','Kanal önizleme (2 bağlantı hakkı gerekir)',['Kapalı','Açık']],['pin','Ebeveyn kilidi',['Açık: yetişkin kategoriler','Kapalı']],['clean','Kanal ve kategori adlarını temizle',['Açık','Kapalı']],['clock','Saat',['Göster','Gizle']],['teamNote','Takımımın maçı başlarken haber ver',['Açık','Kapalı']],['ssv','Ambient: boşta kalınca aç',['5 dakika sonra','10 dakika sonra','Kapalı']],['amode','Ambient düzeni',['Karışık','Saat ve hava','Takvim','Sanat','Afişler']],['anim','Yumuşak kaydırma',['Açık','Kapalı']],['snd','Açılış sesi',['Açık','Kapalı']],['logs','Hata raporlarını gönder',['Açık','Kapalı']]];
 const pinOn=()=>!ST.pin,pinCode=()=>ST.pinCode||'0000';
 
 /* =========================================================
    VERİ KATMANI (Xtream + M3U)
    ========================================================= */
-const nL=s=>({k:'live',id:String(s.stream_id),name:s.name||'',num:+s.num||0,icon:s.stream_icon||'',cat:String(s.category_id),arch:+s.tv_archive===1,archD:+s.tv_archive_duration||0});
+const nL=s=>({k:'live',id:String(s.stream_id),name:s.name||'',num:+s.num||0,icon:s.stream_icon||'',cat:String(s.category_id),arch:+s.tv_archive===1,archD:+s.tv_archive_duration||0,radio:s.stream_type==='radio_streams'||undefined});
 const nV=s=>({k:'vod',id:String(s.stream_id),name:s.name||'',icon:s.stream_icon||'',cat:String(s.category_id),ext:s.container_extension||'mp4',rating:s.rating||'',added:+s.added||0});
 const nS=s=>({k:'series',id:String(s.series_id),name:s.name||'',icon:s.cover||'',cat:String(s.category_id),plot:s.plot||'',genre:s.genre||'',year:String(s.releaseDate||s.release_date||'').slice(0,4),rating:s.rating||'',bd:(Array.isArray(s.backdrop_path)&&s.backdrop_path[0])||'',added:+(s.last_modified||0)});
 const API={C:{},
@@ -112,7 +112,7 @@ async function adultSet(k){const cs=await API.cats(k);return new Set(cs.filter(c
 
 /* ---------- kayıt defteri, geçmiş, favoriler ---------- */
 const REG=new Map();const reg=it=>{const k=it.k+':'+it.id;REG.set(k,it);return k};
-function histSet(it,t,d){if(!it||it.k==='live'||!d||d<60)return;const k=it.k+':'+it.id;
+function histSet(it,t,d){if(it&&it.loop)return;if(!it||it.k==='live'||!d||d<60)return;const k=it.k+':'+it.id;
  HIST[k]={k:it.k,id:it.id,name:it.name,icon:it.icon,ext:it.ext,url:it.url,t:Math.floor(t),d:Math.floor(d),ts:Date.now(),sid:it.sid,sname:it.sname,scover:it.scover,season:it.season,num:it.num};if(it.k==='ep'){HIST['sl:'+it.sid]={k:'sl',id:it.id,t:0,d:1,ts:Date.now()};
  if(isDone(t,d,it.k==='ep')){const i=EPS.findIndex(e=>e.id===it.id),n=i>=0?EPS[i+1]:null;if(n)HIST['nx:'+it.sid]={k:'nx',id:n.id,name:n.name,icon:n.icon,ext:n.ext,url:n.url,sid:n.sid,sname:n.sname,scover:n.scover,season:n.season,num:n.num,t:0,d:1,ts:Date.now()+1};else delete HIST['nx:'+it.sid]}}
  const ks=Object.keys(HIST);if(ks.length>400)ks.sort((a,b)=>HIST[a].ts-HIST[b].ts).slice(0,ks.length-400).forEach(x=>delete HIST[x]);save(pkey('rg-hist'),HIST)}
@@ -167,7 +167,7 @@ function toast(title,text,btns,ms){const t=$('#toast');t.innerHTML=`<b>${esc(tit
    GÖRÜNÜMLER
    ========================================================= */
 const V={},AF={};let HKEY=null,GRID=null;
-V.home=()=>{const cw=cwList();HKEY=null;return`<div class="hero" id="hero"></div><div class="rows" id="hrows">${row('İzlemeye devam et',cw.map(cwCard))}${row('Listem',MYL.map(poster))}<div id="hmore"><div class="spin sm"></div></div></div>`};
+V.home=()=>{const cw=cwList();HKEY=null;return`<div class="hero" id="hero"></div><div class="rows" id="hrows">${teamDay()}${row('İzlemeye devam et',cw.map(cwCard))}${row('Listem',MYL.map(poster))}<div id="hmore"><div class="spin sm"></div></div></div>`};
 let HL=[];
 AF.home=async(a,tok)=>{const cw=cwList();let first=null,n=0;
  const put=h=>{if(tok!==RT||!$('#hmore'))return;const sp=$('#hmore > .spin');if(sp)sp.remove();$('#hmore').insertAdjacentHTML('beforeend',h);n++;if(!cur||!cur.isConnected)focus($('#view [data-f]'))};
@@ -291,30 +291,39 @@ let Q='',SDATA=null;
 const SCOPES={all:['live','vod','series'],live:['live'],vod:['vod'],series:['series']};
 V.search=sc=>{sc=sc||'all';const H={all:'Ara',live:'Kanallarda ara',vod:'Filmlerde ara',series:'Dizilerde ara'}[sc];
  return`<h1>${H}</h1><div class="srch"><div><div class="qbox" id="qbox"></div><div class="kb">${[...'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ0123456789'].map(k=>`<div class="key" data-f data-act="key" data-v="${k}">${k}</div>`).join('')}<div class="key w" data-f data-act="key" data-v=" ">Boşluk</div><div class="key w" data-f data-act="key" data-v="DEL">Sil</div></div></div><div style="flex:1;min-width:0" id="sres"><div class="spin"></div><p class="empty" style="text-align:center">Liste aramaya hazırlanıyor. Büyük listelerde bu ilk seferde biraz sürebilir.</p></div></div>`};
+const fold=t=>t.replace(/[İI]/g,'I').replace(/Ş/g,'S').replace(/Ğ/g,'G').replace(/Ü/g,'U').replace(/Ö/g,'O').replace(/Ç/g,'C');
 let SIDX={};
 const yieldT=()=>new Promise(r=>setTimeout(r,0));
-AF.search=async(sc,tok)=>{sc=sc||'all';const D={};SDATA={sc,D};for(const k of SCOPES[sc]){try{const ck=k+(pinOn()&&!UNL?'p':'')+(ST['h_'+k]||[]).join(',')+'|'+PID;const kidSet=PROF().kid?new Set(visCats(k,await API.cats(k)).map(c=>c.id)):null;
+AF.search=async(sc,tok)=>{sc=sc||'all';const D={};SDATA={sc,D};for(const k of SCOPES[sc]){try{const ck='f2'+k+(pinOn()&&!UNL?'p':'')+(ST['h_'+k]||[]).join(',')+'|'+PID;const kidSet=PROF().kid?new Set(visCats(k,await API.cats(k)).map(c=>c.id)):null;
   if(SIDX[k]&&SIDX[k].ck===ck){D[k]=SIDX[k].v;continue}
   const[all,ad]=await Promise.all([API.all(k),adultSet(k)]);const hid=new Set(ST['h_'+k]||[]),out=[];
-  for(let i=0;i<all.length;i++){const it=all[i];if(!hid.has(it.cat)&&!(pinOn()&&!UNL&&ad.has(it.cat))&&(!kidSet||kidSet.has(it.cat)))out.push([U(clean(it.name)),it]);if(i%1500===1499){await yieldT();if(tok!==RT)return}}
+  for(let i=0;i<all.length;i++){const it=all[i];if(!hid.has(it.cat)&&!(pinOn()&&!UNL&&ad.has(it.cat))&&(!kidSet||kidSet.has(it.cat)))out.push([fold(U(clean(it.name))),it]);if(i%1500===1499){await yieldT();if(tok!==RT)return}}
   D[k]=out;SIDX[k]={ck,v:out}}catch(e){D[k]=[]}if(tok!==RT)return;if(Q)drawSearch()}
  if(tok!==RT)return;drawSearch()};
 let SF=null;
-function drawSearch(){$('#qbox').innerHTML=Q?esc(Q):`<span style="color:var(--dim)">Aramak için yaz</span>`;if(!SDATA)return;const{D}=SDATA,R={};let tot=0;
- const N={};for(const k in D){const a=[];let n=0;if(Q){const L=D[k];for(let i=0;i<L.length;i++)if(L[i][0].includes(Q)){n++;if(a.length<48)a.push(L[i][1])}}R[k]=a;N[k]=n;tot+=n}
+let FZ=0;
+function lev(a,b,m){if(Math.abs(a.length-b.length)>m)return m+1;let p=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){const c=[i];let mn=i;for(let j=1;j<=b.length;j++){const v=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));c.push(v);if(v<mn)mn=v}if(mn>m)return m+1;p=c}return p[b.length]}
+async function fuzzy(q){const my=++FZ,qw=fold(q).split(/\s+/).filter(x=>x.length>=2);if(!qw.length||!SDATA)return;const{D}=SDATA,out=[];let n=0;
+ for(const k in D){if(SF&&k!==SF)continue;const L=D[k];for(let i=0;i<L.length;i++){if(++n%4000===0){await yieldT();if(my!==FZ)return}const t=L[i][0];if(t.includes(fold(q)))continue;const tw=t.split(/[^A-Z0-9]+/);
+  if(qw.every(w=>tw.some(x=>x.indexOf(w)===0||lev(w,x.slice(0,w.length+1),w.length>=7?2:1)<=(w.length>=7?2:1)||lev(w,x,w.length>=7?2:1)<=(w.length>=7?2:1)))){out.push(L[i][1]);if(out.length>=24)break}}if(out.length>=24)break}
+ if(my!==FZ||Q!==q||!out.length||!$('#sres'))return;$('#sres').insertAdjacentHTML('beforeend',`<div class="rt" style="margin:18px 0 10px">Bunu mu aradın?</div><div class="grid">${out.map(i=>i.k==='live'?`<div class="tvi" data-f data-act="live" data-key="${reg(i)}" style="width:300px">${img(i.icon)}<b>${esc(clean(i.name))}</b></div>`:poster(i)).join('')}</div>`)}
+function drawSearch(){FZ++;$('#qbox').innerHTML=Q?esc(Q):`<span style="color:var(--dim)">Aramak için yaz</span>`;if(!SDATA)return;const{D}=SDATA,R={};let tot=0;
+ const QF=fold(Q),N={};for(const k in D){const a=[];let n=0;if(Q){const L=D[k];for(let i=0;i<L.length;i++)if(L[i][0].includes(QF)){n++;if(a.length<48)a.push(L[i][1])}}R[k]=a;N[k]=n;tot+=n}
  if(SF&&!N[SF])SF=null;for(const k in R)if(SF&&k!==SF)R[k]=[];
+ const SUG=[];if(Q&&Q.length>=2){const seen=new Set();for(const k in D){const L=D[k];for(let i=0;i<L.length&&SUG.length<6;i++){const t=L[i][0];if((t.indexOf(QF)===0||t.indexOf(' '+QF)>=0)&&t!==QF){const nm=dispName(L[i][1].name).t;const u=U(nm);if(!seen.has(u)&&fold(u)!==QF){seen.add(u);SUG.push(nm)}}}}}
  const chips=(h,a)=>a.length?`<div class="rt" style="margin:0 0 10px;font-size:16px;color:var(--mut)">${h}</div><div class="chips" style="margin-bottom:16px">${a.map(x=>`<div class="chip" data-f data-act="rq" data-q="${esc(x)}">${esc(x)}</div>`).join('')}</div>`:'';
- let h='';if(!Q)h=chips('Son aramalar',ST.rec)+'<p class="empty">Ekrandaki klavyeyle yazmaya başla. Sonuçlar yazdıkça gelir.</p>';
+ let h='';if(!Q)h=(RECS.length?chips('Son aramalar',RECS).replace(/<\/div><\/div>$/,'</div><div class="chip" data-f data-act="rqclr">Temizle</div></div>'):'')+'<p class="empty">Ekrandaki klavyeyle yazmaya başla. Sonuçlar yazdıkça gelir; birkaç harften sonra öneriler çıkar.</p>';
  else{const kinds=[['vod','Film'],['series','Dizi'],['live','Kanal']].filter(([k])=>N[k]);
-  h=kinds.length>1?`<div class="chips sfil" style="margin:0 0 16px"><div class="chip${!SF?' sel':''}" data-f data-act="sfil" data-k="">Tümü (${tot})</div>${kinds.map(([k,l])=>`<div class="chip${SF===k?' sel':''}" data-f data-act="sfil" data-k="${k}">${l} (${N[k]})</div>`).join('')}</div>`:`<div class="rt" style="margin:0 0 12px">${tot} sonuç</div>`;if(!tot)h+='<p class="empty">Bu adla bir sonuç yok. Farklı bir kelime dene.</p>';
+  h=(SUG.length?`<div class="chips sugg" style="margin:0 0 12px">${SUG.map(x=>`<div class="chip" data-f data-act="rq" data-q="${esc(U(x))}">${esc(x)}</div>`).join('')}</div>`:'')+(kinds.length>1?`<div class="chips sfil" style="margin:0 0 16px"><div class="chip${!SF?' sel':''}" data-f data-act="sfil" data-k="">Tümü (${tot})</div>${kinds.map(([k,l])=>`<div class="chip${SF===k?' sel':''}" data-f data-act="sfil" data-k="${k}">${l} (${N[k]})</div>`).join('')}</div>`:`<div class="rt" style="margin:0 0 12px">${tot} sonuç</div>`);if(!tot)h+='<p class="empty">Bu adla bir sonuç yok. Farklı bir kelime dene.</p>';
   if(R.vod&&R.vod.length)h+=`${SDATA.sc==='all'?'<div class="rt" style="margin:0 0 10px">Filmler</div>':''}<div class="grid">${R.vod.map(poster).join('')}</div>`;
   if(R.series&&R.series.length)h+=`${SDATA.sc==='all'?'<div class="rt" style="margin:18px 0 10px">Diziler</div>':''}<div class="grid">${R.series.map(poster).join('')}</div>`;
   if(R.live&&R.live.length)h+=`${SDATA.sc==='all'?'<div class="rt" style="margin:18px 0 10px">Kanallar</div>':''}<div class="grid">${R.live.map(i=>`<div class="tvi" data-f data-act="live" data-key="${reg(i)}" style="width:300px">${img(i.icon)}<span>${i.num||''}</span><div><b>${esc(clean(i.name))}</b></div></div>`).join('')}</div>`}
- $('#sres').innerHTML=h}
+ $('#sres').innerHTML=h;if(Q&&Q.length>=4&&tot<5){const q=Q;setTimeout(()=>{if(Q===q)fuzzy(q)},250)}}
 
 V.settings=()=>{const u=ACC.ui||{},ex=+u.exp_date?new Date(+u.exp_date*1000):null,dl=ex?Math.ceil((ex-Date.now())/864e5):null;
  const sub=ACC.type==='m3u'?'M3U listesi':`${esc(ACC.srv)} · ${esc(ACC.u)}`;
  return`<h1>Ayarlar</h1><div class="acct"><div><b>${sub}</b><small>${ex?`Abonelik ${ex.toLocaleDateString('tr-TR')} tarihine kadar, ${dl} gün kaldı.`:'Abonelik bitiş tarihi bilinmiyor.'}${u.max_connections?` Bağlantı: ${u.active_cons||0} / ${u.max_connections}.`:''}</small><small>Cihaz kodu: <b style="color:var(--tx)">${DEV}</b> · Sürüm ${APPV} (${APPSRC})</small></div><div class="btn sm" data-f data-act="logout">Listeyi değiştir</div></div>
+ <div class="set" data-f data-act="nav" data-v="city">Hava durumu konumu<span>${esc((ST.loc&&ST.loc.name)||'Otomatik')} ›</span></div>
  <div class="set" data-f data-act="nav" data-v="profs">Profiller<span>${esc(PROF().name)}${PROFS.length>1?' · '+PROFS.length+' profil':''} ›</span></div>
  <div class="set" data-f data-act="cats" data-t="live">Kategorileri düzenle<span>Canlı TV, filmler, diziler ›</span></div>
  <div class="set" data-f data-act="reload">Listeyi yenile<span>Yeni eklenenleri getir ›</span></div>
@@ -335,6 +344,85 @@ AF.kidcats=async(id,tok)=>{const p=PROFS.find(x=>x.id===id);let cs=[];try{cs=awa
  $('#kcbox').innerHTML=cs.filter(c=>!isAdult(c.name)&&!KIDBAD.test(c.name)).map(c=>{const on=sel?sel.indexOf(c.id)>=0:KIDRX.test(c.name);return`<div class="set" data-f data-act="kct" data-id="${id}" data-c="${esc(c.id)}">${esc(clean(c.name))}<span>${on?'Görünür':'Gizli'}</span></div>`}).join('')||'<p class="empty">Kategori yok.</p>'};
 let RECQ='',RECUP=false;
 V.pinrec=()=>{const ks=RECUP?'ABCDEFGHIJKLMNOPQRSTUVWXYZ':'abcdefghijklmnopqrstuvwxyz';return`<h1>PIN'i sıfırla</h1><p class="sub2">IPTV hesabının şifresini gir (listeyi eklerken kullandığın şifre). Doğruysa PIN sıfırlanır ve yenisini belirlersin.</p><div class="srch"><div><div class="qbox" id="rbox">${'●'.repeat(RECQ.length)||'<span style="color:var(--dim)">Şifre</span>'}</div><div class="kb">${[...ks+'0123456789-_.@!'].map(k=>`<div class="key" data-f data-act="rkey" data-v="${esc(k)}">${esc(k)}</div>`).join('')}<div class="key w" data-f data-act="rkey" data-v="SH">${RECUP?'küçük harf':'BÜYÜK HARF'}</div><div class="key w" data-f data-act="rkey" data-v="DEL">Sil</div></div><div class="btn" data-f data-act="rok" style="margin-top:16px">Onayla</div></div></div>`};
+const AMBRX=/fire\s*place|kamin|[şs][öo]mine|ambien|ambiance|relax|chill|lounge|aquarium|akvaryum|nature|do[ğg]a\b|scenic|slow\s*tv|yule|christmas|noel|xmas|rain\b|ya[ğg]mur|ocean|okyanus|beach|plaj|snow|winter\s*scen|drone|landscape|manzara|sunset|g[üu]n\s*bat|4k\s*(uhd\s*)?(nature|relax)|zen\b|meditat/i;
+V.amb=()=>`<div class="ptop"><h1>Ambiyans</h1></div><p class="sub2">Şömine, doğa, akvaryum gibi arka plan yayınları, ya da TV'yi saat, hava durumu, takvim ve sanat eserleriyle dekoratif bir ekrana çeviren RAGNAR Ambient.</p><div class="btn" data-f data-act="ambgo" style="margin-bottom:22px">RAGNAR Ambient'i başlat</div><div id="ambl"><div class="spin"></div></div>`;
+AF.amb=async(a,tok)=>{let L=[],W=[];try{const all=await API.all('live'),ok=new Set(visCats('live',await API.cats('live')).filter(c=>!catLocked(c)).map(c=>c.id)),cn={};(await API.cats('live')).forEach(c=>cn[c.id]=c.name);
+  L=all.filter(c=>ok.has(c.cat)&&(AMBRX.test(c.name)||AMBRX.test(cn[c.cat]||''))).slice(0,80)}catch(e){}
+ try{W=await new Promise(r=>{setTimeout(()=>r([]),4000);const sc=document.createElement('script');sc.src=APPBASE+'amb.js?t='+Math.floor(Date.now()/36e5);sc.onload=()=>{r(window.RAGNAR_AMB||[]);sc.remove()};sc.onerror=()=>{r([]);sc.remove()};document.head.appendChild(sc)})}catch(e){}
+ if(tok!==RT)return;W=W.filter(x=>x&&x.url&&(+x.h||0)>=1080);
+ let h='';if(W.length)h+=`<div class="rt">İnternetten · 1080p ve üstü</div><div class="row">${W.map(x=>`<div class="lc" data-f data-act="ambw" data-u="${esc(x.url)}" data-n="${esc(x.title)}"><b>${esc(x.title)}</b><small style="color:var(--mut)">${x.h>=2160?'4K':'1080p'}${x.dur?' · '+esc(x.dur):''}</small></div>`).join('')}</div>`;
+ if(L.length)h+=`<div class="rt">Kanallarından</div><div class="grid">${L.map(i=>`<div class="tvi" data-f data-act="live" data-key="${reg(i)}" style="width:300px">${img(i.icon)}<span>${i.num||''}</span><div><b>${esc(clean(i.name))}</b></div></div>`).join('')}</div>`;
+ $('#ambl').innerHTML=h||'<p class="empty">Listende ambiyans kanalı bulunamadı.</p>';if(!cur||!cur.isConnected||cur.closest('#side')===null)focus($('#ambl [data-f]'))};
+/* ================= TAKIMIM (ESPN halka açık verisi + Google Haberler) ================= */
+const LEAGUES=[['tur.1','Süper Lig'],['eng.1','Premier League'],['esp.1','LaLiga'],['ger.1','Bundesliga'],['ita.1','Serie A'],['fra.1','Ligue 1'],['ned.1','Eredivisie'],['por.1','Liga Portugal']];
+const SP={async get(url,ttl,xml){const ck='rg-sp-'+url.replace(/[^a-z0-9]/gi,'').slice(-90),c=load(ck,null);if(c&&Date.now()-c.t<ttl)return c.v;
+  const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),9000);try{const r=await fetch(url,{signal:ctl.signal});if(!r.ok)throw new Error('HTTP '+r.status);const v=xml?await r.text():await r.json();try{save(ck,{t:Date.now(),v})}catch(e){}return v}
+  catch(e){if(c)return c.v;throw e}finally{clearTimeout(to)}},
+ fresh(url,ttl){const c=load('rg-sp-'+url.replace(/[^a-z0-9]/gi,'').slice(-90),null);return c&&Date.now()-c.t<ttl?c.v:null}};
+const TU={teams:lg=>`https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/teams`,fix:id=>`https://site.web.api.espn.com/apis/site/v2/sports/soccer/all/teams/${id}/schedule?fixture=true`,
+ res:id=>`https://site.web.api.espn.com/apis/site/v2/sports/soccer/all/teams/${id}/schedule`,tab:lg=>`https://site.api.espn.com/apis/v2/sports/soccer/${lg}/standings`,
+ news:n=>`https://news.google.com/rss/search?q=${encodeURIComponent('"'+n+'"')}&hl=tr&gl=TR&ceid=TR:tr`};
+const logoOf=t=>t&&((t.logos&&t.logos[0]&&t.logos[0].href)||t.logo||'');
+const TRN={Fenerbahce:'Fenerbahçe',Besiktas:'Beşiktaş',Galatasaray:'Galatasaray',Trabzonspor:'Trabzonspor',Basaksehir:'Başakşehir','Istanbul Basaksehir':'Başakşehir',Goztepe:'Göztepe',Kasimpasa:'Kasımpaşa',Eyupspor:'Eyüpspor',Genclerbirligi:'Gençlerbirliği',Kocaelispor:'Kocaelispor',Karagumruk:'Karagümrük','Fatih Karagumruk':'Fatih Karagümrük',Rizespor:'Rizespor','Caykur Rizespor':'Çaykur Rizespor',Antalyaspor:'Antalyaspor',Alanyaspor:'Alanyaspor',Kayserispor:'Kayserispor',Konyaspor:'Konyaspor',Samsunspor:'Samsunspor',Gaziantep:'Gaziantep','Gaziantep FK':'Gaziantep FK'};
+const trn=n=>TRN[n]||n;
+function evParse(ev,myId){const c=(ev.competitions||[])[0]||{},cs=c.competitors||[],me=cs.find(x=>x.team&&String(x.team.id)===String(myId))||cs[0]||{},op=cs.find(x=>x!==me)||{},st=(c.status||ev.status||{}).type||{};
+ const lgName=(ev.league&&ev.league.name)||(c.league&&c.league.name)||(ev.season&&ev.season.displayName)||'',slug=(ev.league&&ev.league.slug)||(c.league&&c.league.slug)||'';
+ const sc=x=>x&&x.score!=null?(typeof x.score==='object'?x.score.displayValue||x.score.value:x.score):'';
+ const LGTR={'Turkish Super Lig':'Süper Lig','Turkish Cup':'Türkiye Kupası','UEFA Champions League':'Şampiyonlar Ligi','UEFA Europa League':'Avrupa Ligi','UEFA Conference League':'Konferans Ligi','UEFA Europa Conference League':'Konferans Ligi','English Premier League':'Premier League','Spanish LALIGA':'LaLiga','German Bundesliga':'Bundesliga','Italian Serie A':'Serie A','French Ligue 1':'Ligue 1','Dutch Eredivisie':'Eredivisie','Portuguese Primeira Liga':'Liga Portugal','Club Friendly':'Hazırlık maçı'};
+ return{id:ev.id,t:Date.parse(ev.date),home:me.homeAway==='home',op:trn((op.team&&(op.team.shortDisplayName||op.team.displayName))||'?'),opl:logoOf(op.team),lg:LGTR[lgName]||lgName,slug,state:st.state||'',done:!!st.completed,det:st.shortDetail||'',my:sc(me),their:sc(op),
+  tv:((c.broadcasts||[]).map(b=>(b.names||[]).join(', ')).filter(Boolean)[0])||''}}
+const tmStr=t=>{const d=new Date(t),n=new Date(),tm=new Date(n.getTime()+864e5);const same=(a,b)=>a.toDateString()===b.toDateString();return(same(d,n)?'Bugün':same(d,tm)?'Yarın':d.toLocaleDateString('tr-TR',{weekday:'short',day:'numeric',month:'short'}))+' '+hhmm(d)};
+V.team=()=>{const T=PROF().team;if(!T)return V.teampick();return`<div class="tmh">${T.logo?`<img src="${esc(T.logo)}" alt="">`:''}<div><h1>${esc(trn(T.name))}</h1><p class="sub2">${esc((LEAGUES.find(l=>l[0]===T.lg)||[])[1]||'')}</p></div><div class="btn sm" data-f data-act="tmchg">Takımı değiştir</div></div><div id="tmb"><div class="spin"></div></div>`};
+let TPL='tur.1';
+V.teampick=()=>`<h1>Takımını seç</h1><p class="sub2">Önce ligi, sonra takımını seç. Her profilin bir takımı olur; Ayarlar'dan ya da bu sayfadan değiştirebilirsin.</p><div class="chips">${LEAGUES.map(([k,n])=>`<div class="chip${TPL===k?' sel':''}" data-f data-act="tplg" data-l="${k}">${n}</div>`).join('')}</div><div id="tpg" class="grid"><div class="spin"></div></div>`;
+AF.teampick=async(a,tok)=>{let T=[];try{const j=await SP.get(TU.teams(TPL),7*864e5);T=(((j.sports||[])[0]||{}).leagues||[{}])[0].teams.map(x=>x.team)}catch(e){}if(tok!==RT)return;
+ $('#tpg').innerHTML=T.length?T.sort((x,y)=>trn(x.displayName).localeCompare(trn(y.displayName),'tr')).map(t=>`<div class="tmc" data-f data-act="tpset" data-id="${t.id}" data-n="${esc(t.displayName)}" data-lo="${esc(logoOf(t))}">${logoOf(t)?img(logoOf(t)):''}<b>${esc(trn(t.displayName))}</b></div>`).join(''):'<p class="empty">Takım listesi alınamadı. İnternet bağlantısını kontrol edip tekrar dene.</p>'};
+AF.team=async(a,tok)=>{const T=PROF().team;if(!T)return AF.teampick(a,tok);let F=[],R=[],tab=null,tabE=null,news=[];
+ try{const j=await SP.get(TU.fix(T.id),30*6e4);F=(j.events||[]).map(e=>evParse(e,T.id)).filter(m=>!m.done&&m.t>Date.now()-3*3600e3).sort((x,y)=>x.t-y.t).slice(0,3)}catch(e){}
+ try{const j=await SP.get(TU.res(T.id),30*6e4);R=(j.events||[]).map(e=>evParse(e,T.id)).filter(m=>m.done).sort((x,y)=>y.t-x.t).slice(0,5)}catch(e){}
+ const euro=[...F,...R].map(m=>m.slug||(/champions/i.test(m.lg)?'uefa.champions':/europa league/i.test(m.lg)?'uefa.europa':/conference/i.test(m.lg)?'uefa.europa.conf':'')).find(x=>/^uefa\./.test(x));
+ const parseTab=j=>{const g=(j&&j.children)||[];const E=[];g.forEach(c=>((c.standings||{}).entries||[]).forEach(en=>{const st={};(en.stats||[]).forEach(x=>st[x.name]=x.displayValue!=null?x.displayValue:x.value);E.push({id:String(en.team.id),n:trn(en.team.shortDisplayName||en.team.displayName),lo:logoOf(en.team),r:+st.rank||0,o:st.gamesPlayed,g:st.wins,b:st.ties,m:st.losses,av:st.pointDifferential,p:st.points})}));return E.sort((a,b)=>(a.r||99)-(b.r||99))};
+ try{tab=parseTab(await SP.get(TU.tab(T.lg),3*36e5))}catch(e){}
+ if(euro)try{tabE=parseTab(await SP.get(TU.tab(euro),3*36e5))}catch(e){}
+ try{const x=await SP.get(TU.news(trn(T.name)),30*6e4,1);const dm=new DOMParser().parseFromString(x,'text/xml');news=[...dm.querySelectorAll('item')].slice(0,6).map(it=>({t:(it.querySelector('title')||{}).textContent||'',s:(it.querySelector('source')||{}).textContent||'',d:Date.parse((it.querySelector('pubDate')||{}).textContent||'')}))}catch(e){}
+ if(tok!==RT)return;TEAMF=F;
+ const vs=m=>m.home?`${esc(trn(T.name))} – ${esc(m.op)}`:`${esc(m.op)} – ${esc(trn(T.name))}`;
+ const fx=F.map(m=>`<div class="tmm${m.state==='in'?' live':''}" data-f><small>${esc(m.lg)}</small><b>${vs(m)}</b><span>${m.state==='in'?'CANLI · '+esc(m.my)+' – '+esc(m.their)+' · '+esc(m.det):tmStr(m.t)}</span></div>`).join('')||'<p class="empty">Yaklaşan maç bulunamadı.</p>';
+ const rs=R.map(m=>{const w=+m.my>+m.their?'G':+m.my<+m.their?'M':'B';return`<div class="tmr r${w}"><i>${w}</i><b>${vs(m)}</b><span>${m.home?esc(m.my)+' – '+esc(m.their):esc(m.their)+' – '+esc(m.my)}</span><small>${new Date(m.t).toLocaleDateString('tr-TR',{day:'numeric',month:'short'})} · ${esc(m.lg)}</small></div>`}).join('');
+ const tb=(E,lgn)=>E&&E.length?`<table class="tmt"><tr><th></th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th><th>AV</th><th>P</th></tr>${E.map(e=>`<tr class="${e.id===String(T.id)?'me':''}"><td>${e.r||''}</td><td>${e.lo?`<img src="${esc(e.lo)}" alt="">`:''}${esc(e.n)}</td><td>${e.o??''}</td><td>${e.g??''}</td><td>${e.b??''}</td><td>${e.m??''}</td><td>${e.av??''}</td><td><b>${e.p??''}</b></td></tr>`).join('')}</table>`:'<p class="empty">Puan durumu alınamadı.</p>';
+ const nw=news.map(n=>`<div class="tmn" data-f><b>${esc(n.t.replace(/\s+-\s+[^-]+$/,''))}</b><small>${esc(n.s)}${n.d?' · '+ago(n.d):''}</small></div>`).join('');
+ $('#tmb').innerHTML=`<div class="tmg"><div><div class="rt">Gelecek maçlar</div><div class="tmf">${fx}</div>${rs?`<div class="rt">Son sonuçlar</div><div class="tmrs">${rs}</div>`:''}${nw?`<div class="rt">Son haberler</div><div class="tmns">${nw}</div>`:''}</div>
+  <div><div class="rt">Puan durumu${tabE?` <span class="chips" style="display:inline-flex;margin-left:12px"><div class="chip sel" data-f data-act="tmtab" data-w="lg">Lig</div><div class="chip" data-f data-act="tmtab" data-w="eu">Avrupa</div></span>`:''}</div><div id="tmtl">${tb(tab)}</div><div id="tmte" style="display:none">${tb(tabE)}</div></div></div>`;
+ if(!cur||!cur.isConnected)focus($('#tmb [data-f]')||$('[data-act=tmchg]'))};
+const ago=t=>{const m=Math.round((Date.now()-t)/6e4);return m<60?m+' dk önce':m<1440?Math.round(m/60)+' sa önce':Math.round(m/1440)+' gün önce'};
+let TEAMF=[];
+/* maç başlarken bildirim; ana sayfada bugünün maçı */
+let TMNOTE={};
+setInterval(async()=>{const T=PROF().team;if(!T||ST.teamNote===1)return;const j=SP.fresh(TU.fix(T.id),12*36e5);if(!j)return;const F=(j.events||[]).map(e=>evParse(e,T.id)).filter(m=>!m.done);
+ for(const m of F){const dt=m.t-Date.now();if(dt<=60000&&dt>-5*60000&&!TMNOTE[m.id]){TMNOTE[m.id]=1;const nm=m.home?trn(T.name)+' – '+m.op:m.op+' – '+trn(T.name);toast('Maç başlıyor',nm+' · '+m.lg,'',15000)}}},30000);
+function teamDay(){const T=PROF().team;if(!T)return'';const j=SP.fresh(TU.fix(T.id),12*36e5);if(!j){SP.get(TU.fix(T.id),30*6e4).catch(()=>{});return''}
+ const m=(j.events||[]).map(e=>evParse(e,T.id)).filter(m=>!m.done&&m.t>Date.now()-3*3600e3).sort((x,y)=>x.t-y.t)[0];if(!m||new Date(m.t).toDateString()!==new Date().toDateString())return'';
+ return`<div class="row" id="tday"><div class="tdc" data-f data-act="nav" data-v="team">${T.logo?`<img src="${esc(T.logo)}" alt="">`:''}<div><small>${m.state==='in'?'CANLI':'BUGÜN '+hhmm(new Date(m.t))} · ${esc(m.lg)}</small><b>${m.home?esc(trn(T.name))+' – '+esc(m.op):esc(m.op)+' – '+esc(trn(T.name))}</b></div>${m.opl?`<img src="${esc(m.opl)}" alt="">`:''}</div></div>`}
+let CQ='';
+V.city=()=>`<h1>Hava durumu konumu</h1><p class="sub2">Şehrin adını yaz ve listeden seç. "Otomatik" seçilirse konum internet bağlantısından yaklaşık bulunur.</p><div class="srch"><div><div class="qbox" id="cqbox">${esc(CQ)||'<span style="color:var(--dim)">Şehir</span>'}</div><div class="kb">${[...'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ'].map(k=>`<div class="key" data-f data-act="ckey" data-v="${k}">${k}</div>`).join('')}<div class="key w" data-f data-act="ckey" data-v=" ">Boşluk</div><div class="key w" data-f data-act="ckey" data-v="DEL">Sil</div></div></div><div style="flex:1;min-width:0" id="cres"><div class="set" data-f data-act="cset" data-i="-1">Otomatik<span>${ST.loc?'':'seçili'}</span></div></div></div>`;
+let CRES=[];
+async function citySearch(){const q=CQ.trim();clearTimeout(citySearch.t);if(q.length<2){CRES=[];return cityDraw()}citySearch.t=setTimeout(async()=>{try{const j=await SP.get('https://geocoding-api.open-meteo.com/v1/search?count=8&language=tr&name='+encodeURIComponent(q.toLocaleLowerCase('tr')),864e5);if(CQ.trim()!==q)return;CRES=(j&&j.results)||[]}catch(e){CRES=[]}cityDraw()},400)}
+function cityDraw(){const r=$('#cres');if(!r)return;r.innerHTML=`<div class="set" data-f data-act="cset" data-i="-1">Otomatik<span>${ST.loc?'':'seçili'}</span></div>`+CRES.map((c,i)=>`<div class="set" data-f data-act="cset" data-i="${i}">${esc(c.name)}<span>${esc([c.admin1,c.country].filter(Boolean).join(', '))}</span></div>`).join('')}
+/* ---- Canlı radyo: sağlayıcının radyo yayınları, ülkeye göre ---- */
+const RADRX=/rad[yi]o|\bfm\b|\bradio\b/i;
+const CCN={TR:'Türkiye',DE:'Almanya',AT:'Avusturya',CH:'İsviçre',UK:'İngiltere',GB:'İngiltere',US:'ABD',FR:'Fransa',NL:'Hollanda',BE:'Belçika',IT:'İtalya',ES:'İspanya',AZ:'Azerbaycan',KKTC:'KKTC',CY:'Kıbrıs',GR:'Yunanistan',AR:'Arapça',RU:'Rusya',PL:'Polonya',RO:'Romanya',BG:'Bulgaristan',AL:'Arnavutluk',KU:'Kürtçe',KURD:'Kürtçe',EXYU:'Balkanlar',BA:'Bosna',RS:'Sırbistan',HR:'Hırvatistan',SE:'İsveç',DK:'Danimarka',NO:'Norveç',PT:'Portekiz',IR:'İran'};
+const ccOf=(...xs)=>{for(const x of xs){const m=String(x||'').match(/^\s*([A-Z]{2,4})\s*[|:\-]/)||String(x||'').match(/\b(TR|DE|UK|US|FR|NL|AZ|KKTC)\b/);if(m)return m[1]}return''};
+let RCC=null;
+V.radio=()=>`<div class="ptop"><h1>Radyo</h1></div><p class="sub2">Sağlayıcının radyo yayınları, ülkeye göre.</p><div class="chips" id="rcc"></div><div id="rgrid" class="grid"><div class="spin"></div></div>`;
+let RADS=[];
+AF.radio=async(a,tok)=>{let L=[];try{const all=await API.all('live'),cats=await API.cats('live'),cn={};cats.forEach(c=>cn[c.id]=c.name);const ok=new Set(visCats('live',cats).filter(c=>!catLocked(c)).map(c=>c.id));
+  L=all.filter(c=>ok.has(c.cat)&&(c.radio||RADRX.test(cn[c.cat]||''))).map(c=>Object.assign(c,{radio:true,cc:ccOf(cn[c.cat],c.name)||'?'}))}catch(e){}
+ if(tok!==RT)return;RADS=L;const G={};L.forEach(c=>{G[c.cc]=(G[c.cc]||0)+1});const keys=Object.keys(G).sort((a,b)=>(a==='TR'?-1:b==='TR'?1:0)||(a==='?'?1:b==='?'?-1:0)||G[b]-G[a]);
+ if(!RCC||!G[RCC])RCC=keys[0]||null;
+ $('#rcc').innerHTML=keys.length>1?keys.map(k=>`<div class="chip${k===RCC?' sel':''}" data-f data-act="rcc" data-c="${k}">${k==='?'?'Diğer':esc(CCN[k]||k)} (${G[k]})</div>`).join(''):'';radDraw();if(!cur||!cur.isConnected)focus($('#rcc [data-f]')||$('#rgrid [data-f]'))};
+function radDraw(){const L=RADS.filter(c=>!RCC||c.cc===RCC);$('#rgrid').innerHTML=L.length?L.map(i=>`<div class="tvi" data-f data-act="live" data-key="${reg(i)}" style="width:300px">${img(i.icon)}<span>${i.num||''}</span><div><b>${esc(clean(i.name))}</b></div></div>`).join(''):'<p class="empty">Listende radyo yayını bulunamadı.</p>'}
+function radView(it){let r=$('#radv');if(!it||!it.radio){if(r)r.remove();$('#live').classList.remove('radio');return}$('#live').classList.add('radio');
+ if(!r){r=document.createElement('div');r.id='radv';$('#live').prepend(r)}r.innerHTML=`<div class="rvc">${it.icon?`<img src="${esc(it.icon)}" alt="">`:`<div class="rvi">${IC.radio}</div>`}<b>${esc(clean(it.name))}</b><small>Canlı radyo</small><div class="eq"><i></i><i></i><i></i><i></i><i></i></div></div>`}
 V.diag=()=>{const b=load('rg-logbuf',[]);return`<h1>Son hatalar</h1><p class="sub2">Bir sorun olduğunda bu ekranın fotoğrafını göndermen yeterli. Sürüm ${APPV} (${APPSRC}), cihaz ${DEV}. Akıcılık: ${PERF.text()}${ACC&&ACC.ui&&ACC.ui.max_connections?`, bağlantı hakkı ${ACC.ui.max_connections}`:''}.</p>`+(b.length?b.map(x=>`<div class="set" data-f><b style="font-weight:700;max-width:640px">${esc(x.m)}</b><span>${esc(x.l)} · ${hhmm(x.t)}</span></div>`).join(''):'<p class="empty">Kayıtlı hata yok.</p>')}
 V.cats=t=>`<h1>Kategoriler</h1><div class="chips">${[['live','Canlı TV'],['vod','Filmler'],['series','Diziler']].map(([k,n])=>`<div class="chip${k===t?' sel':''}" data-f data-act="ctab" data-t="${k}">${n}</div>`).join('')}</div><p class="sub2">Gizlediğin kategoriler listede, aramada ve kanal geçişinde görünmez. Yetişkin kategoriler otomatik algılanır ve PIN ile korunur.</p><div id="cbox"><div class="spin sm"></div></div>`;
 AF.cats=async(t,tok,sel)=>{const cs=await API.cats(t);if(tok!==RT)return;drawCats(t,cs,sel)};
@@ -345,7 +433,7 @@ function drawCats(t,cs,sel){const h=ST['h_'+t]||[],nm={};visCats(t,cs).forEach(c
 
 /* ---------- gezinme ---------- */
 function go(s){const was=scr;scr=s;if(s==='login'){if(was!=='login'||!PAIR.t)PAIR.start()}else PAIR.stop();$$('.scr').forEach(x=>x.classList.toggle('on',x.id===s));document.documentElement.classList.toggle('vid',s==='player'||s==='live')}
-function sideCur(v,a){const sv={pinrec:'settings',who:'who',profs:'settings',pname:'settings',kidcats:'settings',diag:'settings',cat:a&&a.t==='vod'?'films':'series',tv:'live',detail:REG.get(a)&&REG.get(a).k==='vod'?'films':'series',cats:'settings',search:a==='live'?'live':a==='vod'?'films':a==='series'?'series':'search'}[v]||v;$$('.sn').forEach(s=>s.classList.toggle('cur',s.dataset.v===sv))}
+function sideCur(v,a){const sv={radio:'radio',city:'settings',team:'team',amb:'amb',teampick:'team',pinrec:'settings',who:'who',profs:'settings',pname:'settings',kidcats:'settings',diag:'settings',cat:a&&a.t==='vod'?'films':'series',tv:'live',detail:REG.get(a)&&REG.get(a).k==='vod'?'films':'series',cats:'settings',search:a==='live'?'live':a==='vod'?'films':a==='series'?'series':'search'}[v]||v;$$('.sn').forEach(s=>s.classList.toggle('cur',s.dataset.v===sv))}
 async function render(v,a,push=true,sel){if(push||!nav.length)nav.push([v,a]);else nav[nav.length-1]=[v,a];if(cv==='tv'||v!=='tv')miniStop();if(cv==='search'&&v!=='search'&&v!=='detail')API.purge();if(REG.size>6000&&(v==='home'||v==='tv'||v==='series'||v==='films'))REG.clear();cv=v;GRID=null;BR=null;COLDR=null;
  $('#catov').classList.remove('on');const w=$('#view'),tok=++RT;w.className=v==='home'||v==='series'||v==='films'?'home':v==='tv'?'tvv':'';w.innerHTML=V[v](a);w.scrollTop=0;sideCur(v,a);focus((sel&&$('#view '+sel))||$('#view [data-f]'));
  if(AF[v]){try{await AF[v](a,tok,sel)}catch(e){if(tok===RT)toast('Yüklenemedi',e.message);LOG.add('api',e.message,{gorunum:v})}}}
@@ -365,7 +453,7 @@ let HT=null,REP=false,KT=0;
 /* afiş satırları: odaklanan satır hep aynı yükseklikte dursun, yatayda sadece gerekince kay */
 function rowScroll(e,beh){const rw=e.parentElement,box=rw&&rw.classList.contains('row')&&rw.parentElement;if(!box||!box.scrollTo||(!box.classList.contains('rows')&&box.id!=='brows'&&box.id!=='hmore'&&box.id!=='hrows'))return false;
  const sc=e.closest('.rows');if(!sc)return false;const sr=sc.getBoundingClientRect(),rt=rw.previousElementSibling,top=(rt&&rt.classList.contains('rt')?rt:rw).getBoundingClientRect(),z=sr.height/(sc.clientHeight||1)||1;
- const ty=Math.max(0,Math.round(sc.scrollTop+(top.top-sr.top)/z-6));if(Math.abs(ty-sc.scrollTop)>2)try{sc.scrollTo({top:ty,behavior:beh})}catch(x){sc.scrollTop=ty}
+ const ty=Math.max(0,Math.round(sc.scrollTop+(top.top-sr.top)/z+(rt&&rt.classList.contains('rt')?2:0)));if(Math.abs(ty-sc.scrollTop)>2)try{sc.scrollTo({top:ty,behavior:beh})}catch(x){sc.scrollTop=ty}
  const rr=rw.getBoundingClientRect(),er=e.getBoundingClientRect(),zx=rr.width/(rw.clientWidth||1)||1;let tx=null;if(er.left<rr.left+4)tx=rw.scrollLeft+(er.left-rr.left)/zx-24;else if(er.right>rr.right-4)tx=rw.scrollLeft+(er.right-rr.right)/zx+24;
  if(tx!=null)try{rw.scrollTo({left:Math.max(0,Math.round(tx)),behavior:beh})}catch(x){rw.scrollLeft=tx}return true}
 const tail=(e,n)=>{let c=0,x=e;while(c<n&&(x=x.nextElementSibling))c++;return c};
@@ -537,7 +625,7 @@ async function startPlay(t){$('#rs').classList.remove('on');$('#perr').classList
  const pr=pref(PK);MKOK=false;if(!pr.mk&&pr.mkx!==2&&isTV){const t0=Date.now(),mk=await MKV.read(API.url(PL));if(PL!==me||scr!=='player')return;
   if(mk&&mk.length){pr.mk=mk;savePF();LOG.add('info','Altyazı dilleri dosyadan okundu',{ms:Date.now()-t0,diller:mk.map(x=>x.lang+(x.forced?'*':'')+(x.sdh?'+':'')).join(' '),kodekler:[...new Set(mk.map(x=>x.codec))].join(' ')})}else{pr.mkx=2;savePF();LOG.add('info','Dosyadan altyazı dili okunamadı',{ms:Date.now()-t0,neden:MKV.why||(mk&&!mk.length?'altyazı parçası yok':'bilinmiyor'),uzanti:PL.ext||''})}}
  AV.open(API.url(PL),null,{start:t,ready:()=>{loadingOff('player');AV.mode(1);applyTracks();wake()},buf:b=>b?loadingOn('player','Arabelleğe alınıyor'):loadingOff('player'),
-  time:ms=>{if(SK==null&&$('#player').classList.contains('ui'))drawT(ms/1000)},end:()=>{histSet(PL,AV.dur()/1000,AV.dur()/1000);const n=nextEp();n?openPlayer(n,0):exit()},sub:(tx,d)=>showSub(tx,d),
+  time:ms=>{if(SK==null&&$('#player').classList.contains('ui'))drawT(ms/1000)},end:()=>{if(PL&&PL.loop){try{AV.seek(0);AV.play()}catch(e){openPlayer(PL,0)}return}histSet(PL,AV.dur()/1000,AV.dur()/1000);const n=nextEp();n?openPlayer(n,0):exit()},sub:(tx,d)=>showSub(tx,d),
   error:er=>{loadingOff('player');LOG.add('player','Film/dizi açılamadı: '+((er&&(er.name||er.message||er.code))||(typeof er==='string'?er:'bilinmeyen hata')),{deneme:tryN,tur:PL.k,ad:PL.name,url:API.url(PL),sure:Math.round(AV.time()/1000)});if(tryN++<1){const cb0=AV.cb,at=Math.max(0,AV.time()/1000||PL.start||0);AV.close();loadingOn('player','Yeniden bağlanılıyor');setTimeout(()=>{if(scr==='player')AV.open(API.url(PL),null,Object.assign(cb0,{start:at}))},1500);return}
    $('#perrt').textContent='Sunucu bu içeriği şu an açamadı. İnternet bağlantını kontrol edip tekrar deneyebilirsin. (Kod: '+((er&&(er.name||er.message||er.code))||er||'-')+')';$('#perr').classList.add('on');focus($('[data-act=retry]'))}})}
 let TLD={},SC=null,LRN=null,MKN={},MKOK=false,MKCHK=0;
@@ -735,7 +823,7 @@ function recOK(){const n=Date.now();LREC=LREC.filter(t=>n-t<300000);if(LREC.leng
 const erTx=er=>(er&&(er.name||er.message||er.code))||(typeof er==='string'?er:'bilinmeyen hata');
 function liveFail(it,er){loadingOff('live');$('#lerrt').textContent=`${clean(it.name)} şu an açılamıyor. Kanal yayında olmayabilir ya da sunucu yoğun olabilir. (Kod: ${erTx(er)})`;$('#lerr2').classList.add('on');focus($('[data-act=lretry]'))}
 let LRC=0;
-function liveOpen(rc){const it=LV,pr=pref('l:'+it.id);LRC=rc||0;$('#lerr2').classList.remove('on');loadingOn('live','');TRK={au:[],tx:[],ca:-1,cs:-1};
+function liveOpen(rc){const it=LV,pr=pref('l:'+it.id);LRC=rc||0;if(!it.radio&&RADS.some(r=>r.id===it.id))it.radio=true;radView(it);$('#lerr2').classList.remove('on');loadingOn('live','');TRK={au:[],tx:[],ca:-1,cs:-1};
  const arch=lag>0&&it.arch,pf=pr.hls===1||ST[fmtKey()]==='m3u8',alt=LRC?pf:ltry===1?!pf:pf,url=arch?API.tsUrl(it,Date.now()-lag*1000,Math.max(60,Math.ceil(lag/60)+30)):API.url(it,alt),t0=Date.now();let ready=false;
  AV.open(url,null,{ready:()=>{ready=true;loadingOff('live');AV.mode(pr.fit!==0);const au=AV.tracks('AUDIO'),tx=AV.tracks('TEXT');TRK={au,tx,ca:au[0]?au[0].i:-1,cs:-1};const w=pr.a&&au.find(x=>lname(x.lang)===lname(pr.a));if(w){AV.sel('AUDIO',w.i);TRK.ca=w.i}AV.silent(true);
    if(!arch&&!it.url&&ltry===1){ST[fmtKey()]=alt?'m3u8':'ts';saveST()}
@@ -803,7 +891,7 @@ function closePad(){$('#pad').classList.remove('on');const pv=PAD&&PAD.prev;PAD=
    ========================================================= */
 function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.dataset,a=d.act,it=d.key&&REG.get(d.key);
  if(a==='pk')return padKey(d.v);
- if(cv==='search'&&Q&&scr==='app'&&['open','live','playv'].includes(a)){ST.rec=[Q,...ST.rec.filter(x=>x!==Q)].slice(0,6);saveST()}
+ if(cv==='search'&&Q&&scr==='app'&&['open','live','playv'].includes(a)){RECS=[Q,...RECS.filter(x=>x!==Q)].slice(0,8);save(pkey('rg-rec'),RECS)}
  switch(a){
  case'login':{let acc;try{acc=parseLogin($('#in1').value,$('#in2').value,$('#in3').value)}catch(x){$('#lerr').textContent=x.message;return focus($('#in1'))}return doLogin(acc)}
  case'logout':AV.close();ACC=null;save('rg-acc',null);API.C={};go('login');return focus($('#in1'));
@@ -824,8 +912,18 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
  case'rkey':if(d.v==='SH'){RECUP=!RECUP;render('pinrec');return focus($('#view [data-act=rkey][data-v="SH"]'))}RECQ=d.v==='DEL'?RECQ.slice(0,-1):(RECQ+d.v).slice(0,40);$('#rbox').innerHTML='●'.repeat(RECQ.length)||'<span style="color:var(--dim)">Şifre</span>';return;
  case'rok':{const ok2=ACC&&((ACC.p&&RECQ===ACC.p)||(!ACC.p&&ACC.u&&RECQ===ACC.u));LOG.add('info','PIN sıfırlama denemesi',{basarili:!!ok2});if(!ok2){RECQ='';$('#rbox').innerHTML='<span style="color:#ff8a8a">Şifre tutmadı, tekrar dene</span>';return}
   ST.pinCode=null;saveST();RECQ='';nav.pop();render(nav.length?nav[nav.length-1][0]:'home');return pad('newpin',()=>{})}
+ case'ambw':return openPlayer({k:'vod',id:'amb:'+d.u,name:d.n,url:d.u,loop:1},0);
+ case'tplg':TPL=d.l;render('teampick');return focus($(`[data-act=tplg][data-l="${d.l}"]`));
+ case'tpset':{const p=PROF();p.team={lg:TPL,id:d.id,name:d.n,logo:d.lo};save('rg-profs',PROFS);LOG.add('info','Takım seçildi',{lig:TPL});nav=[];render('team');return focus($('.sn[data-v="team"]'))}
+ case'tmchg':TPL=(PROF().team||{}).lg||'tur.1';return render('teampick');
+ case'tmtab':{const eu=d.w==='eu';$('#tmtl').style.display=eu?'none':'';$('#tmte').style.display=eu?'':'none';$$('[data-act=tmtab]').forEach(x=>x.classList.toggle('sel',x===e));return}
+ case'ckey':CQ=d.v==='DEL'?CQ.slice(0,-1):(CQ+(CQ&&d.v!==' '?d.v.toLocaleLowerCase('tr'):d.v)).slice(0,30);$('#cqbox').innerHTML=esc(CQ)||'<span style="color:var(--dim)">Şehir</span>';return citySearch();
+ case'cset':{const i=+d.i;if(i<0)delete ST.loc;else{const c=CRES[i];ST.loc={name:c.name,lat:c.latitude,lon:c.longitude,cc:c.country_code||''}}saveST();osd('Hava durumu konumu: '+((ST.loc&&ST.loc.name)||'Otomatik'));nav.pop();render('settings');return focus($('[data-v=city]'))}
+ case'ambgo':return ssShow(true);
+ case'rcc':RCC=d.c;$$('#rcc .chip').forEach(x=>x.classList.toggle('sel',x===e));return radDraw();
  case'sfil':SF=d.k||null;drawSearch();return focus($(`#sres [data-act=sfil][data-k="${d.k||''}"]`));
- case'rq':Q=d.q;return drawSearch();
+ case'rq':Q=d.q;drawSearch();return focus($('#sres [data-f]')||$('[data-act=key]'));
+ case'rqclr':RECS=[];save(pkey('rg-rec'),RECS);drawSearch();return focus($('[data-act=key]'));
  case'key':Q=d.v==='DEL'?Q.slice(0,-1):(Q+d.v).slice(0,24);return drawSearch();
  case'cat':{const lockd=d.ad&&pinOn()&&!UNL;const goIn=()=>{const f=$(d.t==='live'?'#chl [data-f]':'#vg [data-f]');if(f)focus(f)};
   if(lockd)return pad('pin',async()=>{e.innerHTML=e.textContent;await loadCat(d.t,d.c);goIn()});if(!e.classList.contains('sel')){clearTimeout(CT);return loadCat(d.t,d.c).then(goIn)}return goIn()}
@@ -879,8 +977,62 @@ const PERF={n:0,slow:0,jank:0,max:0,sent:0,until:0,last:0,on:false,
  tick(t){if(this.last){const d=t-this.last;this.n++;if(d>34)this.slow++;if(d>100)this.jank++;if(d>this.max)this.max=d}this.last=t;if(t<this.until)requestAnimationFrame(x=>this.tick(x));else this.on=false},
  text(){return this.n?`${this.n} kare ölçüldü, yüzde ${Math.round(this.slow/this.n*100)} yavaş, ${this.jank} takılma, en uzun kare ${Math.round(this.max)} ms`:'henüz ölçüm yok'},
  report(){if(this.n-this.sent<400)return;this.sent=this.n;LOG.add('perf','Akıcılık: '+this.text(),{sayfa:cv})}};
+/* ---- sinematik ekran koruyucu: menülerde tuşa basılmazsa ---- */
+let LASTK=Date.now(),SSI=null;
+function ssPics(){const out=[],seen=new Set(),add=(src,title,sub)=>{if(src&&!seen.has(src)){seen.add(src);out.push({src,title,sub})}};
+ cwList().forEach(h=>{const sr=h.sid&&REG.get('series:'+h.sid);add(isz((sr&&sr.bd)||h.scover||h.icon,'w1280'),h.sid?h.sname:h.name,'İzlemeye devam et')});
+ MYL.forEach(it=>add(isz(it.bd||it.icon,'w1280'),it.name,'Listem'));
+ return out.slice(0,24)}
+/* ---- RAGNAR Ambient: saat ve hava, takvim, sanat, afişler ---- */
+const AMODES=['mix','clock','cal','art','posters'];
+const WX={0:['Açık','sun'],1:['Az bulutlu','psun'],2:['Parçalı bulutlu','psun'],3:['Kapalı','cloud'],45:['Sisli','fog'],48:['Kırağılı sis','fog'],51:['Hafif çisenti','rain'],53:['Çisenti','rain'],55:['Yoğun çisenti','rain'],61:['Hafif yağmur','rain'],63:['Yağmurlu','rain'],65:['Kuvvetli yağmur','rain'],66:['Dondurucu yağmur','rain'],67:['Dondurucu yağmur','rain'],71:['Hafif kar','snow'],73:['Karlı','snow'],75:['Yoğun kar','snow'],77:['Kar taneleri','snow'],80:['Sağanak','rain'],81:['Sağanak','rain'],82:['Kuvvetli sağanak','rain'],85:['Kar sağanağı','snow'],86:['Kar sağanağı','snow'],95:['Gök gürültülü','storm'],96:['Dolu ve fırtına','storm'],99:['Dolu ve fırtına','storm']};
+const WIC={sun:'<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>',
+ psun:'<circle cx="8.5" cy="8.5" r="3.5"/><path d="M8.5 2v1.5M2 8.5h1.5M3.9 3.9l1 1M13.1 3.9l-1 1"/><path d="M8 20h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4 1.8A3.2 3.2 0 0 0 8 20z"/>',
+ cloud:'<path d="M7 19h10a4.5 4.5 0 0 0 .3-9A6 6 0 0 0 5.7 11.6 3.8 3.8 0 0 0 7 19z"/>',fog:'<path d="M4 9h16M2 13h20M5 17h14"/>',
+ rain:'<path d="M7 15h10a4 4 0 0 0 .3-8A5.5 5.5 0 0 0 6.6 8.6 3.3 3.3 0 0 0 7 15z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
+ snow:'<path d="M7 14h10a4 4 0 0 0 .3-8A5.5 5.5 0 0 0 6.6 7.6 3.3 3.3 0 0 0 7 14z"/><path d="M8 18h.01M12 20h.01M16 18h.01M10 22h.01M14 22h.01"/>',
+ storm:'<path d="M7 14h10a4 4 0 0 0 .3-8A5.5 5.5 0 0 0 6.6 7.6 3.3 3.3 0 0 0 7 14z"/><path d="M12 14l-2 4h3l-2 4"/>'};
+const wic=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${WIC[k]||WIC.cloud}</svg>`;
+async function geo(){if(ST.loc&&ST.loc.lat)return ST.loc;const c=load('rg-geo',null);if(c&&Date.now()-c.t<864e5)return c.v;
+ for(const u of['https://ipapi.co/json/','https://ipwho.is/']){try{const j=await SP.get(u,864e5);const v={name:j.city||'',lat:+(j.latitude||j.lat),lon:+(j.longitude||j.lon),cc:j.country_code||j.countryCode||''};if(v.lat){save('rg-geo',{t:Date.now(),v});return v}}catch(e){}}return null}
+async function weather(){const g=await geo();if(!g)return null;const j=await SP.get(`https://api.open-meteo.com/v1/forecast?latitude=${g.lat.toFixed(3)}&longitude=${g.lon.toFixed(3)}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=5`,30*6e4);return{g,j}}
+async function holidays(){const y=new Date().getFullYear(),g=await geo().catch(()=>null),ccs=[...new Set(['TR',(g&&g.cc)||'DE'])].filter(Boolean);let out=[];
+ for(const cc of ccs)for(const yy of[y,y+1]){try{const L=await SP.get(`https://date.nager.at/api/v3/PublicHolidays/${yy}/${cc}`,30*864e5);(L||[]).forEach(h=>out.push({d:h.date,n:h.localName||h.name,cc}))}catch(e){}}return out}
+async function artList(){const qs=['landscape painting','seascape','impressionism','japanese woodblock','still life','cityscape'],q=qs[new Date().getDate()%qs.length];
+ const j=await SP.get(`https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(q)}&query[term][is_public_domain]=true&fields=id,title,artist_title,date_display,image_id,thumbnail&limit=60`,7*864e5);
+ return((j&&j.data)||[]).filter(a=>a.image_id&&a.thumbnail&&a.thumbnail.width>a.thumbnail.height*1.15).map(a=>({src:`https://www.artic.edu/iiif/2/${a.image_id}/full/1686,/0/default.jpg`,t:a.title,a:[a.artist_title,a.date_display].filter(Boolean).join(', ')}))}
+let SSM=null,SSMI=0,SSART=[],SSAI=0;
+function ssShow(force){if($('#ss'))return;const d=document.createElement('div');d.id='ss';
+ d.innerHTML=`<div class="ssb" id="ssa"></div><div class="ssb" id="ssb2"></div><div class="ssv"></div><div id="ssw"><div class="ssl"><svg viewBox="16 4 168 262">${HELM}</svg><span>RAGNAR</span></div><div id="ssm"></div></div>`;
+ $('#stage').appendChild(d);d.classList.add('on');SSMI=0;const mode=AMODES[ST.amode||0];SSM=mode==='mix'?'clock':mode;ssRender();
+ let sec=0;SSI=setInterval(()=>{sec++;ssTick();if(sec%12===0&&(SSM==='posters'||SSM==='art'))ssStep();if(sec%180===0){const w=$('#ssw');if(w)w.style.transform=`translate(${Math.round(Math.random()*16-8)}px,${Math.round(Math.random()*12-6)}px)`}
+  if(AMODES[ST.amode||0]==='mix'&&sec%120===0){const L=['clock','cal','art','posters'];SSM=L[(L.indexOf(SSM)+1)%L.length];ssRender()}},1000);
+ LOG.add('info','Ambient açıldı',{duzen:mode,elle:!!force})}
+function ssBg(src){const a=$('#ssa'),b=$('#ssb2');if(!a)return;const on=a.classList.contains('on'),el=on?b:a,ot=on?a:b;if(!src){a.classList.remove('on');b.classList.remove('on');return}
+ const im=new Image();im.onload=()=>{el.style.backgroundImage=`url("${src}")`;el.classList.remove('kb');void el.offsetWidth;el.classList.add('kb','on');ot.classList.remove('on')};im.src=src}
+function ssTick(){const n=new Date(),c=$('#ssclk');if(c){c.textContent=hhmm(n);const dd=$('#ssd');if(dd)dd.textContent=n.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}}
+let SSP=[],SSPI=0;
+function ssStep(){if(SSM==='posters'){if(!SSP.length)return;const p=SSP[SSPI++%SSP.length];ssBg(p.src);const n=$('#ssn');if(n){n.textContent=dispName(p.title).t;$('#sss').textContent=p.sub}}
+ else if(SSM==='art'){if(!SSART.length)return;const a=SSART[SSAI++%SSART.length];ssBg(a.src);const n=$('#ssn');if(n){n.textContent=a.t;$('#sss').textContent=a.a}}}
+async function ssRender(){const m=$('#ssm');if(!m)return;const my=SSM;
+ const clockB=`<div class="ssc"><b id="ssclk"></b><small id="ssd"></small></div>`;
+ if(my==='posters'){SSP=ssPics();SSPI=0;m.innerHTML=`<div class="sst"><small id="sss"></small><b id="ssn"></b></div>${clockB}`;ssTick();if(SSP.length)ssStep();else ssBg('');return}
+ if(my==='art'){m.innerHTML=`<div class="sst"><small id="sss"></small><b id="ssn"></b></div>${clockB}`;ssTick();try{if(!SSART.length){SSART=await artList();SSAI=Math.floor(Math.random()*SSART.length)}}catch(e){}if(SSM!==my)return;if(SSART.length)ssStep();else{SSM='clock';ssRender()}return}
+ ssBg('');
+ if(my==='clock'){m.innerHTML=`<div class="ssbig"><b id="ssclk"></b><small id="ssd"></small><div id="sswx"></div></div>`;ssTick();
+  try{const w=await weather();if(SSM!==my||!w)return;const c=w.j.current||{},dl=w.j.daily||{},k=WX[c.weather_code]||['','cloud'];
+   $('#sswx').innerHTML=`<div class="wxnow">${wic(k[1])}<b>${Math.round(c.temperature_2m)}°</b><div><span>${esc(k[0])}</span><small>${esc(w.g.name||'')} · hissedilen ${Math.round(c.apparent_temperature)}° · rüzgâr ${Math.round(c.wind_speed_10m)} km/s</small></div></div>
+    <div class="wxd">${(dl.time||[]).slice(1,5).map((t,i)=>{const kk=WX[dl.weather_code[i+1]]||['','cloud'];return`<div>${wic(kk[1])}<b>${new Date(t).toLocaleDateString('tr-TR',{weekday:'short'})}</b><span>${Math.round(dl.temperature_2m_max[i+1])}° / ${Math.round(dl.temperature_2m_min[i+1])}°</span></div>`}).join('')}</div>`}catch(e){}return}
+ if(my==='cal'){const n=new Date(),y=n.getFullYear(),mo=n.getMonth(),first=new Date(y,mo,1),days=new Date(y,mo+1,0).getDate(),off=(first.getDay()+6)%7;let H=[];try{H=await holidays()}catch(e){}if(SSM!==my)return;
+  const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,hset={};H.forEach(h=>hset[h.d]=1);
+  let cells='';for(let i=0;i<off;i++)cells+='<i></i>';for(let d=1;d<=days;d++){const dt=new Date(y,mo,d),k=iso(dt);cells+=`<i class="${d===n.getDate()?'td':''}${hset[k]?' hd':''}${(dt.getDay()%6===0)?' we':''}">${d}</i>`}
+  const up=H.filter(h=>h.d>=iso(n)).sort((a,b)=>a.d<b.d?-1:1).filter((h,i,a)=>a.findIndex(x=>x.d===h.d&&x.n===h.n)===i).slice(0,4);
+  m.innerHTML=`<div class="sscal"><div><small class="ssmo">${n.toLocaleDateString('tr-TR',{month:'long',year:'numeric'})}</small><div class="calg">${['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(x=>`<em>${x}</em>`).join('')}${cells}</div></div>
+   <div class="calr"><b id="ssclk"></b><small id="ssd"></small>${up.length?`<div class="hol"><span>Yaklaşan tatiller</span>${up.map(h=>`<p><b>${new Date(h.d).toLocaleDateString('tr-TR',{day:'numeric',month:'long'})}</b> ${esc(h.n)} <em>${h.cc}</em></p>`).join('')}</div>`:''}</div></div>`;ssTick()}}
+function ssHide(){const d=$('#ss');if(!d)return false;clearInterval(SSI);d.remove();return true}
+setInterval(()=>{const m=[5,10,0][ST.ssv||0];if(!m||scr!=='app'||PAD||AV.st!=='none'||$('#ss'))return;if($('#exitov').classList.contains('on'))return;if(Date.now()-LASTK>m*60000)ssShow()},10000);
 let MQ=null;function qmove(d){if(MQ){MQ=d;return}MQ=d;requestAnimationFrame(()=>{const x=MQ;MQ=null;move(x)})}
-addEventListener('keydown',e=>{REP=e.repeat;if(scr==='app')PERF.kick();const kc=e.keyCode,inp=e.target.tagName==='INPUT';if(inp&&(kc===65376||kc===65385)){e.target.blur();return}if(inp&&![38,40,27,13,10009].includes(kc))return;
+addEventListener('keydown',e=>{REP=e.repeat;LASTK=Date.now();if($('#ss')){e.preventDefault();ssHide();return}if(scr==='app')PERF.kick();const kc=e.keyCode,inp=e.target.tagName==='INPUT';if(inp&&(kc===65376||kc===65385)){e.target.blur();return}if(inp&&![38,40,27,13,10009].includes(kc))return;
  const m={37:'l',39:'r',38:'u',40:'d'}[kc],b=kc===10009||kc===27||(kc===8&&!inp),cu=kc===427||kc===33,cd=kc===428||kc===34,pp=kc===10252||kc===415||kc===19||(kc===32&&!inp),ff=kc===417,rw=kc===412,dg=kc>=48&&kc<=57&&!inp?String(kc-48):null;
  if(m||b||cu||cd||pp||ff||rw||kc===13)e.preventDefault();
  if($('#toast').classList.contains('on')&&$('#toast').contains(cur)){if(m)return focus(m==='l'||m==='r'?[...$('#toast').querySelectorAll('[data-f]')].find(x=>x!==cur)||cur:cur);if(kc===13)return ok(cur);if(b){$('#toast').classList.remove('on');return unf()}}
@@ -953,7 +1105,7 @@ function introSynth(c){const t0=c.currentTime+.05,M=c.createGain(),cp=c.createDy
  [41.2,55,61.7].forEach(f=>{const o=c.createOscillator();o.type='sawtooth';o.frequency.value=f;o.connect(lp2);o.start(ts);o.stop(ts+2.6)})}
 function replayIntro(){const s=$('#splash');s.replaceWith(s.cloneNode(true));introSound()}
 /* ---------- başlangıç ---------- */
-function drawSide(){const cv0=$('.sn.cur')&&$('.sn.cur').dataset.v;$('#side').innerHTML='<div class="brand"><svg viewBox="16 4 168 262" aria-hidden="true">'+HELM+'</svg><span>RAGNAR</span></div>'+[['home','Ana sayfa'],['live','Canlı TV'],['series','Diziler'],['films','Filmler'],['search','Ara'],['settings','Ayarlar']].map(([v,n])=>`<div class="sn" data-f data-act="nav" data-v="${v}">${IC[v]}<span>${n}</span></div>`).join('')+`<div class="sn snp" data-f data-act="nav" data-v="who">${av(PROF(),'s')}<span>${esc(PROF().name)}</span></div>`;if(cv0){const e=$(`.sn[data-v="${cv0}"]`);if(e)e.classList.add('cur')}}
+function drawSide(){const cv0=$('.sn.cur')&&$('.sn.cur').dataset.v;$('#side').innerHTML='<div class="brand"><svg viewBox="16 4 168 262" aria-hidden="true">'+HELM+'</svg><span>RAGNAR<small class="by">by CUD Apps</small></span></div>'+[['home','Ana sayfa'],['live','Canlı TV'],['series','Diziler'],['films','Filmler'],['team','Takımım'],['radio','Radyo'],['amb','Ambiyans'],['search','Ara'],['settings','Ayarlar']].map(([v,n])=>`<div class="sn" data-f data-act="nav" data-v="${v}">${IC[v]}<span>${n}</span></div>`).join('')+`<div class="sn snp" data-f data-act="nav" data-v="who">${av(PROF(),'s')}<span>${esc(PROF().name)}</span></div>`;if(cv0){const e=$(`.sn[data-v="${cv0}"]`);if(e)e.classList.add('cur')}}
 drawSide();
 $('#pad .pgrid').innerHTML=['1','2','3','4','5','6','7','8','9','DEL','0','ok'].map(k=>`<div class="pk" data-f data-act="pk" data-v="${k}">${k==='ok'?'Tamam':k==='DEL'?'Sil':k}</div>`).join('');
 $$('[data-ic]').forEach(e=>e.insertAdjacentHTML('afterbegin',IC[e.dataset.ic]));
