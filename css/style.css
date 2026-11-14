@@ -393,3 +393,12 @@ html.tv [data-f]{transition:none!important}
 /* yan menü: profil en altta; kapalıyken renkli simge, açıkken simge + ad */
 #side .snp{margin-top:auto;margin-bottom:30px;color:var(--tx)}
 #side .snp .av.s{width:24px;height:24px;font-size:12px}
+
+.rt .rtn{font-size:13px;font-weight:600;color:var(--mut);margin-left:10px}
+
+/* yeni eklenenler: yer tutucu ve yumuşak kapanış */
+.po.sk{background:linear-gradient(160deg,#1a2030,#10141c);opacity:.6}
+#rnew,#rnewt{transition:max-height .3s ease,opacity .25s ease,margin .3s ease,padding .3s ease;max-height:300px;overflow:hidden}
+#rnew.gone,#rnewt.gone{max-height:0;opacity:0;margin-top:0;margin-bottom:0;padding-top:0;padding-bottom:0}
+
+.po.sk{display:grid;place-items:center}.po.sk span{color:var(--mut);font-size:13px;font-weight:600}

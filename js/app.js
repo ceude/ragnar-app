@@ -55,7 +55,7 @@ const pinOn=()=>!ST.pin,pinCode=()=>ST.pinCode||'0000';
    ========================================================= */
 const nL=s=>({k:'live',id:String(s.stream_id),name:s.name||'',num:+s.num||0,icon:s.stream_icon||'',cat:String(s.category_id),arch:+s.tv_archive===1,archD:+s.tv_archive_duration||0});
 const nV=s=>({k:'vod',id:String(s.stream_id),name:s.name||'',icon:s.stream_icon||'',cat:String(s.category_id),ext:s.container_extension||'mp4',rating:s.rating||'',added:+s.added||0});
-const nS=s=>({k:'series',id:String(s.series_id),name:s.name||'',icon:s.cover||'',cat:String(s.category_id),plot:s.plot||'',genre:s.genre||'',year:String(s.releaseDate||s.release_date||'').slice(0,4),rating:s.rating||'',bd:(Array.isArray(s.backdrop_path)&&s.backdrop_path[0])||''});
+const nS=s=>({k:'series',id:String(s.series_id),name:s.name||'',icon:s.cover||'',cat:String(s.category_id),plot:s.plot||'',genre:s.genre||'',year:String(s.releaseDate||s.release_date||'').slice(0,4),rating:s.rating||'',bd:(Array.isArray(s.backdrop_path)&&s.backdrop_path[0])||'',added:+(s.last_modified||0)});
 const API={C:{},
  base(){return ACC.srv.replace(/\/+$/,'')},
  q(a,x){return`${this.base()}/player_api.php?username=${encodeURIComponent(ACC.u)}&password=${encodeURIComponent(ACC.p)}${a?'&action='+a:''}${x||''}`},
@@ -77,7 +77,7 @@ const API={C:{},
  async login(){const j=await this.getR(this.q(''));if(!j||!j.user_info)throw new Error('Bu adres bir Xtream sunucusu gibi yanıt vermedi');const u=j.user_info;
   if(+u.auth===0)throw new Error('Kullanıcı adı veya şifre hatalı');if(u.status&&u.status!=='Active')throw new Error('Abonelik aktif değil ('+u.status+')');return u},
  cats(k){return this.once('c'+k,async()=>{if(ACC.type==='m3u')return M3U.cats(k);const ck='rg-c-'+k+'-'+(ACC.u||''),cc=load(ck,null);if(cc&&Date.now()-cc.t<432e5)return cc.v;const j=await this.getR(this.q({live:'get_live_categories',vod:'get_vod_categories',series:'get_series_categories'}[k]));const v=(Array.isArray(j)?j:[]).map(c=>({id:String(c.category_id),name:c.category_name||''}));save(ck,{t:Date.now(),v});return v})},
- items(k,cat){return this.once('i'+k+'|'+cat,async()=>{if(ACC.type==='m3u')return noInfo(k,M3U.items(k,cat));const j=await this.getR(this.q({live:'get_live_streams',vod:'get_vod_streams',series:'get_series'}[k],'&category_id='+encodeURIComponent(cat)),45000);return noInfo(k,(Array.isArray(j)?j:[]).map({live:nL,vod:nV,series:nS}[k]))})},
+ items(k,cat){if(cat==='__new')return newItems(k);return this.once('i'+k+'|'+cat,async()=>{if(ACC.type==='m3u')return noInfo(k,M3U.items(k,cat));const j=await this.getR(this.q({live:'get_live_streams',vod:'get_vod_streams',series:'get_series'}[k],'&category_id='+encodeURIComponent(cat)),45000);return noInfo(k,(Array.isArray(j)?j:[]).map({live:nL,vod:nV,series:nS}[k]))})},
  all(k){return this.once('a'+k,async()=>{if(ACC.type==='m3u')return noInfo(k,M3U.all(k));const j=await this.getR(this.q({live:'get_live_streams',vod:'get_vod_streams',series:'get_series'}[k]),120000);return noInfo(k,(Array.isArray(j)?j:[]).map({live:nL,vod:nV,series:nS}[k]))})},
  vodInfo(id){return this.once('vi'+id,()=>this.getR(this.q('get_vod_info','&vod_id='+id)))},
  seriesInfo(id){return this.once('si'+id,()=>this.getR(this.q('get_series_info','&series_id='+id),30000))},
@@ -229,7 +229,19 @@ function miniStop(){clearTimeout(MT);if(scr==='app'&&AV.st!=='none'){AV.close();
 let BR=null;
 const browseView=(k,h)=>{HKEY=null;return`<div class="hero" id="hero"></div><div class="btop"><h1>${h}</h1><div class="btn sm" data-f data-act="catpick" data-t="${k}">${IC.guide} Kategoriler</div>${srchBtn(k,(k==='series'?'Dizilerde':'Filmlerde')+' ara')}</div><div class="rows" id="brows"><div class="spin sm"></div></div>`};
 V.series=()=>browseView('series','Diziler');V.films=()=>browseView('vod','Filmler');
-async function browseAF(k,tok){const cs=visCats(k,await API.cats(k));if(tok!==RT)return;BR={k,cs,shown:0,tok,busy:0};$('#brows').innerHTML=cs.length?'':'<div class="empty">Bu listede içerik yok.</div>';
+async function newItems(k){const ck='rg-new-'+k+'-'+(ACC.u||''),c=load(ck,null);let L=c&&Date.now()-c.t<3*3600e3?c.v:null;
+ if(!L){const t0=Date.now(),all=await API.all(k),lim=Date.now()/1000-7*86400,now=Date.now()/1000+86400;L=all.filter(x=>x.added>lim&&x.added<now).sort((a,b)=>b.added-a.added).slice(0,200);try{save(ck,{t:Date.now(),v:L})}catch(e){}
+  LOG.add('info','Yeni eklenenler hesaplandı',{tur:k,toplam:all.length,yeni:L.length,tarihsiz:all.filter(x=>!x.added).length,ms:Date.now()-t0})}
+ const ok=new Set(visCats(k,await API.cats(k)).filter(c=>!catLocked(c)).map(c=>c.id));return L.filter(x=>ok.has(x.cat))}
+/* yer tutucu hemen konur, sayfa kaymaz; içerik gelince yerine oturur. boş çıkarsa yumuşakça kapanır ve 3 saat bir daha yer tutulmaz */
+async function newRow(k,tok){const b=$('#brows');if(!b)return;const ck='rg-new-'+k+'-'+(ACC.u||''),c=load(ck,null),fresh=c&&Date.now()-c.t<3*3600e3;
+ if(fresh&&!c.v.length)return;
+ b.insertAdjacentHTML('afterbegin',`<div class="rt" id="rnewt">Yeni eklenenler<small class="rtn">${fresh?'son 7 gün':'son 7 gün · yükleniyor…'}</small></div><div class="row" id="rnew">${fresh?'':Array.from({length:7},()=>'<div class="po sk"><span>Yükleniyor…</span></div>').join('')}</div>`);
+ if(!fresh)await new Promise(r=>setTimeout(r,800));if(tok!==RT)return;let L=[];try{L=await newItems(k)}catch(e){}if(tok!==RT)return;const row=$('#rnew'),t=$('#rnewt');if(!row)return;
+ if(!L.length){[t,row].forEach(x=>x.classList.add('gone'));setTimeout(()=>{t.remove();row.remove()},320);return}
+ t.querySelector('.rtn').textContent='son 7 gün · '+L.length;
+ row.innerHTML=L.slice(0,16).map(poster).join('')+(L.length>16?`<div class="more" data-f data-act="catall" data-t="${k}" data-c="__new" data-n="Yeni eklenenler"><b>Tümünü gör</b><small>${L.length} ${k==='vod'?'film':'dizi'}</small></div>`:'')}
+async function browseAF(k,tok){const cs=visCats(k,await API.cats(k));if(tok!==RT)return;BR={k,cs,shown:0,tok,busy:0};$('#brows').innerHTML=cs.length?'':'<div class="empty">Bu listede içerik yok.</div>';if(cs.length)newRow(k,tok);
  await browseMore();if(tok===RT&&(!cur||!cur.isConnected||cur.closest('#view')))focus($('#hero [data-f]')||$('#brows [data-f]'))}
 AF.series=(a,t)=>browseAF('series',t);AF.films=(a,t)=>browseAF('vod',t);
 async function rowFill(B,cid,nm){const tok=B.tok;let it=[];try{it=await API.items(B.k,cid)}catch(e){}if(tok!==RT)return;const row=$(`#brows .row[data-cat="${CSS.escape(cid)}"]`);if(!row||row.dataset.cold)return;
