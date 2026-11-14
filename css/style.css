@@ -369,3 +369,9 @@ html.tv [data-f]{transition:none!important}
 #side .brand{display:flex;align-items:center;gap:14px;height:46px;margin:0 0 26px 0;padding:0 0 0 11px;letter-spacing:.3em;font-size:17px;overflow:hidden;width:48px;box-sizing:content-box}
 #side .brand svg{width:26px;height:40px;flex:none;display:block}
 #side.open .brand{width:206px}
+
+/* göz atma sayfalarında vitrin, üstteki sayfa başlığına binmesin */
+#view:not(.home) .hero .hc .ds{-webkit-line-clamp:2}
+#view:not(.home) .hero .tl{font-size:60px}
+#view:not(.home) .hero .tl.m{font-size:48px}
+#view:not(.home) .hero .tl.s{font-size:36px}
