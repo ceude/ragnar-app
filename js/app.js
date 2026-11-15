@@ -231,12 +231,12 @@ function miniStop(){clearTimeout(MT);if(scr==='app'&&AV.st!=='none'){AV.close();
 let BR=null;
 const browseView=(k,h)=>{HKEY=null;return`<div class="hero" id="hero"></div><div class="btop"><h1>${h}</h1><div class="btn sm" data-f data-act="catpick" data-t="${k}">${IC.guide} Kategoriler</div>${srchBtn(k,(k==='series'?'Dizilerde':'Filmlerde')+' ara')}</div><div class="rows" id="brows"><div class="spin sm"></div></div>`};
 V.series=()=>browseView('series','Diziler');V.films=()=>browseView('vod','Filmler');
-async function newItems(k){const ck='rg-new-'+k+'-'+(ACC.u||''),c=load(ck,null);let L=c&&Date.now()-c.t<3*3600e3?c.v:null;
+async function newItems(k){const ck='rg-new-'+k+'-'+(ACC.u||''),c=load(ck,null);let L=c&&Date.now()-c.t<12*3600e3?c.v:null;
  if(!L){const t0=Date.now(),all=await API.all(k),lim=Date.now()/1000-7*86400,now=Date.now()/1000+86400;L=all.filter(x=>x.added>lim&&x.added<now).sort((a,b)=>b.added-a.added).slice(0,200);try{save(ck,{t:Date.now(),v:L})}catch(e){}
   LOG.add('info','Yeni eklenenler hesaplandı',{tur:k,toplam:all.length,yeni:L.length,tarihsiz:all.filter(x=>!x.added).length,ms:Date.now()-t0})}
  const ok=new Set(visCats(k,await API.cats(k)).filter(c=>!catLocked(c)).map(c=>c.id));return L.filter(x=>ok.has(x.cat))}
 /* yer tutucu hemen konur, sayfa kaymaz; içerik gelince yerine oturur. boş çıkarsa yumuşakça kapanır ve 3 saat bir daha yer tutulmaz */
-async function newRow(k,tok){const b=$('#brows');if(!b)return;const ck='rg-new-'+k+'-'+(ACC.u||''),c=load(ck,null),fresh=c&&Date.now()-c.t<3*3600e3;
+async function newRow(k,tok){const b=$('#brows');if(!b)return;const ck='rg-new-'+k+'-'+(ACC.u||''),c=load(ck,null),fresh=c&&Date.now()-c.t<12*3600e3;
  if(fresh&&!c.v.length)return;
  b.insertAdjacentHTML('afterbegin',`<div class="rt" id="rnewt">Yeni eklenenler<small class="rtn">${fresh?'son 7 gün':'son 7 gün · yükleniyor…'}</small></div><div class="row" id="rnew">${fresh?'':Array.from({length:7},()=>'<div class="po sk"><span>Yükleniyor…</span></div>').join('')}</div>`);
  if(!fresh)await new Promise(r=>setTimeout(r,800));if(tok!==RT)return;let L=[];try{L=await newItems(k)}catch(e){}if(tok!==RT)return;const row=$('#rnew'),t=$('#rnewt');if(!row)return;
@@ -1096,9 +1096,8 @@ async function holidays(){const y=new Date().getFullYear(),g=await geo().catch((
 async function artMet(){const q=['landscape','seascape','river','mountain','harbor','garden'][new Date().getDate()%6];const s0=await SP.get(`https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true&isHighlight=true&q=${q}`,7*864e5);const ids=((s0&&s0.objectIDs)||[]).slice(0,30);const out=[];
  for(const id of ids){try{const o=await SP.get(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`,30*864e5);if(o&&o.isPublicDomain&&o.primaryImage)out.push({src:o.primaryImage,alt:o.primaryImageSmall,t:o.title,a:[o.artistDisplayName,o.objectDate].filter(Boolean).join(', '),src2:'Metropolitan Sanat Müzesi',land:1})}catch(e){}if(out.length>=16)break}return out}
 let SSNOART=false,SSSRC='aic';
-async function artList(){const qs=['landscape painting','seascape','impressionism','japanese woodblock','still life','cityscape'],q=qs[new Date().getDate()%qs.length];
- const j=await SP.get(`https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(q)}&query[term][is_public_domain]=true&fields=id,title,artist_title,date_display,image_id,thumbnail&limit=60`,7*864e5);
- return((j&&j.data)||[]).filter(a=>a.image_id&&a.thumbnail&&a.thumbnail.width>a.thumbnail.height*1.15).map(a=>({src:`https://www.artic.edu/iiif/2/${a.image_id}/full/1686,/0/default.jpg`,t:a.title,a:[a.artist_title,a.date_display].filter(Boolean).join(', ')}))}
+async function artList(){const L=await new Promise(r=>{const t=setTimeout(()=>r([]),8000);const sc=document.createElement('script');sc.src=APPBASE+'art/list.js?v='+APPV;sc.onload=()=>{clearTimeout(t);r(window.RAGNAR_ART||[]);sc.remove()};sc.onerror=()=>{clearTimeout(t);r([]);sc.remove()};document.head.appendChild(sc)});
+ const out=L.map(x=>({src:APPBASE+'art/'+x.f,t:x.t,a:[x.a,x.y].filter(Boolean).join(', '),src2:'Chicago Sanat Enstitüsü · kamu malı',local:1}));for(let i=out.length-1;i>0;i--){const k=Math.floor(Math.random()*(i+1));[out[i],out[k]]=[out[k],out[i]]}return out}
 let SSM=null,SSMI=0,SSART=[],SSAI=0;
 let SSMAN=false;
 function ssShow(force){if($('#ss'))return;SSMAN=!!force;const d=document.createElement('div');d.id='ss';
@@ -1119,12 +1118,12 @@ function ssBg(src,done,alt,land){const a=$('#ssa'),b=$('#ssb2');if(!a)return;con
  im.onerror=()=>fail('hata');im.onload=()=>{if(fin)return;if(land&&im.naturalWidth&&im.naturalWidth<im.naturalHeight*1.15)return fail('dikey');fin=true;clearTimeout(to);if(!$('#ss')||tk!==SSBT)return;el.style.backgroundImage=`url("${im.src}")`;el.classList.remove('kb');void el.offsetWidth;el.classList.add('kb','on');ot.classList.remove('on');done&&done(true)};im.src=src}
 function ssTick(){const n=new Date(),c=$('#ssclk');if(c){c.textContent=hhmm(n);const dd=$('#ssd');if(dd)dd.textContent=n.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}}
 let SSP=[],SSPI=0;
-async function artNext(){if(SSSRC==='aic'){SSSRC='met';LOG.add('warn','Sanat: Chicago görselleri açılmadı, Met deneniyor',{});try{SSART=await artMet();SSAI=0}catch(e){SSART=[]}if(SSART.length&&SSM==='art')return ssStep(0)}
+async function artNext(){
  SSNOART=true;LOG.add('warn','Sanat görselleri açılamadı, düzen atlandı',{});if(SSM==='art'){SSM='posters';ssRender();ssDots()}}
 const artTitle=t=>String(t||'').replace(/,?\s*from the series[\s\S]*$/i,'').replace(/\s*\([^)]*\)\s*$/,'').trim();
 function ssStep(tries){tries=tries||0;if(tries>4){if(SSM==='art')artNext();return}const my=SSM;
  if(SSM==='posters'){if(!SSP.length)return;const p=SSP[SSPI++%SSP.length];ssBg(p.src,ok=>{if(SSM!==my)return;if(!ok)return ssStep(tries+1);const n=$('#ssn');if(n){n.textContent=dispName(p.title).t;$('#sss').textContent=p.sub}})}
- else if(SSM==='art'){if(!SSART.length)return;const a=SSART[SSAI++%SSART.length];ssBg(a.src,ok=>{if(SSM!==my)return;if(!ok)return ssStep(tries+1);const n=$('#ssn');if(n){n.textContent=artTitle(a.t);$('#sss').textContent=(a.a?a.a+' · ':'')+(a.src2||'Chicago Sanat Enstitüsü')}},a.alt||a.src.replace('/1686,/','/843,/'),a.land)}}
+ else if(SSM==='art'){if(!SSART.length)return;const a=SSART[SSAI++%SSART.length];ssBg(a.src,ok=>{if(SSM!==my)return;if(!ok)return ssStep(tries+1);const n=$('#ssn');if(n){n.textContent=a.local?a.t:artTitle(a.t);$('#sss').textContent=(a.a?a.a+' · ':'')+(a.src2||'Chicago Sanat Enstitüsü')}},a.alt||a.src.replace('/1686,/','/843,/'),a.land)}}
 async function ssRender(){const m=$('#ssm');if(!m)return;const my=SSM;
  const clockB=`<div class="ssc"><b id="ssclk"></b><small id="ssd"></small></div>`;
  if(my==='posters'){SSP=ssPics();SSPI=0;m.innerHTML=`<div class="sst"><small id="sss"></small><b id="ssn"></b></div>${clockB}`;ssTick();if(SSP.length)ssStep();else ssBg('');return}
