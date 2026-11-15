@@ -576,3 +576,8 @@ html.tv [data-f]{transition:none!important}
 #lhq.pick .bt{flex-direction:column;align-items:stretch;gap:6px;max-height:330px;overflow:hidden}
 #lhq.pick .bt .btn{justify-content:flex-start;text-align:left;padding:8px 14px;min-height:0;font-size:14px}
 #lhq.pick .bt .btn small{font-size:11px}
+
+/* jenerik sırasında oynatıcı çubuğunun üstünde sağda "Sonraki bölüm" (menü gizliyken de görünür) */
+#nxb{position:absolute;right:40px;bottom:118px;display:none;z-index:4;padding:10px 20px;font-size:15px}
+#nxb.on{display:flex}
+#player:not(.ui) #nxb{bottom:40px}
