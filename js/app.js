@@ -361,7 +361,7 @@ AF.amb=async(a,tok)=>{let L=[],W=[];try{const all=await API.all('live'),ok=new S
 function teamsOf(p){p=p||PROF();if(p.team&&!p.teams){p.teams=[p.team];p.ti=0;delete p.team;save('rg-profs',PROFS)}return p.teams||[]}
 function curTeam(p){p=p||PROF();const L=teamsOf(p);return L[Math.min(p.ti||0,L.length-1)]||null}
 const EPGOFF=()=>(ST.epgOff||0)*3600e3;
-const LGTR0={'Turkish Super Lig':'Süper Lig','Turkish 1. Lig':'1. Lig','UEFA Champions League':'Şampiyonlar Ligi','UEFA Europa League':'Avrupa Ligi','UEFA Conference League':'Konferans Ligi','English Premier League':'Premier League','Spanish LALIGA':'LaLiga','German Bundesliga':'Bundesliga','Italian Serie A':'Serie A','French Ligue 1':'Ligue 1'};
+const LGTR0={'Spanish LALIGA 2':'LaLiga 2','English League Championship':'Championship','German 2. Bundesliga':'2. Bundesliga','Italian Serie B':'Serie B','French Ligue 2':'Ligue 2','Saudi Pro League':'Suudi Pro Lig','Turkish Super Lig':'Süper Lig','Turkish 1. Lig':'1. Lig','UEFA Champions League':'Şampiyonlar Ligi','UEFA Europa League':'Avrupa Ligi','UEFA Conference League':'Konferans Ligi','English Premier League':'Premier League','Spanish LALIGA':'LaLiga','German Bundesliga':'Bundesliga','Italian Serie A':'Serie A','French Ligue 1':'Ligue 1'};
 const LEAGUES=[['tur.1','Süper Lig'],['eng.1','Premier League'],['esp.1','LaLiga'],['ger.1','Bundesliga'],['ita.1','Serie A'],['fra.1','Ligue 1'],['ned.1','Eredivisie'],['por.1','Liga Portugal']];
 const SP={async get(url,ttl,xml){const ck='rg-sp-'+url.replace(/[^a-z0-9]/gi,'').slice(-90),c=load(ck,null);if(c&&Date.now()-c.t<ttl)return c.v;
   const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),9000);try{const r=await fetch(url,{signal:ctl.signal});if(!r.ok)throw new Error('HTTP '+r.status);const v=xml?await r.text():await r.json();try{save(ck,{t:Date.now(),v})}catch(e){}return v}
@@ -488,7 +488,8 @@ const CINE={xy:null,key:null,
   for(const[id,x]of Object.entries(HUE.saved))if(x.on)await HUE.req('/lights/'+id+'/state','PUT',{xy:this.xy,bri:Math.max(1,Math.min(x.bri,Math.round(pct*254/100))),transitiontime:20})}catch(e){}}};
 /* ===== CANLI MAÇ YARDIMCISI: spor kanalında yayındaki maçın istatistikleri ve kadroları ===== */
 const SPORTRX=/spor|sport|bein|exxen|tivibu|dazn|eurosport|s\s*sport|tabii|a\s*spor|trt\s*spor|smart\s*spor|sky\s*sport|tv8,5|tv\s*8,5/i;
-const MLGS=['tur.1','tur.2','eng.1','esp.1','ger.1','ita.1','fra.1','ned.1','por.1','uefa.champions','uefa.europa','uefa.europa.conf'];
+/* maç aranan ligler ve kupalar (ESPN kısaltmaları); olmayan ya da boş olanlar sessizce atlanır */
+const MLGS=['tur.1','tur.2','tur.cup','eng.1','eng.2','eng.3','eng.fa','eng.league_cup','esp.1','esp.2','esp.copa_del_rey','ger.1','ger.2','ger.dfb_pokal','ita.1','ita.2','ita.coppa_italia','fra.1','fra.2','fra.coupe_de_france','ned.1','por.1','bel.1','sco.1','aut.1','sui.1','gre.1','den.1','sau.1','usa.1','mex.1','bra.1','arg.1','uefa.champions','uefa.europa','uefa.europa.conf','uefa.nations','uefa.euro','uefa.euroq','fifa.world','fifa.worldq.uefa','fifa.friendly','club.friendly'];
 const STN={possessionPct:'Topla oynama',totalShots:'Şut',shotsOnTarget:'İsabetli şut',wonCorners:'Korner',foulsCommitted:'Faul',yellowCards:'Sarı kart',redCards:'Kırmızı kart',offsides:'Ofsayt',saves:'Kurtarış',accuratePasses:'İsabetli pas',totalPasses:'Pas',totalTackles:'Top kapma',effectiveClearance:'Uzaklaştırma'};
 const tnorm=n=>fold(U(String(n||''))).replace(/\b(FK|SK|FC|AS|SC|JK|AFC|CF|CD|AC|SV|VFB|VFL|TSG|BK|IF|SL|KULUBU|SPOR KULUBU)\b/g,' ').replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
 const LC={open:false,ev:null,lg:null,t:null,
