@@ -1097,7 +1097,7 @@ async function artMet(){const q=['landscape','seascape','river','mountain','harb
  for(const id of ids){try{const o=await SP.get(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`,30*864e5);if(o&&o.isPublicDomain&&o.primaryImage)out.push({src:o.primaryImage,alt:o.primaryImageSmall,t:o.title,a:[o.artistDisplayName,o.objectDate].filter(Boolean).join(', '),src2:'Metropolitan Sanat Müzesi',land:1})}catch(e){}if(out.length>=16)break}return out}
 let SSNOART=false,SSSRC='aic';
 async function artList(){const L=await new Promise(r=>{const t=setTimeout(()=>r([]),8000);const sc=document.createElement('script');sc.src=APPBASE+'art/list.js?v='+APPV;sc.onload=()=>{clearTimeout(t);r(window.RAGNAR_ART||[]);sc.remove()};sc.onerror=()=>{clearTimeout(t);r([]);sc.remove()};document.head.appendChild(sc)});
- const out=L.map(x=>({src:APPBASE+'art/'+x.f,t:x.t,a:[x.a,x.y].filter(Boolean).join(', '),src2:'Chicago Sanat Enstitüsü · kamu malı',local:1}));for(let i=out.length-1;i>0;i--){const k=Math.floor(Math.random()*(i+1));[out[i],out[k]]=[out[k],out[i]]}return out}
+ const out=L.map(x=>({src:APPBASE+'art/'+x.f,t:x.t,a:[x.a,x.y].filter(Boolean).join(', '),src2:x.f.indexOf('h_')===0?'Ermitaj Müzesi · kamu malı':'Chicago Sanat Enstitüsü · kamu malı',local:1}));for(let i=out.length-1;i>0;i--){const k=Math.floor(Math.random()*(i+1));[out[i],out[k]]=[out[k],out[i]]}return out}
 let SSM=null,SSMI=0,SSART=[],SSAI=0;
 let SSMAN=false;
 function ssShow(force){if($('#ss'))return;SSMAN=!!force;const d=document.createElement('div');d.id='ss';
