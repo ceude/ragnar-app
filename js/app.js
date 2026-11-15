@@ -412,11 +412,6 @@ setInterval(async()=>{if(ST.teamNote===1)return;for(const T of teamsOf()){const 
 function teamDay(){let T=null,m=null;for(const t of teamsOf()){const j=SP.fresh(TU.fix(t.id),12*36e5);if(!j){SP.get(TU.fix(t.id),30*6e4).catch(()=>{});continue}
  const x=(j.events||[]).map(e=>evParse(e,t.id)).filter(q=>!q.done&&q.t>Date.now()-3*3600e3).sort((a,b)=>a.t-b.t)[0];if(x&&new Date(x.t).toDateString()===new Date().toDateString()&&(!m||x.t<m.t)){m=x;T=t}}if(!m)return'';
  return`<div class="row" id="tday"><div class="tdc" data-f data-act="tday" data-id="${T.id}">${T.logo?`<img src="${esc(T.logo)}" alt="">`:''}<div><small>${m.state==='in'?'CANLI':'BUGÜN '+hhmm(new Date(m.t))} · ${esc(m.lg)}</small><b>${m.home?esc(trn(T.name))+' – '+esc(m.op):esc(m.op)+' – '+esc(trn(T.name))}</b></div>${m.opl?`<img src="${esc(m.opl)}" alt="">`:''}</div></div>`}
-let CQ='';
-V.city=()=>`<h1>Hava durumu konumu</h1><p class="sub2">Şehrin adını yaz ve listeden seç. "Otomatik" seçilirse konum internet bağlantısından yaklaşık bulunur.</p><div class="srch"><div><div class="qbox" id="cqbox">${esc(CQ)||'<span style="color:var(--dim)">Şehir</span>'}</div><div class="kb">${[...'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ'].map(k=>`<div class="key" data-f data-act="ckey" data-v="${k}">${k}</div>`).join('')}<div class="key w" data-f data-act="ckey" data-v=" ">Boşluk</div><div class="key w" data-f data-act="ckey" data-v="DEL">Sil</div></div></div><div style="flex:1;min-width:0" id="cres"><div class="set" data-f data-act="cset" data-i="-1">Otomatik<span>${ST.loc?'':'seçili'}</span></div></div></div>`;
-let CRES=[];
-async function citySearch(){const q=CQ.trim();clearTimeout(citySearch.t);if(q.length<2){CRES=[];return cityDraw()}citySearch.t=setTimeout(async()=>{try{const j=await SP.get('https://geocoding-api.open-meteo.com/v1/search?count=8&language=tr&name='+encodeURIComponent(q.toLocaleLowerCase('tr')),864e5);if(CQ.trim()!==q)return;CRES=(j&&j.results)||[]}catch(e){CRES=[]}cityDraw()},400)}
-function cityDraw(){const r=$('#cres');if(!r)return;r.innerHTML=`<div class="set" data-f data-act="cset" data-i="-1">Otomatik<span>${ST.loc?'':'seçili'}</span></div>`+CRES.map((c,i)=>`<div class="set" data-f data-act="cset" data-i="${i}">${esc(c.name)}<span>${esc([c.admin1,c.country].filter(Boolean).join(', '))}</span></div>`).join('')}
 /* ---- Canlı radyo: sağlayıcının radyo yayınları, ülkeye göre ---- */
 const RADRX=/rad[yi]o|\bfm\b|\bradio\b/i;
 const CCN={TR:'Türkiye',DE:'Almanya',AT:'Avusturya',CH:'İsviçre',UK:'İngiltere',GB:'İngiltere',US:'ABD',FR:'Fransa',NL:'Hollanda',BE:'Belçika',IT:'İtalya',ES:'İspanya',AZ:'Azerbaycan',KKTC:'KKTC',CY:'Kıbrıs',GR:'Yunanistan',AR:'Arapça',RU:'Rusya',PL:'Polonya',RO:'Romanya',BG:'Bulgaristan',AL:'Arnavutluk',KU:'Kürtçe',KURD:'Kürtçe',EXYU:'Balkanlar',BA:'Bosna',RS:'Sırbistan',HR:'Hırvatistan',SE:'İsveç',DK:'Danimarka',NO:'Norveç',PT:'Portekiz',IR:'İran'};
@@ -997,13 +992,11 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
  case'ambw':return openPlayer({k:'vod',id:'amb:'+d.u,name:d.n,url:d.u,loop:1},0);
  case'tplg':TPL=d.l;render('teampick');return focus($(`[data-act=tplg][data-l="${d.l}"]`));
  case'tpset':{const p=PROF(),L=teamsOf(p);p.teams=L;const i=L.findIndex(t=>String(t.id)===String(d.id));if(i>=0)p.ti=i;else{L.push({lg:TPL,id:d.id,name:d.n,logo:d.lo});p.ti=L.length-1}save('rg-profs',PROFS);LOG.add('info','Takım seçildi',{lig:TPL});nav=[];render('team');return focus($('.sn[data-v="team"]'))}
- case'tmchg':case'tmadd':TPL=(curTeam()||{}).lg||'tur.1';return render('teampick');
+ case'tmadd':TPL=(curTeam()||{}).lg||'tur.1';return render('teampick');
  case'tday':{const p=PROF(),i=teamsOf(p).findIndex(t=>String(t.id)===d.id);if(i>=0){p.ti=i;save('rg-profs',PROFS)}return render('team')}
  case'tmsel':{PROF().ti=+d.i;save('rg-profs',PROFS);nav=[];render('team');return focus($('.tmsw [data-f]'))}
  case'tmdel':{if(!e.dataset.arm){e.dataset.arm='1';e.textContent='Emin misin?';return setTimeout(()=>{if(e.isConnected){delete e.dataset.arm;e.textContent='Kaldır'}},4000)}const p=PROF(),L=teamsOf(p);L.splice(+d.i,1);p.ti=Math.max(0,Math.min(p.ti||0,L.length-1));save('rg-profs',PROFS);render('teams');return focus($('#view [data-f]'))}
  case'tmtab':{const eu=d.w==='eu';$('#tmtl').style.display=eu?'none':'';$('#tmte').style.display=eu?'':'none';{const b=$(eu?'#tmte':'#tmtl'),r=b.querySelector('tr.me');if(r)b.scrollTop=Math.max(0,r.offsetTop-b.clientHeight/2)}$$('[data-act=tmtab]').forEach(x=>x.classList.toggle('sel',x===e));return}
- case'ckey':CQ=d.v==='DEL'?CQ.slice(0,-1):(CQ+(CQ&&d.v!==' '?d.v.toLocaleLowerCase('tr'):d.v)).slice(0,30);$('#cqbox').innerHTML=esc(CQ)||'<span style="color:var(--dim)">Şehir</span>';return citySearch();
- case'cset':{const i=+d.i;if(i<0)delete ST.loc;else{const c=CRES[i];ST.loc={name:c.name,lat:c.latitude,lon:c.longitude,cc:c.country_code||''}}saveST();osd('Hava durumu konumu: '+((ST.loc&&ST.loc.name)||'Otomatik'));nav.pop();render('settings');return focus($('[data-v=city]'))}
  case'ambgo':return ssShow(true);
  case'rgen':RGEN=d.g;$$('#rtg .chip').forEach(x=>x.classList.toggle('sel',x===e));return radWebDraw();
  case'radk':RQ=d.v==='DEL'?RQ.slice(0,-1):(RQ+(RQ&&d.v!==' '?d.v.toLocaleLowerCase('tr'):d.v)).slice(0,30);$('#rqbox').innerHTML=esc(RQ)||'<span style="color:var(--dim)">İstasyon adı</span>';return rSearch();
@@ -1079,23 +1072,7 @@ function ssPics(){const out=[],seen=new Set(),add=(src,title,sub)=>{if(src&&!see
  MYL.forEach(it=>add(isz(it.bd||it.icon,'w1280'),it.name,'Listem'));
  return out.slice(0,24)}
 /* ---- RAGNAR Ambient: saat ve hava, takvim, sanat, afişler ---- */
-const AMODES=['mix','clock','cal','art','posters'];
-const WX={0:['Açık','sun'],1:['Az bulutlu','psun'],2:['Parçalı bulutlu','psun'],3:['Kapalı','cloud'],45:['Sisli','fog'],48:['Kırağılı sis','fog'],51:['Hafif çisenti','rain'],53:['Çisenti','rain'],55:['Yoğun çisenti','rain'],61:['Hafif yağmur','rain'],63:['Yağmurlu','rain'],65:['Kuvvetli yağmur','rain'],66:['Dondurucu yağmur','rain'],67:['Dondurucu yağmur','rain'],71:['Hafif kar','snow'],73:['Karlı','snow'],75:['Yoğun kar','snow'],77:['Kar taneleri','snow'],80:['Sağanak','rain'],81:['Sağanak','rain'],82:['Kuvvetli sağanak','rain'],85:['Kar sağanağı','snow'],86:['Kar sağanağı','snow'],95:['Gök gürültülü','storm'],96:['Dolu ve fırtına','storm'],99:['Dolu ve fırtına','storm']};
-const WIC={sun:'<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>',
- psun:'<circle cx="8.5" cy="8.5" r="3.5"/><path d="M8.5 2v1.5M2 8.5h1.5M3.9 3.9l1 1M13.1 3.9l-1 1"/><path d="M8 20h9a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.4 1.8A3.2 3.2 0 0 0 8 20z"/>',
- cloud:'<path d="M7 19h10a4.5 4.5 0 0 0 .3-9A6 6 0 0 0 5.7 11.6 3.8 3.8 0 0 0 7 19z"/>',fog:'<path d="M4 9h16M2 13h20M5 17h14"/>',
- rain:'<path d="M7 15h10a4 4 0 0 0 .3-8A5.5 5.5 0 0 0 6.6 8.6 3.3 3.3 0 0 0 7 15z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
- snow:'<path d="M7 14h10a4 4 0 0 0 .3-8A5.5 5.5 0 0 0 6.6 7.6 3.3 3.3 0 0 0 7 14z"/><path d="M8 18h.01M12 20h.01M16 18h.01M10 22h.01M14 22h.01"/>',
- storm:'<path d="M7 14h10a4 4 0 0 0 .3-8A5.5 5.5 0 0 0 6.6 7.6 3.3 3.3 0 0 0 7 14z"/><path d="M12 14l-2 4h3l-2 4"/>'};
-const wic=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${WIC[k]||WIC.cloud}</svg>`;
-async function geo(){if(ST.loc&&ST.loc.lat)return ST.loc;const c=load('rg-geo',null);if(c&&Date.now()-c.t<864e5)return c.v;
- for(const u of['https://ipapi.co/json/','https://ipwho.is/']){try{const j=await SP.get(u,864e5);const v={name:j.city||'',lat:+(j.latitude||j.lat),lon:+(j.longitude||j.lon),cc:j.country_code||j.countryCode||''};if(v.lat){save('rg-geo',{t:Date.now(),v});return v}}catch(e){}}return null}
-async function weather(){const g=await geo();if(!g)return null;const j=await SP.get(`https://api.open-meteo.com/v1/forecast?latitude=${g.lat.toFixed(3)}&longitude=${g.lon.toFixed(3)}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=5`,30*6e4);return{g,j}}
-async function holidays(){const y=new Date().getFullYear(),g=await geo().catch(()=>null),ccs=[...new Set(['TR',(g&&g.cc)||'DE'])].filter(Boolean);let out=[];
- for(const cc of ccs)for(const yy of[y,y+1]){try{const L=await SP.get(`https://date.nager.at/api/v3/PublicHolidays/${yy}/${cc}?g=1`,30*864e5);(L||[]).filter(h=>h.global!==false&&!(h.counties&&h.counties.length)).forEach(h=>out.push({d:h.date,n:h.localName||h.name,cc}))}catch(e){}}return out}
-async function artMet(){const q=['landscape','seascape','river','mountain','harbor','garden'][new Date().getDate()%6];const s0=await SP.get(`https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true&isHighlight=true&q=${q}`,7*864e5);const ids=((s0&&s0.objectIDs)||[]).slice(0,30);const out=[];
- for(const id of ids){try{const o=await SP.get(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`,30*864e5);if(o&&o.isPublicDomain&&o.primaryImage)out.push({src:o.primaryImage,alt:o.primaryImageSmall,t:o.title,a:[o.artistDisplayName,o.objectDate].filter(Boolean).join(', '),src2:'Metropolitan Sanat Müzesi',land:1})}catch(e){}if(out.length>=16)break}return out}
-let SSNOART=false,SSSRC='aic';
+let SSNOART=false;
 async function artList(){const L=await new Promise(r=>{const t=setTimeout(()=>r([]),8000);const sc=document.createElement('script');sc.src=APPBASE+'art/list.js?v='+APPV;sc.onload=()=>{clearTimeout(t);r(window.RAGNAR_ART||[]);sc.remove()};sc.onerror=()=>{clearTimeout(t);r([]);sc.remove()};document.head.appendChild(sc)});
  const out=L.map(x=>({src:APPBASE+'art/'+x.f,t:x.t,a:[x.a,x.y].filter(Boolean).join(', '),src2:x.f.indexOf('h_')===0?'Ermitaj Müzesi · kamu malı':'Chicago Sanat Enstitüsü · kamu malı',local:1}));for(let i=out.length-1;i>0;i--){const k=Math.floor(Math.random()*(i+1));[out[i],out[k]]=[out[k],out[i]]}return out}
 let SSM=null,SSMI=0,SSART=[],SSAI=0;
@@ -1109,7 +1086,7 @@ function ssShow(force){if($('#ss'))return;SSMAN=!!force;const d=document.createE
 const SSLN={clock:'Saat ve hava',cal:'Takvim',art:'Sanat',posters:'Afişler'};
 const ssList=()=>SSMAN&&!SSNOART?['posters','art']:['posters'];
 function ssNav(d){if(!$('#ss'))return;const L=ssList();if(L.length<2)return ssHide();SSM=L[(L.indexOf(SSM)+d+L.length)%L.length];SSMS=0;ssRender();ssDots()}
-function ssDots(){let el=$('#ssdots');if(!el){el=document.createElement('div');el.id='ssdots';$('#ss').appendChild(el)}const L=ssList();if(L.length<2){el.classList.remove('on');return}el.innerHTML=L.map(x=>`<i class="${x===SSM?'on':''}"></i>`).join('')+`<span>${SSLN[SSM]} · ◀ ▶ ile değiştir</span>`;el.classList.add('on');clearTimeout(ssDots.t);ssDots.t=setTimeout(()=>el.classList.remove('on'),3000)}
+function ssDots(){if(!$('#ss'))return;let el=$('#ssdots');if(!el){el=document.createElement('div');el.id='ssdots';$('#ss').appendChild(el)}const L=ssList();if(L.length<2){el.classList.remove('on');return}el.innerHTML=L.map(x=>`<i class="${x===SSM?'on':''}"></i>`).join('')+`<span>${SSLN[SSM]} · ◀ ▶ ile değiştir</span>`;el.classList.add('on');clearTimeout(ssDots.t);ssDots.t=setTimeout(()=>el.classList.remove('on'),3000)}
 let SSMS=0;
 let SSBT=0;
 function ssBg(src,done,alt,land){const a=$('#ssa'),b=$('#ssb2');if(!a)return;const tk=++SSBT,on=a.classList.contains('on'),el=on?b:a,ot=on?a:b;if(!src){a.classList.remove('on');b.classList.remove('on');return}
@@ -1119,7 +1096,7 @@ function ssBg(src,done,alt,land){const a=$('#ssa'),b=$('#ssb2');if(!a)return;con
 function ssTick(){const n=new Date(),c=$('#ssclk');if(c){c.textContent=hhmm(n);const dd=$('#ssd');if(dd)dd.textContent=n.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}}
 let SSP=[],SSPI=0;
 async function artNext(){
- SSNOART=true;LOG.add('warn','Sanat görselleri açılamadı, düzen atlandı',{});if(SSM==='art'){SSM='posters';ssRender();ssDots()}}
+ SSNOART=true;LOG.add('warn','Sanat görselleri açılamadı, düzen atlandı',{});if(SSM==='art'&&$('#ss')){SSM='posters';ssRender();ssDots()}}
 const artTitle=t=>String(t||'').replace(/,?\s*from the series[\s\S]*$/i,'').replace(/\s*\([^)]*\)\s*$/,'').trim();
 function ssStep(tries){tries=tries||0;if(tries>4){if(SSM==='art')artNext();return}const my=SSM;
  if(SSM==='posters'){if(!SSP.length)return;const p=SSP[SSPI++%SSP.length];ssBg(p.src,ok=>{if(SSM!==my)return;if(!ok)return ssStep(tries+1);const n=$('#ssn');if(n){n.textContent=dispName(p.title).t;$('#sss').textContent=p.sub}})}
@@ -1128,17 +1105,7 @@ async function ssRender(){const m=$('#ssm');if(!m)return;const my=SSM;
  const clockB=`<div class="ssc"><b id="ssclk"></b><small id="ssd"></small></div>`;
  if(my==='posters'){SSP=ssPics();SSPI=0;m.innerHTML=`<div class="sst"><small id="sss"></small><b id="ssn"></b></div>${clockB}`;ssTick();if(SSP.length)ssStep();else ssBg('');return}
  if(my==='art'){m.innerHTML=`<div class="sst art"><small id="sss"></small><b id="ssn"></b></div>${clockB}`;ssTick();try{if(!SSART.length){SSART=await artList();SSAI=Math.floor(Math.random()*SSART.length)}}catch(e){}if(SSM!==my)return;if(SSART.length)ssStep();else artNext();return}
- ssBg('');
- if(my==='clock'){m.innerHTML=`<div class="ssbig"><b id="ssclk"></b><small id="ssd"></small><div id="sswx"></div></div>`;ssTick();
-  try{const w=await weather();if(SSM!==my||!w)return;const c=w.j.current||{},dl=w.j.daily||{},k=WX[c.weather_code]||['','cloud'];
-   $('#sswx').innerHTML=`<div class="wxnow">${wic(k[1])}<b>${Math.round(c.temperature_2m)}°</b><div><span>${esc(k[0])}</span><small>${esc(w.g.name||'')} · hissedilen ${Math.round(c.apparent_temperature)}° · rüzgâr ${Math.round(c.wind_speed_10m)} km/s</small></div></div>
-    <div class="wxd">${(dl.time||[]).slice(1,5).map((t,i)=>{const kk=WX[dl.weather_code[i+1]]||['','cloud'];return`<div>${wic(kk[1])}<b>${new Date(t).toLocaleDateString('tr-TR',{weekday:'short'})}</b><span>${Math.round(dl.temperature_2m_max[i+1])}° / ${Math.round(dl.temperature_2m_min[i+1])}°</span></div>`}).join('')}</div>`}catch(e){}return}
- if(my==='cal'){const n=new Date(),y=n.getFullYear(),mo=n.getMonth(),first=new Date(y,mo,1),days=new Date(y,mo+1,0).getDate(),off=(first.getDay()+6)%7;let H=[];try{H=await holidays()}catch(e){}if(SSM!==my)return;
-  const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,hset={};H.forEach(h=>hset[h.d]=1);
-  let cells='';for(let i=0;i<off;i++)cells+='<i></i>';for(let d=1;d<=days;d++){const dt=new Date(y,mo,d),k=iso(dt);cells+=`<i class="${d===n.getDate()?'td':''}${hset[k]?' hol':''}${(dt.getDay()%6===0)?' we':''}">${d}</i>`}
-  const up=H.filter(h=>h.d>=iso(n)).sort((a,b)=>a.d<b.d?-1:1).filter((h,i,a)=>a.findIndex(x=>x.d===h.d&&x.n===h.n)===i).slice(0,4);
-  m.innerHTML=`<div class="sscal"><div><small class="ssmo">${n.toLocaleDateString('tr-TR',{month:'long',year:'numeric'})}</small><div class="calg">${['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(x=>`<em>${x}</em>`).join('')}${cells}</div></div>
-   <div class="calr"><b id="ssclk"></b><small id="ssd"></small>${up.length?`<div class="hol"><span>Yaklaşan tatiller</span>${up.map(h=>`<p><b>${new Date(h.d).toLocaleDateString('tr-TR',{day:'numeric',month:'long'})}</b> ${esc(h.n)} <em>${h.cc}</em></p>`).join('')}</div>`:''}</div></div>`;ssTick()}}
+ ssBg('')}
 function ssHide(){const d=$('#ss');if(!d)return false;clearInterval(SSI);d.remove();return true}
 setInterval(()=>{const m=[5,10,0][ST.ssv||0];if(!m||scr!=='app'||PAD||AV.st!=='none'||$('#ss'))return;if($('#exitov').classList.contains('on'))return;if(Date.now()-LASTK>m*60000)ssShow()},10000);
 let MQ=null;function qmove(d){if(MQ){MQ=d;return}MQ=d;requestAnimationFrame(()=>{const x=MQ;MQ=null;move(x)})}
@@ -1234,4 +1201,9 @@ if(isTV){try{tizen.systeminfo.addPropertyValueChangeListener('MEMORY',m=>{if(m&&
  if(ACC){$('#in1').value=ACC.type==='xt'?ACC.srv:ACC.url;$('#in2').value=ACC.u||'';$('#in3').value=ACC.p||'';const wait=new Promise(r=>setTimeout(r,2200));
   if(ACC.type==='m3u'){await wait;return doLogin(ACC)}try{API.C={};const lp=API.login();lp.catch(()=>{});await wait;ACC.ui=await lp;save('rg-acc',ACC);startApp()}catch(e){$('#lerr').textContent=e.message+' Bilgileri kontrol edip tekrar giriş yap.';PAIR.start();focus($('[data-act=login]'))}}})();
 
+/* depolama temizliği: kalkmış özelliklerin ve 14 günden eski önbelleklerin kayıtları silinir */
+setTimeout(()=>{try{let kb=0,rm=0;const now=Date.now(),DEAD=/artic|metmuseum|openmeteo|nagerat|ipapi|ipwhois|geocoding/i;
+ for(const k of Object.keys(localStorage)){const v=localStorage.getItem(k)||'';kb+=(k.length+v.length)*2/1024;
+  if(k==='rg-geo'||(k.indexOf('rg-sp-')===0&&(DEAD.test(k)||((()=>{try{return now-JSON.parse(v).t>14*864e5}catch(e){return true}})())))){localStorage.removeItem(k);rm++}}
+ if(rm||kb>2500)LOG.add('info','Depolama temizlendi',{silinen:rm,kb:Math.round(kb)})}catch(e){}},20000);
 try{localStorage.setItem('rg-boot','ok');localStorage.removeItem('rg-bad');const le=localStorage.getItem('rg-lasterr');if(le){localStorage.removeItem('rg-lasterr');LOG.add('error','Önceki açılışta hata',JSON.parse(le))}}catch(e){}
