@@ -1,3 +1,5 @@
+/* açılış hatası yakalayıcı: uygulama açılırken çökerse nedeni saklanır, sonraki açılışta Supabase'e yazılır */
+window.addEventListener('error',e=>{try{if(localStorage.getItem('rg-boot')!=='ok')localStorage.setItem('rg-lasterr',JSON.stringify({m:String(e.message||''),l:e.lineno,c:e.colno,f:String(e.filename||'').split('/').pop(),t:Date.now()}))}catch(x){}});
 'use strict';
 /* =========================================================
    Ragnar IPTV - Samsung Tizen TV
@@ -1124,4 +1126,4 @@ if(isTV){try{tizen.systeminfo.addPropertyValueChangeListener('MEMORY',m=>{if(m&&
  if(ACC){$('#in1').value=ACC.type==='xt'?ACC.srv:ACC.url;$('#in2').value=ACC.u||'';$('#in3').value=ACC.p||'';const wait=new Promise(r=>setTimeout(r,2200));
   if(ACC.type==='m3u'){await wait;return doLogin(ACC)}try{API.C={};const lp=API.login();lp.catch(()=>{});await wait;ACC.ui=await lp;save('rg-acc',ACC);startApp()}catch(e){$('#lerr').textContent=e.message+' Bilgileri kontrol edip tekrar giriş yap.';PAIR.start();focus($('[data-act=login]'))}}})();
 
-try{localStorage.setItem('rg-boot','ok')}catch(e){}
+try{localStorage.setItem('rg-boot','ok');localStorage.removeItem('rg-bad');const le=localStorage.getItem('rg-lasterr');if(le){localStorage.removeItem('rg-lasterr');LOG.add('error','Önceki açılışta hata',JSON.parse(le))}}catch(e){}
