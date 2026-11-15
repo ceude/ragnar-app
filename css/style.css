@@ -554,3 +554,19 @@ html.tv [data-f]{transition:none!important}
 #lcvid{position:absolute;left:40px;top:40px;width:1240px;height:698px;border-radius:6px;box-shadow:0 0 0 2px #ffffff14}
 #lcomp.on{background:linear-gradient(90deg,transparent 0,transparent 1300px,#0a0d12 1300px),linear-gradient(0deg,#0a0d12 0,#0a0d12 316px,transparent 316px)}
 #lcst{right:40px;width:540px;left:auto}
+
+/* canlı maç yardımcısı: sahne birimleri (1280x720) ile yeniden boyutlandırma */
+#lcvid{left:20px;top:20px;width:832px;height:468px;border-radius:4px;box-shadow:0 0 0 1px #ffffff18}
+#lcomp.on{background:linear-gradient(90deg,transparent 0,transparent 866px,#0a0d12 866px),linear-gradient(0deg,#0a0d12 0,#0a0d12 226px,transparent 226px)}
+#lcst{top:18px;right:20px;width:372px;left:auto;bottom:232px}
+.lch{gap:6px;margin-bottom:3px}.lch img{width:34px;height:34px}.lch small{font-size:11px;margin-top:2px}
+.lch>b{font-size:34px}
+.lcs{font-size:11px;margin-bottom:8px}
+.lcr{grid-template-columns:44px 1fr 44px;row-gap:2px;margin:4px 0}
+.lcr b{font-size:13px}.lcr span{font-size:11px}.lcr i{height:3px}
+#lcl{left:20px;right:20px;bottom:12px;height:198px;gap:6px}
+.lcl h4{font-size:11px;margin:0 0 4px}
+.lcp{gap:7px}
+.lpl{width:84px;height:62px;border-radius:7px;gap:2px;padding:3px}
+.lpl img{width:24px;height:24px}.lpl i{width:22px;height:22px;font-size:10px}
+.lpl b{font-size:10px;max-width:78px}.lpl small{font-size:8px}
