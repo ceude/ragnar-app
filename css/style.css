@@ -552,3 +552,7 @@ html.tv [data-f]{transition:none!important}
 
 /* sayfa başlığı satırı: başlık ve yanındaki düğme aynı hizada */
 .ptop{display:flex;align-items:center;gap:22px;margin-bottom:6px}.ptop h1{margin:0}.ptop .btn{margin:0!important}
+
+/* profil seçimi: yan menü yok, menüye kaçılamaz */
+#app.noside #side{display:none}
+#app.noside #view{padding-left:48px}
