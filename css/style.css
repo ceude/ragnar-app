@@ -549,3 +549,8 @@ html.tv [data-f]{transition:none!important}
 .lpl img{width:34px;height:34px;border-radius:50%;object-fit:cover}.lpl i{width:30px;height:30px;border-radius:50%;background:#2a3142;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:13px}
 .lpl b{font-size:12px;line-height:1.15;max-width:110px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.lpl small{font-size:10px;color:var(--mut)}
 .lpl.sub{opacity:.6}.lpl.fx{background:var(--tx);color:#0a0d12;opacity:1}.lpl.fx small{color:#333}
+
+/* yardımcı: yayının küçüldüğü alan (video bu kutuya oturtulur), panel bu kutunun sağında başlar */
+#lcvid{position:absolute;left:40px;top:40px;width:1240px;height:698px;border-radius:6px;box-shadow:0 0 0 2px #ffffff14}
+#lcomp.on{background:linear-gradient(90deg,transparent 0,transparent 1300px,#0a0d12 1300px),linear-gradient(0deg,#0a0d12 0,#0a0d12 316px,transparent 316px)}
+#lcst{right:40px;width:540px;left:auto}

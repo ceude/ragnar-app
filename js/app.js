@@ -518,7 +518,7 @@ const LC={open:false,ev:null,lg:null,t:null,
   else{$('#lhqt').textContent='Bu maçta Hue gol kutlaması var';$('#lhqp').textContent='Hangi takımı tutuyorsun? O takım gol atınca salon takım renklerine bürünür.';
    $('#lhqb').innerHTML=cs.map(c=>`<div class="btn" data-f data-act="lht" data-id="${esc((c.team||{}).id)}" data-n="${esc((c.team||{}).displayName||'')}" data-c1="${esc((c.team||{}).color||'')}" data-c2="${esc((c.team||{}).alternateColor||'')}">${esc(tn(c))}</div>`).join('')+'<div class="btn" data-f data-act="lhn">İstemiyorum</div>'}
   q.classList.add('on');focus($('#lhqb [data-f]'))},
- async show(){if(!this.ev)return;this.open=true;const el=$('#lcomp');el.classList.add('on');$$('#live .lf').forEach(x=>x.classList.add('fade'));AV.rect({x:40,y:40,w:1280,h:720});await this.load();focus($('#lcomp [data-f]'));clearInterval(this.t);this.t=setInterval(()=>this.load(),30000)},
+ async show(){if(!this.ev)return;this.open=true;const el=$('#lcomp');el.classList.add('on');$$('#live .lf').forEach(x=>x.classList.add('fade'));{const v=$('#lcvid'),r=v.getBoundingClientRect(),k=1920/(innerWidth||1920);if(r.width>10)AV.rect({x:Math.round(r.left*k),y:Math.round(r.top*k),w:Math.round(r.width*k),h:Math.round(r.height*k)});else AV.rect({x:40,y:40,w:1280,h:720})}await this.load();focus($('#lcomp [data-f]'));clearInterval(this.t);this.t=setInterval(()=>this.load(),30000)},
  hide(){if(!this.open)return false;this.open=false;clearInterval(this.t);$('#lcomp').classList.remove('on');AV.rect(null);showBand&&showBand();focus($('#lstat'));return true},
  async load(){const{id,lg}=this.ev;let j=null;try{const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);const r=await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/summary?event=${id}`,{signal:c.signal});clearTimeout(to);j=await r.json()}catch(e){}
   if(!this.open)return;if(!j){$('#lcst').innerHTML='<p class="empty">Maç verisi alınamadı.</p>';return}
@@ -541,10 +541,11 @@ const GOAL={last:{},pend:{},busy:false,pick:load('rg-goalpick',{}),
  setPick(ev,v){this.pick[ev]=Object.assign({t:Date.now()},v);for(const k in this.pick)if(Date.now()-this.pick[k].t>2*864e5)delete this.pick[k];save('rg-goalpick',this.pick)},
  delay(){return[0,15,30,45,60,90][ST.goalDl==null?3:ST.goalDl]},
  on(){return HUE.ok()&&ST.goalOn!==1},
- async watch(evId,lg,T){let sb=null;try{const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);const r=await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/scoreboard`,{signal:c.signal});clearTimeout(to);sb=await r.json()}catch(e){return}
+ watching(ev,P){return scr==='live'&&!!LV&&((P&&P.ch&&LV.id===P.ch)||(LC.ev&&String(LC.ev.id)===String(ev)))},
+ async watch(evId,lg,T,active){let sb=null;try{const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);const r=await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/scoreboard`,{signal:c.signal});clearTimeout(to);sb=await r.json()}catch(e){return}
   const ev=(sb.events||[]).find(e=>String(e.id)===String(evId));if(!ev)return;const c=(ev.competitions||[])[0]||{},me=(c.competitors||[]).find(x=>x.team&&String(x.team.id)===String(T.id));if(!me)return;
   if(me.team.color&&!T.c1){T.c1=me.team.color;T.c2=me.team.alternateColor||'ffffff'}const sc=+me.score||0,k='x'+evId,prev=this.last[k];this.last[k]=sc;const st=((c.status||{}).type||{}).state;
-  if(prev!=null&&sc>prev&&st==='in'){const op=(c.competitors||[]).find(x=>x!==me);const txt=trn(T.name)+' '+sc+' – '+(op?op.score:'');clearTimeout(this.pend[k]);this.pend[k]=setTimeout(()=>{if((this.last[k]||0)>=sc){toast('GOOOL!',txt,'',8000);this.party(T,'seçilen maç')}},this.delay()*1000)}
+  if(prev!=null&&sc>prev&&st==='in'&&active){const op=(c.competitors||[]).find(x=>x!==me);const txt=trn(T.name)+' '+sc+' – '+(op?op.score:'');clearTimeout(this.pend[k]);this.pend[k]=setTimeout(()=>{if((this.last[k]||0)>=sc&&this.watching(evId,this.pick[evId])){toast('GOOOL!',txt,'',8000);this.party(T,'seçilen maç')}},this.delay()*1000)}
   if(prev!=null&&sc<prev)clearTimeout(this.pend[k])},
  async colors(T){const k=clubColors(T.name);if(k)return k;if(T.c1)return[T.c1,T.c2||'ffffff'];try{const j=await SP.get(TU.teams(T.lg),7*864e5);const L=(((j.sports||[])[0]||{}).leagues||[{}])[0].teams.map(x=>x.team);const t=L.find(x=>String(x.id)===String(T.id));if(t&&t.color){T.c1=t.color;T.c2=t.alternateColor||'ffffff';save('rg-profs',PROFS);return[T.c1,T.c2]}}catch(e){}return['ffcc00','1a2a6c']},
  async party(T,why){if(this.busy||!HUE.ok())return;this.busy=true;try{const[c1,c2]=await this.colors(T),x1=hexXY(c1),x2=hexXY(c2)||x1;const S=await hueStates(),ids=Object.keys(S).filter(id=>S[id].on&&S[id].reachable!==false);
@@ -552,7 +553,7 @@ const GOAL={last:{},pend:{},busy:false,pick:load('rg-goalpick',{}),
   for(let k=0;k<10;k++){const dark=h=>{const v=String(h||'').replace('#','');return v.length>=6&&[0,2,4].every(i=>parseInt(v.substr(i,2),16)<40)};for(let i=0;i<ids.length;i++){const odd=(i+k)%2,hx=odd?c2:c1,xy=odd?x2:x1;HUE.req('/lights/'+ids[i]+'/state','PUT',dark(hx)?{on:true,xy:hexXY('ffffff'),bri:1,transitiontime:2}:{on:true,xy,bri:254,transitiontime:2}).catch(()=>{})}await new Promise(r=>setTimeout(r,900))}
   await hueRestoreStates(S)}catch(e){LOG.add('warn','Gol kutlaması hatası: '+e.message,{})}finally{this.busy=false}},
  async poll(){if(!this.on())return;
-  for(const[ev,P]of Object.entries(this.pick)){if(!P.team||Date.now()-P.t>4*3600e3)continue;await this.watch(ev,P.lg,P.team)}
+  for(const[ev,P]of Object.entries(this.pick)){if(!P.team||Date.now()-P.t>4*3600e3)continue;await this.watch(ev,P.lg,P.team,this.watching(ev,P))}
   for(const T of teamsOf()){const j=SP.fresh(TU.fix(T.id),12*36e5);if(!j){SP.get(TU.fix(T.id),30*6e4).catch(()=>{});continue}
    const m=(j.events||[]).map(e=>evParse(e,T.id)).find(m=>!m.done&&m.t<Date.now()+5*6e4&&m.t>Date.now()-170*6e4);if(!m)continue;
    const lg=m.slug||T.lg;let sb=null;try{const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);const r=await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/scoreboard`,{signal:c.signal});clearTimeout(to);sb=await r.json()}catch(e){continue}
@@ -1120,7 +1121,7 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
  case'lpick':{const x=LC.list[+d.i];const q=$('#lhq');q.classList.remove('on','pick');delete q.dataset.pick;if(!x)return;LC.ev={id:x.e.id,lg:x.lg,e:x.e};LOG.add('info','Maç elle seçildi',{lig:x.lg});LC.show().then(()=>LC.ask(LC.ev));return}
  case'lhy':{const q=$('#lhq');q.classList.remove('on');GOAL.setPick(q.dataset.ev,{yes:1});osd('Gol kutlaması bu maç için açık');return focus($('#lstat'))}
  case'lhn':{const q=$('#lhq');if(q.dataset.pick){q.classList.remove('on','pick');delete q.dataset.pick;return focus($('#lstat'))}q.classList.remove('on');GOAL.setPick(q.dataset.ev,{no:1});return focus(LC.open?$('#lcl [data-f]'):$('#lstat'))}
- case'lht':{const q=$('#lhq');q.classList.remove('on');GOAL.setPick(q.dataset.ev,{lg:q.dataset.lg,team:{id:d.id,name:d.n,c1:d.c1||null,c2:d.c2||null,lg:q.dataset.lg}});LOG.add('info','Maç için takım seçildi',{});osd(trn(d.n)+' gol atınca salon kutlayacak');return focus($('#lstat'))}
+ case'lht':{const q=$('#lhq');q.classList.remove('on');GOAL.setPick(q.dataset.ev,{lg:q.dataset.lg,ch:LV&&LV.id,team:{id:d.id,name:d.n,c1:d.c1||null,c2:d.c2||null,lg:q.dataset.lg}});LOG.add('info','Maç için takım seçildi',{});osd(trn(d.n)+' gol atınca salon kutlayacak');return focus($('#lstat'))}
  case'sfil':SF=d.k||null;drawSearch();return focus($(`#sres [data-act=sfil][data-k="${d.k||''}"]`));
  case'rq':Q=d.q;drawSearch();return focus($('#sres [data-f]')||$('[data-act=key]'));
  case'rqclr':RECS=[];save(pkey('rg-rec'),RECS);drawSearch();return focus($('[data-act=key]'));
