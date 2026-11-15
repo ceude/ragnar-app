@@ -49,7 +49,7 @@ const clean=s=>{if(ST.clean)return String(s||'');const c=cleanRaw(s);return c||S
 const isAdult=s=>/xxx|adult|18\s?\+|\+\s?18|porn|erotic|yetişkin/i.test(s||'');
 
 /* ---------- ayar listesi ---------- */
-const SET=[['aud','Varsayılan ses',['Türkçe dublaj','Orijinal dil']],['sub','Varsayılan altyazı',['Türkçe','Kapalı','English']],['buf','Oynatıcı tamponu',['Dengeli','Güçlü, takılmaya karşı','Hızlı kanal geçişi']],['start','Açılışta',['Ana sayfa','Son izlenen kanal']],['mini','Kanal önizleme (2 bağlantı hakkı gerekir)',['Kapalı','Açık']],['pin','Ebeveyn kilidi',['Açık: yetişkin kategoriler','Kapalı']],['clean','Kanal ve kategori adlarını temizle',['Açık','Kapalı']],['clock','Saat',['Göster','Gizle']],['teamNote','Takımımın maçı başlarken haber ver',['Açık','Kapalı']],['ssv','Ambient: boşta kalınca aç',['5 dakika sonra','10 dakika sonra','Kapalı']],['amode','Ambient düzeni',['Karışık','Saat ve hava','Takvim','Sanat','Afişler']],['anim','Yumuşak kaydırma',['Açık','Kapalı']],['snd','Açılış sesi',['Açık','Kapalı']],['logs','Hata raporlarını gönder',['Açık','Kapalı']]];
+const SET=[['aud','Varsayılan ses',['Türkçe dublaj','Orijinal dil']],['sub','Varsayılan altyazı',['Türkçe','Kapalı','English']],['buf','Oynatıcı tamponu',['Dengeli','Güçlü, takılmaya karşı','Hızlı kanal geçişi']],['start','Açılışta',['Ana sayfa','Son izlenen kanal']],['mini','Kanal önizleme (2 bağlantı hakkı gerekir)',['Kapalı','Açık']],['pin','Ebeveyn kilidi',['Açık: yetişkin kategoriler','Kapalı']],['clean','Kanal ve kategori adlarını temizle',['Açık','Kapalı']],['clock','Saat',['Göster','Gizle']],['teamNote','Takımımın maçı başlarken haber ver',['Açık','Kapalı']],['ssv','Ambient: boşta kalınca aç',['5 dakika sonra','10 dakika sonra','Kapalı']],['anim','Yumuşak kaydırma',['Açık','Kapalı']],['snd','Açılış sesi',['Açık','Kapalı']],['logs','Hata raporlarını gönder',['Açık','Kapalı']]];
 const pinOn=()=>!ST.pin,pinCode=()=>ST.pinCode||'0000';
 
 /* =========================================================
@@ -325,11 +325,11 @@ function drawSearch(){FZ++;$('#qbox').innerHTML=Q?esc(Q):`<span style="color:var
 V.settings=()=>{const u=ACC.ui||{},ex=+u.exp_date?new Date(+u.exp_date*1000):null,dl=ex?Math.ceil((ex-Date.now())/864e5):null;
  const sub=ACC.type==='m3u'?'M3U listesi':`${esc(ACC.srv)} · ${esc(ACC.u)}`;
  return`<h1>Ayarlar</h1><div class="acct"><div><b>${sub}</b><small>${ex?`Abonelik ${ex.toLocaleDateString('tr-TR')} tarihine kadar, ${dl} gün kaldı.`:'Abonelik bitiş tarihi bilinmiyor.'}${u.max_connections?` Bağlantı: ${u.active_cons||0} / ${u.max_connections}.`:''}</small><small>Cihaz kodu: <b style="color:var(--tx)">${DEV}</b> · Sürüm ${APPV} (${APPSRC})</small></div><div class="btn sm" data-f data-act="logout">Listeyi değiştir</div></div>
- <div class="set" data-f data-act="nav" data-v="city">Hava durumu konumu<span>${esc((ST.loc&&ST.loc.name)||'Otomatik')} ›</span></div>
  <div class="set" data-f data-act="nav" data-v="profs">Profiller<span>${esc(PROF().name)}${PROFS.length>1?' · '+PROFS.length+' profil':''} ›</span></div>
  <div class="set" data-f data-act="cats" data-t="live">Kategorileri düzenle<span>Canlı TV, filmler, diziler ›</span></div>
  <div class="set" data-f data-act="reload">Listeyi yenile<span>Yeni eklenenleri getir ›</span></div>
  ${SET.map(([k,n,o])=>`<div class="set" data-f data-act="set" data-k="${k}">${n}<span>‹ ${o[ST[k]||0]} ›</span></div>`).join('')}
+ <div class="set" data-f data-act="nav" data-v="hue">Philips Hue ışıkları<span>${ST.hue&&ST.hue.u?esc('Bağlı'+(ST.hue.gname?' · '+ST.hue.gname:'')):'Bağlı değil'} ›</span></div>
  <div class="set" data-f data-act="pinchg">PIN kodunu değiştir<span>›</span></div>
  <div class="set" data-f data-act="diag">Son hatalar<span>Sorun bildirmek için ›</span></div>`};
 V.who=()=>`<div class="who"><h1>Kim izliyor?</h1><div class="whos">${PROFS.map(p=>`<div class="wp${p.id===PID?' on':''}" data-f data-act="prof" data-id="${p.id}">${av(p,'l')}<b>${esc(p.name)}</b><small>${p.kid?'Çocuk':''}</small></div>`).join('')}</div><div class="btn sm" data-f data-act="nav" data-v="profs">Profilleri yönet</div></div>`;
@@ -422,7 +422,7 @@ const RADRX=/rad[yi]o|\bfm\b|\bradio\b/i;
 const CCN={TR:'Türkiye',DE:'Almanya',AT:'Avusturya',CH:'İsviçre',UK:'İngiltere',GB:'İngiltere',US:'ABD',FR:'Fransa',NL:'Hollanda',BE:'Belçika',IT:'İtalya',ES:'İspanya',AZ:'Azerbaycan',KKTC:'KKTC',CY:'Kıbrıs',GR:'Yunanistan',AR:'Arapça',RU:'Rusya',PL:'Polonya',RO:'Romanya',BG:'Bulgaristan',AL:'Arnavutluk',KU:'Kürtçe',KURD:'Kürtçe',EXYU:'Balkanlar',BA:'Bosna',RS:'Sırbistan',HR:'Hırvatistan',SE:'İsveç',DK:'Danimarka',NO:'Norveç',PT:'Portekiz',IR:'İran'};
 const ccOf=(...xs)=>{for(const x of xs){const m=String(x||'').match(/^\s*([A-Z]{2,4})\s*[|:\-]/)||String(x||'').match(/\b(TR|DE|UK|US|FR|NL|AZ|KKTC)\b/);if(m)return m[1]}return''};
 let RCC=null;
-V.radio=()=>`<div class="ptop"><h1>Radyo</h1><div class="btn sm" data-f data-act="nav" data-v="rsearch" style="margin-left:24px">${IC.search}<span>Radyo ara</span></div></div><p class="sub2">Ülkelere göre canlı radyolar. Sağlayıcında radyo varsa onlar, yoksa ücretsiz internet radyoları (Radio Browser) listelenir.</p><div class="chips" id="rcc"></div><div class="chips" id="rtg" style="margin-top:-10px"></div><div id="rgrid" class="grid"><div class="spin"></div></div>`;
+V.radio=()=>`<div class="phead"><h1>Radyo</h1><div class="btn sm" data-f data-act="nav" data-v="rsearch">${IC.search}<span>Radyo ara</span></div></div><p class="sub2">Ülkelere göre canlı radyolar. Sağlayıcında radyo varsa onlar, yoksa ücretsiz internet radyoları (Radio Browser) listelenir.</p><div class="chips" id="rcc"></div><div class="chips" id="rtg" style="margin-top:-10px"></div><div id="rgrid" class="grid"><div class="spin"></div></div>`;
 const rbMap=cc=>r=>({k:'live',id:'rb:'+r.stationuuid,name:(r.name||'').trim(),icon:r.favicon||'',url:r.url_resolved,radio:true,cc:cc||r.countrycode||'',web:1,tags:String(r.tags||'').toLowerCase().split(',').map(x=>x.trim()).filter(Boolean)});
 const GENRE=[['pop',/\bpop\b/,'Pop'],['rock',/rock|metal/,'Rock'],['news',/news|haber|talk|nachrichten/,'Haber ve sohbet'],['folk',/folk|türkü|turku|halk/,'Türkü ve halk'],['arabesk',/arabesk|fantazi/,'Arabesk'],['slow',/slow|romantic|love/,'Slow'],['dance',/dance|electro|house|club|edm/,'Dans'],['rap',/rap|hip.?hop/,'Rap'],['jazz',/jazz|caz|blues/,'Caz'],['classic',/classical|klasik|opera/,'Klasik'],['religious',/relig|islam|dini|kuran/,'Dini'],['sport',/sport|spor/,'Spor'],['oldies',/oldies|80s|90s|70s|nostal/,'Nostalji'],['kids',/kids|çocuk|children/,'Çocuk']];
 let RGEN='';
@@ -450,6 +450,48 @@ function radWebDraw(){const g=GENRE.find(x=>x[0]===RGEN),L=g?RADS.filter(r=>r.ta
 function radDraw(){const L=RADS.filter(c=>!RCC||c.cc===RCC);$('#rgrid').innerHTML=L.length?L.map(i=>`<div class="tvi" data-f data-act="live" data-key="${reg(i)}" style="width:300px">${img(i.icon)}<span>${i.num||''}</span><div><b>${esc(clean(i.name))}</b></div></div>`).join(''):'<p class="empty">Listende radyo yayını bulunamadı.</p>'}
 function radView(it){let r=$('#radv');if(!it||!it.radio){if(r)r.remove();$('#live').classList.remove('radio');return}$('#live').classList.add('radio');
  if(!r){r=document.createElement('div');r.id='radv';$('#live').prepend(r)}r.innerHTML=`<div class="rvc">${it.icon?`<img src="${esc(it.icon)}" alt="">`:`<div class="rvi">${IC.radio}</div>`}<b>${esc(clean(it.name))}</b><small>Canlı radyo</small></div>`}
+/* ================= PHILIPS HUE: film açılınca odayı kıs, bitince eski hâline getir ================= */
+const HUEO={hr:[16,17,18,19,20,21],lv:[5,10,20,30],lvN:['%5','%10','%20','%30'],pz:[40,60,-1],pzN:['%40','%60','Değişmesin']};
+const HUE={saved:null,on:false,busy:false,
+ ok(){return!!(ST.hue&&ST.hue.ip&&ST.hue.u&&ST.hue.g)},
+ base(){return`http://${ST.hue.ip}/api/${ST.hue.u}`},
+ async req(path,method,body){const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);try{const r=await fetch(this.base()+path,{method:method||'GET',body:body?JSON.stringify(body):undefined,signal:c.signal});return await r.json()}finally{clearTimeout(t)}},
+ eve(){return ST.hueEve==null?1:ST.hueEve},hour(){if(ST.hueHr==null&&ST.hueH!=null&&HUEO.hr[ST.hueH]!=null){ST.hueHr=HUEO.hr[ST.hueH];delete ST.hueH}return ST.hueHr==null?17:ST.hueHr},
+ ask(){return this.ok()&&ST.hueOn!==1&&this.when()&&ST.hueAsk!==1&&!this.on},auto(){return this.ok()&&ST.hueOn!==1&&this.when()&&ST.hueAsk===1},
+ when(){if(this.eve()===0)return true;const h=new Date().getHours();return h>=this.hour()||h<6},
+ lvl(){return HUEO.lv[ST.hueLv==null?1:ST.hueLv]},
+ async dim(why){if(!this.ok()||ST.hueOn===1||!this.when())return;try{
+   if(!this.on){const g=await this.req('/groups/'+ST.hue.g);const ids=(g&&g.lights)||[];const st={};for(const id of ids){const l=await this.req('/lights/'+id);if(l&&l.state)st[id]=l.state}this.saved=st;this.on=true;
+    if(!Object.values(st).some(x=>x.on)){this.saved=null;this.on=false;return}}
+   if(scr!=='player'&&scr!=='live'&&why!=='deneme'){this.on=false;this.saved=null;return}
+   const b=Math.max(1,Math.round(this.lvl()*254/100));for(const[id,x]of Object.entries(this.saved||{}))if(x.on)await this.req('/lights/'+id+'/state','PUT',{bri:b,transitiontime:30});
+   LOG.add('info','Hue: ışıklar kısıldı',{neden:why,seviye:this.lvl()})}catch(e){LOG.add('warn','Hue bağlantı hatası: '+e.message,{})}},
+ async pause(p){if(!this.on||!this.ok())return;const z=HUEO.pz[ST.huePz||0];if(z<0)return;try{const b=Math.round((p?z:this.lvl())*254/100);for(const[id,x]of Object.entries(this.saved||{}))if(x.on)await this.req('/lights/'+id+'/state','PUT',{bri:Math.max(1,b),transitiontime:p?15:20})}catch(e){}},
+ async restore(){if(!this.on||!this.ok())return;const S=this.saved||{};this.on=false;this.saved=null;try{for(const[id,x]of Object.entries(S)){if(!x.on)continue;const st={on:true,bri:x.bri,transitiontime:25};if(x.colormode==='ct'&&x.ct)st.ct=x.ct;else if(x.colormode==='xy'&&x.xy)st.xy=x.xy;else if(x.colormode==='hs'&&x.hue!=null){st.hue=x.hue;st.sat=x.sat}await this.req('/lights/'+id+'/state','PUT',st)}LOG.add('info','Hue: ışıklar eski hâline döndü',{})}catch(e){LOG.add('warn','Hue geri alma hatası: '+e.message,{})}}};
+document.addEventListener('visibilitychange',()=>{if(document.hidden)HUE.restore()});
+let HPAIR=null,HIP='';
+V.hue=()=>{const c=HUE.ok(),h=ST.hue||{};return`<h1>Philips Hue ışıkları</h1><p class="sub2">Film ya da dizi başlayınca seçtiğin odanın ışıkları yavaşça kısılır; duraklatınca biraz açılır, çıkınca izlemeden önceki hâline döner. Kapalı lambalar açılmaz.</p>
+ ${!h.u?`<div class="set" data-f data-act="nav" data-v="huepair">Hue köprüsünü bağla<span>›</span></div>`:`<div class="set" data-f data-act="huegrp">Oda<span>‹ ${esc(h.gname||'Seç')} ›</span></div>
+ <div class="set" data-f data-act="hset" data-k="hueOn">Otomatik ışık<span>‹ ${['Açık','Kapalı'][ST.hueOn||0]} ›</span></div>
+ <div class="set" data-f data-act="hset" data-k="hueLv">Film ve dizide ışık seviyesi<span>‹ ${HUEO.lvN[ST.hueLv==null?1:ST.hueLv]} ›</span></div>
+ <div class="set" data-f data-act="hset" data-k="huePz">Duraklatınca<span>‹ ${HUEO.pzN[ST.huePz||0]} ›</span></div>
+ <div class="set" data-f data-act="hset" data-k="hueLive">Canlı TV'de de kıs<span>‹ ${['Hayır','Evet'][ST.hueLive||0]} ›</span></div>
+ <div class="set" data-f data-act="hset" data-k="hueEve">Ne zaman<span>‹ ${['Her zaman','Sadece akşamları'][HUE.eve()]} ›</span></div>
+ ${HUE.eve()===1?`<div class="set" data-f data-act="hset" data-k="hueHr">Akşam başlangıcı<span>‹ ${String(HUE.hour()).padStart(2,'0')}:00 sonrası (sabah 06:00'ya kadar) ›</span></div>
+ <div class="set" data-f data-act="hset" data-k="hueAsk">Her film ve bölümden önce sor<span>‹ ${['Evet','Hayır'][ST.hueAsk||0]} ›</span></div>`:''}
+ <div class="set" data-f data-act="huetest">Şimdi dene<span>5 saniye kıs, sonra geri getir ›</span></div>
+ <div class="set" data-f data-act="hueoff">Bağlantıyı kaldır<span>${esc(h.ip||'')} ›</span></div>`}`};
+let HGROUPS=[];
+AF.hue=async(a,tok)=>{if(!(ST.hue&&ST.hue.u))return;try{const g=await HUE.req('/groups');HGROUPS=Object.entries(g||{}).filter(([,x])=>x&&(x.type==='Room'||x.type==='Zone')).map(([id,x])=>({id,name:x.name}))}catch(e){HGROUPS=[]}};
+V.huepair=()=>`<h1>Hue köprüsünü bağla</h1><div id="hpst" class="sub2">Köprü aranıyor…</div><div id="hpip" style="display:none"><div class="srch"><div><div class="qbox" id="hipbox">${esc(HIP)||'<span style="color:var(--dim)">Örnek: 192.168.1.20</span>'}</div><div class="kb">${[...'1234567890.'].map(k=>`<div class="key" data-f data-act="hipk" data-v="${k}">${k}</div>`).join('')}<div class="key w" data-f data-act="hipk" data-v="DEL">Sil</div></div><div class="btn" data-f data-act="hipgo" style="margin-top:16px">Bu adresi dene</div></div></div></div>`;
+AF.huepair=async(a,tok)=>{let ip='';try{const c=new AbortController(),t=setTimeout(()=>c.abort(),6000);const r=await fetch('https://discovery.meethue.com/',{signal:c.signal});clearTimeout(t);const j=await r.json();ip=(j&&j[0]&&j[0].internalipaddress)||''}catch(e){}
+ if(tok!==RT)return;if(!ip){$('#hpst').textContent='Köprü otomatik bulunamadı. Köprünün IP adresini yaz (Hue uygulamasında Ayarlar → Köprüler → köprünün adı altında görünür).';$('#hpip').style.display='';return focus($('#hpip [data-f]'))}huePair(ip,tok)};
+async function huePair(ip,tok){clearInterval(HPAIR);$('#hpip').style.display='none';$('#hpst').innerHTML=`Köprü bulundu: <b>${esc(ip)}</b><br>Şimdi köprünün üstündeki <b>yuvarlak düğmeye</b> bas. 30 saniye bekleniyor…`;let n=0;
+ const tryOnce=async()=>{if(tok!==RT||cv!=='huepair'){clearInterval(HPAIR);return}try{const c=new AbortController(),t=setTimeout(()=>c.abort(),4000);const r=await fetch(`http://${ip}/api`,{method:'POST',body:JSON.stringify({devicetype:'ragnar#tv'}),signal:c.signal});clearTimeout(t);const j=await r.json();const ok=j&&j[0]&&j[0].success;
+   if(ok){clearInterval(HPAIR);ST.hue={ip,u:ok.username};saveST();LOG.add('info','Hue köprüsü bağlandı',{});nav.pop();render('hue');osd('Hue köprüsü bağlandı. Şimdi odanı seç.');return focus($('[data-act=huegrp]'))}}
+  catch(e){if(++n>=3&&n<5)$('#hpst').innerHTML=`Köprüye ulaşılamıyor (${esc(ip)}). TV ile köprü aynı ağda mı? Tekrar deneniyor…`}
+  if(++n>=16){clearInterval(HPAIR);$('#hpst').innerHTML='Düğmeye basılmadı ya da köprüye ulaşılamadı. Geri dönüp tekrar deneyebilirsin.'}};
+ HPAIR=setInterval(tryOnce,2000);tryOnce()}
 V.diag=()=>{const b=load('rg-logbuf',[]);return`<h1>Son hatalar</h1><p class="sub2">Bir sorun olduğunda bu ekranın fotoğrafını göndermen yeterli. Sürüm ${APPV} (${APPSRC}), cihaz ${DEV}. Akıcılık: ${PERF.text()}${ACC&&ACC.ui&&ACC.ui.max_connections?`, bağlantı hakkı ${ACC.ui.max_connections}`:''}.</p>`+(b.length?b.map(x=>`<div class="set" data-f><b style="font-weight:700;max-width:640px">${esc(x.m)}</b><span>${esc(x.l)} · ${hhmm(x.t)}</span></div>`).join(''):'<p class="empty">Kayıtlı hata yok.</p>')}
 V.cats=t=>`<h1>Kategoriler</h1><div class="chips">${[['live','Canlı TV'],['vod','Filmler'],['series','Diziler']].map(([k,n])=>`<div class="chip${k===t?' sel':''}" data-f data-act="ctab" data-t="${k}">${n}</div>`).join('')}</div><p class="sub2">Gizlediğin kategoriler listede, aramada ve kanal geçişinde görünmez. Yetişkin kategoriler otomatik algılanır ve PIN ile korunur.</p><div id="cbox"><div class="spin sm"></div></div>`;
 AF.cats=async(t,tok,sel)=>{const cs=await API.cats(t);if(tok!==RT)return;drawCats(t,cs,sel)};
@@ -459,8 +501,8 @@ function drawCats(t,cs,sel){const h=ST['h_'+t]||[],nm={};visCats(t,cs).forEach(c
  if(sel)focus($('#cbox '+sel))}
 
 /* ---------- gezinme ---------- */
-function go(s){const was=scr;scr=s;if(s==='login'){if(was!=='login'||!PAIR.t)PAIR.start()}else PAIR.stop();$$('.scr').forEach(x=>x.classList.toggle('on',x.id===s));document.documentElement.classList.toggle('vid',s==='player'||s==='live')}
-function sideCur(v,a){const sv={rsearch:'radio',teams:'team',radio:'radio',city:'settings',team:'team',amb:'amb',teampick:'team',pinrec:'settings',who:'who',profs:'settings',pname:'settings',kidcats:'settings',diag:'settings',cat:a&&a.t==='vod'?'films':'series',tv:'live',detail:REG.get(a)&&REG.get(a).k==='vod'?'films':'series',cats:'settings',search:a==='live'?'live':a==='vod'?'films':a==='series'?'series':'search'}[v]||v;$$('.sn').forEach(s=>s.classList.toggle('cur',s.dataset.v===sv))}
+function go(s){const was=scr;scr=s;if(s==='live'&&was!=='live'&&ST.hueLive===1)HUE.dim('canlı');else if((s==='app'||s==='login')&&(was==='player'||was==='live'))HUE.restore();if(s==='login'){if(was!=='login'||!PAIR.t)PAIR.start()}else PAIR.stop();$$('.scr').forEach(x=>x.classList.toggle('on',x.id===s));document.documentElement.classList.toggle('vid',s==='player'||s==='live')}
+function sideCur(v,a){const sv={hue:'settings',huepair:'settings',rsearch:'radio',teams:'team',radio:'radio',city:'settings',team:'team',amb:'amb',teampick:'team',pinrec:'settings',who:'who',profs:'settings',pname:'settings',kidcats:'settings',diag:'settings',cat:a&&a.t==='vod'?'films':'series',tv:'live',detail:REG.get(a)&&REG.get(a).k==='vod'?'films':'series',cats:'settings',search:a==='live'?'live':a==='vod'?'films':a==='series'?'series':'search'}[v]||v;$$('.sn').forEach(s=>s.classList.toggle('cur',s.dataset.v===sv))}
 async function render(v,a,push=true,sel){if(push||!nav.length)nav.push([v,a]);else nav[nav.length-1]=[v,a];if(cv==='tv'||v!=='tv')miniStop();if(cv==='search'&&v!=='search'&&v!=='detail')API.purge();if(REG.size>6000&&(v==='home'||v==='tv'||v==='series'||v==='films'))REG.clear();cv=v;GRID=null;BR=null;COLDR=null;
  $('#catov').classList.remove('on');const w=$('#view'),tok=++RT;w.className=v==='home'||v==='series'||v==='films'?'home':v==='tv'?'tvv':'';w.innerHTML=V[v](a);w.scrollTop=0;sideCur(v,a);focus((sel&&$('#view '+sel))||$('#view [data-f]'));
  if(AF[v]){try{await AF[v](a,tok,sel)}catch(e){if(tok===RT)toast('Yüklenemedi',e.message);LOG.add('api',e.message,{gorunum:v})}}}
@@ -493,6 +535,8 @@ function focus(e){if(!e)return;if(!PAD&&!e.closest('#'+scr)&&!e.closest('#toast,
  if(CTX.length>LCN&&e.parentElement&&e.parentElement.id==='chl'&&tail(e,7)<7){e.parentElement.insertAdjacentHTML('beforeend',CTX.slice(LCN,LCN+40).map(lcc).join(''));LCN+=40}
  if(GRID&&e.parentElement&&e.parentElement.id==='vg'){if(tail(e,13)<13)gridMore();gridTrim(e)}}
 function move(d){if(!cur||!cur.isConnected)return focus(vis()[0]);
+ if(d==='l'&&scr==='app'&&!PAD&&cur.closest('#view')){const r0=cur.getBoundingClientRect();const left=$$('#view [data-f]').some(e=>{if(e===cur||e.offsetParent===null)return false;const r=e.getBoundingClientRect();return r.right<=r0.left+4&&Math.min(r.bottom,r0.bottom)-Math.max(r.top,r0.top)>-60});
+  if(!left&&!(cur.parentElement&&cur.parentElement.matches(HROW)&&cur.previousElementSibling)){const sn=$('#side .sn.cur')||$('#side .sn');if(sn)return focus(sn)}}
  /* yan menüde sağ ok = seç: başka bir sayfaysa aç ve içeriğe geç */
  if(d==='r'&&scr==='app'&&!PAD&&cur.classList.contains('sn')&&cur.closest('#side')&&!cur.classList.contains('cur')){const v=cur.dataset.v;ok(cur);
   let n=0;const go=()=>{if(PAD||cv==='who'&&v!=='who'&&$('#view .wp'))return;const t=$('#view [data-f]');if(t&&cur&&cur.closest('#side'))return focus(t);if(++n<12&&cur&&cur.closest('#side'))setTimeout(go,150)};setTimeout(go,60);return}
@@ -510,6 +554,7 @@ function move(d){if(!cur||!cur.isConnected)return focus(vis()[0]);
   const sc=(h?Math.abs(dx):Math.abs(dy))+(h?Math.abs(dy):Math.abs(dx))*(ov?0.15:2.5);if(sc<bd){bd=sc;best=e}}return best};
  let best=null;if(ver&&scr==='app'&&!inSide&&!PAD){const A=$$('#view [data-f]');if(A.length<=400)best=pickFrom(A.filter(e=>e.offsetParent!==null))}
  if(!best)best=pickFrom(vis());
+ if(d==='l'&&best&&scr==='app'&&!inSide&&best.closest('#side'))best=$('#side .sn.cur')||best;
  if(!best&&IO&&!PAD&&!$('#exitov').classList.contains('on')&&!$('#'+scr+' .ov.on'))best=pickFrom($$('#'+scr+' [data-f]').filter(e=>e.offsetParent!==null));
  focus(best)}
 
@@ -649,10 +694,12 @@ let PL=null,PK='',paused=false,osdT,hold=0,wT,SK=null,SKT,nxOn=0,nxC=0,TRK={au:[
 function openPlayer(it,start){if(scr!=='player')retSel=cur?selOf(cur):null;PL=it;PK=it.k==='ep'?'s:'+it.sid:'v:'+it.id;miniStop();
  go('player');paused=false;nxOn=0;SK=null;$('#player').classList.add('ui');$('#pt').textContent=dispName(it.k==='ep'?it.sname:it.name).t;
  $('#pe').textContent=it.k==='ep'?`Sezon ${it.season}, Bölüm ${it.num}${epTitle(it)?': '+epTitle(it):''}`:'';$('#beps').style.display='none';
- $('#player').append($('#pan'));hidePan();unf();['#nx','#rs','#perr'].forEach(s=>$(s).classList.remove('on'));$('#sub').style.display='none';$('#player .osd').style.display='none';
+ $('#player').append($('#pan'));hidePan();unf();['#nx','#rs','#perr','#hueq'].forEach(s=>$(s).classList.remove('on'));$('#sub').style.display='none';$('#player .osd').style.display='none';
  $('#t1').textContent='0:00';$('#t2').textContent='';$('#fl').style.width='0';$('#trk').textContent='';drawPP();
- const h=HIST[it.k+':'+it.id];if(start==null&&hPart(h)){$('#rst').textContent=`${fmt(h.t)} noktasında kalmıştın.`;$('[data-act=rsY]').innerHTML=IC.play+' Kaldığın yerden devam et';$('[data-act=rsY]').dataset.t=h.t;$('#rs').classList.add('on');return focus($('[data-act=rsY]'))}
- startPlay(start||0)}
+ const go2=()=>{$('#hueq').classList.remove('on');const h=HIST[it.k+':'+it.id];if(start==null&&hPart(h)){$('#rst').textContent=`${fmt(h.t)} noktasında kalmıştın.`;$('[data-act=rsY]').innerHTML=IC.play+' Kaldığın yerden devam et';$('[data-act=rsY]').dataset.t=h.t;$('#rs').classList.add('on');return focus($('[data-act=rsY]'))}
+  startPlay(start||0)};HQGO=go2;
+ if(HUE.ask()){$('#hueq').classList.add('on');return focus($('[data-act=hqY]'))}if(HUE.auto())HUE.dim('film');go2()}
+let HQGO=null;
 async function startPlay(t){$('#rs').classList.remove('on');$('#perr').classList.remove('on');unf();tryN=0;loadingOn('player','Yükleniyor');PL.start=t;const me=PL;
  const pr=pref(PK);MKOK=false;if(!pr.mk&&pr.mkx!==2&&isTV){const t0=Date.now(),mk=await MKV.read(API.url(PL));if(PL!==me||scr!=='player')return;
   if(mk&&mk.length){pr.mk=mk;savePF();LOG.add('info','Altyazı dilleri dosyadan okundu',{ms:Date.now()-t0,diller:mk.map(x=>x.lang+(x.forced?'*':'')+(x.sdh?'+':'')).join(' '),kodekler:[...new Set(mk.map(x=>x.codec))].join(' ')})}else{pr.mkx=2;savePF();LOG.add('info','Dosyadan altyazı dili okunamadı',{ms:Date.now()-t0,neden:MKV.why||(mk&&!mk.length?'altyazı parçası yok':'bilinmiyor'),uzanti:PL.ext||''})}}
@@ -793,7 +840,7 @@ function osd(t,keep){const o=$('#'+scr+' .osd');if(!o)return;o.innerHTML=t;o.cla
 function loadingOn(s,t){const l=$('#'+s+' .ld');l.querySelector('span').textContent=t||'';l.classList.add('on')}
 function loadingOff(s){$('#'+s+' .ld').classList.remove('on')}
 function wake(){if(!$('#player').classList.contains('ui')&&SK==null&&PL&&AV.st!=='none')drawT(AV.time()/1000);$('#player').classList.add('ui');clearTimeout(wT);wT=setTimeout(()=>{if(scr==='player'&&!paused&&$('#pan').classList.contains('hide')&&!cur&&!$('#player .ov.on'))$('#player').classList.remove('ui')},4000)}
-function pause(){if(AV.st==='none')return;paused=!paused;paused?AV.pause():AV.play();if(SC){if(paused)clearTimeout(SC.t);else{SC.sw=Date.now();SC.t=setTimeout(()=>scanNext(true),9000)}}osd(paused?IC.pause:IC.play,paused);drawPP();wake();if(paused)histSet(PL,AV.time()/1000,AV.dur()/1000)}
+function pause(){if(AV.st==='none')return;paused=!paused;HUE.pause(paused);paused?AV.pause():AV.play();if(SC){if(paused)clearTimeout(SC.t);else{SC.sw=Date.now();SC.t=setTimeout(()=>scanNext(true),9000)}}osd(paused?IC.pause:IC.play,paused);drawPP();wake();if(paused)histSet(PL,AV.time()/1000,AV.dur()/1000)}
 function seek(st){const d=AV.dur()/1000;if(!d)return osd('Bu içerikte sarma yok');if(SK==null)SK=AV.time()/1000;SK=Math.max(0,Math.min(d-2,SK+st));drawT(SK);osd(fmt(SK),paused);
  clearTimeout(SKT);SKT=setTimeout(()=>{AV.seek(SK*1000);SK=null},700)}
 function nextEp(){if(!PL||PL.k!=='ep')return null;const i=EPS.findIndex(e=>e.id===PL.id);return i>=0?EPS[i+1]||null:null}
@@ -958,6 +1005,14 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
  case'rgen':RGEN=d.g;$$('#rtg .chip').forEach(x=>x.classList.toggle('sel',x===e));return radWebDraw();
  case'radk':RQ=d.v==='DEL'?RQ.slice(0,-1):(RQ+(RQ&&d.v!==' '?d.v.toLocaleLowerCase('tr'):d.v)).slice(0,30);$('#rqbox').innerHTML=esc(RQ)||'<span style="color:var(--dim)">İstasyon adı</span>';return rSearch();
  case'rcc':RCC=d.c;$$('#rcc .chip').forEach(x=>x.classList.toggle('sel',x===e));if(RWEB)return radWeb();return radDraw();
+ case'hipk':HIP=d.v==='DEL'?HIP.slice(0,-1):(HIP+d.v).slice(0,15);$('#hipbox').innerHTML=esc(HIP)||'<span style="color:var(--dim)">Örnek: 192.168.1.20</span>';return;
+ case'hipgo':if(!/^\d+\.\d+\.\d+\.\d+$/.test(HIP))return osd('Geçerli bir IP adresi yaz');return huePair(HIP,RT);
+ case'huegrp':{if(!HGROUPS.length){osd('Odalar alınamadı; köprü bağlantısını kontrol et');return}const h=ST.hue,i=HGROUPS.findIndex(g=>g.id===h.g),n=HGROUPS[(i+1)%HGROUPS.length];h.g=n.id;h.gname=n.name;saveST();render('hue');return focus($('[data-act=huegrp]'))}
+ case'hset':{if(d.k==='hueHr'){ST.hueHr=(HUE.hour()+1)%24;saveST();render('hue');return focus($('[data-act=hset][data-k="hueHr"]'))}const k=d.k,m={hueOn:2,hueLv:4,huePz:3,hueLive:2,hueEve:2,hueAsk:2}[k];const c=ST[k]==null?(k==='hueLv'||k==='hueEve'||k==='hueH'?1:0):ST[k];ST[k]=(c+1)%m;saveST();render('hue');return focus($(`[data-act=hset][data-k="${k}"]`))}
+ case'huetest':{if(!HUE.ok())return osd('Önce oda seç');const ev=ST.hueEve,on=ST.hueOn;ST.hueEve=0;ST.hueOn=0;HUE.dim('deneme').then(()=>{ST.hueEve=ev;ST.hueOn=on;osd(HUE.on?'Işıklar kısıldı; 5 saniye sonra geri gelecek':'Odadaki lambalar kapalı ya da köprüye ulaşılamadı');if(HUE.on)setTimeout(()=>HUE.restore(),5000)});return}
+ case'hueoff':{if(!e.dataset.arm){e.dataset.arm='1';e.querySelector('span').textContent='Emin misin? Tekrar bas';return}HUE.restore().then(()=>{delete ST.hue;saveST();render('hue');focus($('#view [data-f]'))});return}
+ case'hqY':HUE.dim('film');return HQGO&&HQGO();
+ case'hqN':return HQGO&&HQGO();
  case'sfil':SF=d.k||null;drawSearch();return focus($(`#sres [data-act=sfil][data-k="${d.k||''}"]`));
  case'rq':Q=d.q;drawSearch();return focus($('#sres [data-f]')||$('[data-act=key]'));
  case'rqclr':RECS=[];save(pkey('rg-rec'),RECS);drawSearch();return focus($('[data-act=key]'));
@@ -1042,15 +1097,17 @@ async function artList(){const qs=['landscape painting','seascape','impressionis
  const j=await SP.get(`https://api.artic.edu/api/v1/artworks/search?q=${encodeURIComponent(q)}&query[term][is_public_domain]=true&fields=id,title,artist_title,date_display,image_id,thumbnail&limit=60`,7*864e5);
  return((j&&j.data)||[]).filter(a=>a.image_id&&a.thumbnail&&a.thumbnail.width>a.thumbnail.height*1.15).map(a=>({src:`https://www.artic.edu/iiif/2/${a.image_id}/full/1686,/0/default.jpg`,t:a.title,a:[a.artist_title,a.date_display].filter(Boolean).join(', ')}))}
 let SSM=null,SSMI=0,SSART=[],SSAI=0;
-function ssShow(force){if($('#ss'))return;const d=document.createElement('div');d.id='ss';
+let SSMAN=false;
+function ssShow(force){if($('#ss'))return;SSMAN=!!force;const d=document.createElement('div');d.id='ss';
  d.innerHTML=`<div class="ssb" id="ssa"></div><div class="ssb" id="ssb2"></div><div class="ssv"></div><div id="ssw"><div class="ssl"><svg viewBox="16 4 168 262">${HELM}</svg><span>RAGNAR</span></div><div id="ssm"></div></div>`;
- $('#stage').appendChild(d);d.classList.add('on');SSMI=0;const mode=AMODES[ST.amode||0];SSM=mode==='mix'?'clock':mode;ssRender();
+ $('#stage').appendChild(d);d.classList.add('on');SSMI=0;const mode=force?'mix':'posters';SSM='posters';ssRender();
  let sec=0;SSI=setInterval(()=>{sec++;ssTick();if((SSM==='posters'&&sec%30===0)||(SSM==='art'&&sec%60===0))ssStep();if(sec%180===0){const w=$('#ssw');if(w)w.style.transform=`translate(${Math.round(Math.random()*16-8)}px,${Math.round(Math.random()*12-6)}px)`}
-  SSMS++;if(AMODES[ST.amode||0]==='mix'&&SSMS>=120){SSMS=0;const L=['clock','cal','art','posters'].filter(x=>!(x==='art'&&SSNOART));SSM=L[(L.indexOf(SSM)+1)%L.length];ssRender()}},1000);
+  SSMS++;if(SSMAN&&SSMS>=180){SSMS=0;const L=ssList();if(L.length>1){SSM=L[(L.indexOf(SSM)+1)%L.length];ssRender()}}},1000);
  ssDots();LOG.add('info','Ambient açıldı',{duzen:mode,elle:!!force})}
-const SSL=['clock','cal','art','posters'],SSLN={clock:'Saat ve hava',cal:'Takvim',art:'Sanat',posters:'Afişler'};
-function ssNav(d){if(!$('#ss'))return;const L=SSL.filter(x=>!(x==='art'&&SSNOART));SSM=L[(L.indexOf(SSM)+d+L.length)%L.length];SSMS=0;ssRender();ssDots()}
-function ssDots(){let el=$('#ssdots');if(!el){el=document.createElement('div');el.id='ssdots';$('#ss').appendChild(el)}el.innerHTML=SSL.filter(x=>!(x==='art'&&SSNOART)).map(x=>`<i class="${x===SSM?'on':''}"></i>`).join('')+`<span>${SSLN[SSM]} · ◀ ▶ ile değiştir</span>`;el.classList.add('on');clearTimeout(ssDots.t);ssDots.t=setTimeout(()=>el.classList.remove('on'),3000)}
+const SSLN={clock:'Saat ve hava',cal:'Takvim',art:'Sanat',posters:'Afişler'};
+const ssList=()=>SSMAN&&!SSNOART?['posters','art']:['posters'];
+function ssNav(d){if(!$('#ss'))return;const L=ssList();if(L.length<2)return ssHide();SSM=L[(L.indexOf(SSM)+d+L.length)%L.length];SSMS=0;ssRender();ssDots()}
+function ssDots(){let el=$('#ssdots');if(!el){el=document.createElement('div');el.id='ssdots';$('#ss').appendChild(el)}const L=ssList();if(L.length<2){el.classList.remove('on');return}el.innerHTML=L.map(x=>`<i class="${x===SSM?'on':''}"></i>`).join('')+`<span>${SSLN[SSM]} · ◀ ▶ ile değiştir</span>`;el.classList.add('on');clearTimeout(ssDots.t);ssDots.t=setTimeout(()=>el.classList.remove('on'),3000)}
 let SSMS=0;
 let SSBT=0;
 function ssBg(src,done,alt,land){const a=$('#ssa'),b=$('#ssb2');if(!a)return;const tk=++SSBT,on=a.classList.contains('on'),el=on?b:a,ot=on?a:b;if(!src){a.classList.remove('on');b.classList.remove('on');return}

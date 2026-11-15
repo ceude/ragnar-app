@@ -534,3 +534,21 @@ html.tv [data-f]{transition:none!important}
 .tmt0.fx{box-shadow:0 0 0 3px var(--acc)}.tmt0.sel.fx{background:var(--tx);color:#0a0d12}
 .tmadd{width:46px;height:46px;border-radius:50%;background:var(--s2);display:grid;place-items:center;color:var(--tx)}
 .tmadd svg{width:22px;height:22px}.tmadd.fx{background:var(--tx);color:#0a0d12}
+
+/* Ambient: saat göz yormasın */
+.ssbig>b{font-size:150px;font-weight:400;color:rgba(232,234,238,.62);letter-spacing:.04em}
+.ssbig>small{font-size:22px;color:rgba(207,211,218,.55)}
+.wxnow>b{font-size:56px;color:rgba(232,234,238,.75)}.wxnow span{color:rgba(232,234,238,.8)}.wxnow svg{opacity:.8}
+.wxd{opacity:.75}
+.calr>b{font-size:96px;font-weight:400;color:rgba(232,234,238,.62)}.calr>small{color:rgba(207,211,218,.55)}
+#ss .ssc b{color:rgba(255,255,255,.82)}
+
+.phead{display:flex;align-items:center;gap:22px;margin-bottom:4px}.phead h1{margin:0}
+.phead .btn{display:inline-flex;align-items:center;gap:8px}.phead .btn svg{width:18px;height:18px}
+/* 5) afişlerde saat ve tarih sağdan tam hizalı */
+#ss .ssc{display:flex;flex-direction:column;align-items:flex-end}
+#ss .ssc b{letter-spacing:0;margin-right:-2px}
+#ss .ssc small{letter-spacing:0;white-space:nowrap}
+
+/* sayfa başlığı satırı: başlık ve yanındaki düğme aynı hizada */
+.ptop{display:flex;align-items:center;gap:22px;margin-bottom:6px}.ptop h1{margin:0}.ptop .btn{margin:0!important}
