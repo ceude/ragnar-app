@@ -49,7 +49,7 @@ const clean=s=>{if(ST.clean)return String(s||'');const c=cleanRaw(s);return c||S
 const isAdult=s=>/xxx|adult|18\s?\+|\+\s?18|porn|erotic|yetişkin/i.test(s||'');
 
 /* ---------- ayar listesi ---------- */
-const SET=[['aud','Varsayılan ses',['Türkçe dublaj','Orijinal dil']],['sub','Varsayılan altyazı',['Türkçe','Kapalı','English']],['buf','Oynatıcı tamponu',['Dengeli','Güçlü, takılmaya karşı','Hızlı kanal geçişi']],['start','Açılışta',['Ana sayfa','Son izlenen kanal']],['mini','Kanal önizleme (2 bağlantı hakkı gerekir)',['Kapalı','Açık']],['pin','Ebeveyn kilidi',['Açık: yetişkin kategoriler','Kapalı']],['clean','Kanal ve kategori adlarını temizle',['Açık','Kapalı']],['clock','Saat',['Göster','Gizle']],['teamNote','Takımımın maçı başlarken haber ver',['Açık','Kapalı']],['ssv','Ambient: boşta kalınca aç',['5 dakika sonra','10 dakika sonra','Kapalı']],['anim','Yumuşak kaydırma',['Açık','Kapalı']],['snd','Açılış sesi',['Açık','Kapalı']],['logs','Hata raporlarını gönder',['Açık','Kapalı']]];
+const SET=[['aud','Varsayılan ses',['Türkçe dublaj','Orijinal dil']],['sub','Varsayılan altyazı',['Türkçe','Kapalı','English']],['buf','Oynatıcı tamponu',['Dengeli','Güçlü, takılmaya karşı','Hızlı kanal geçişi']],['start','Açılışta',['Ana sayfa','Son izlenen kanal']],['mini','Kanal önizleme (2 bağlantı hakkı gerekir)',['Kapalı','Açık']],['pin','Ebeveyn kilidi',['Açık: yetişkin kategoriler','Kapalı']],['clean','Kanal ve kategori adlarını temizle',['Açık','Kapalı']],['clock','Saat',['Göster','Gizle']],['teamNote','Takımımın maçı başlarken haber ver',['Açık','Kapalı']],['epgOffI','Rehber saat düzeltmesi',['Yok','-1 saat','-2 saat','-3 saat','+1 saat','+2 saat','+3 saat']],['ssv','Ambient: boşta kalınca aç',['5 dakika sonra','10 dakika sonra','Kapalı']],['anim','Yumuşak kaydırma',['Açık','Kapalı']],['snd','Açılış sesi',['Açık','Kapalı']],['logs','Hata raporlarını gönder',['Açık','Kapalı']]];
 const pinOn=()=>!ST.pin,pinCode=()=>ST.pinCode||'0000';
 
 /* =========================================================
@@ -85,7 +85,7 @@ const API={C:{},
  seriesInfo(id){return this.once('si'+id,()=>this.getR(this.q('get_series_info','&series_id='+id),30000))},
  async epg(id,n){if(ACC.type==='m3u')return[];n=n||4;const k='e'+id+'_'+n,c=this.C[k];if(c&&Date.now()-c.t<300000)return c.v;
   const j=await this.getR(this.q('get_short_epg','&stream_id='+id+'&limit='+n),10000).catch(()=>null);
-  const v=((j&&j.epg_listings)||[]).map(e=>({title:b64(e.title),desc:b64(e.description),s:(+e.start_timestamp*1000)||Date.parse(String(e.start).replace(' ','T')),e:(+e.stop_timestamp*1000)||Date.parse(String(e.end||e.stop).replace(' ','T'))})).filter(x=>x.s&&x.e).sort((a,b)=>a.s-b.s);
+  const v=((j&&j.epg_listings)||[]).map(e=>({title:b64(e.title),desc:b64(e.description),s:((+e.start_timestamp*1000)||Date.parse(String(e.start).replace(' ','T')))+EPGOFF(),e:((+e.stop_timestamp*1000)||Date.parse(String(e.end||e.stop).replace(' ','T')))+EPGOFF()})).filter(x=>x.s&&x.e).sort((a,b)=>a.s-b.s);
   this.C[k]={t:Date.now(),v};return v},
  url(it,alt){if(it.url)return it.url;const b=this.base(),u=ACC.u,p=ACC.p;
   if(it.k==='live')return`${b}/live/${u}/${p}/${it.id}.${alt?'m3u8':'ts'}`;
@@ -360,6 +360,8 @@ AF.amb=async(a,tok)=>{let L=[],W=[];try{const all=await API.all('live'),ok=new S
 /* profil başına takım listesi; eski tek takım verisi listeye taşınır */
 function teamsOf(p){p=p||PROF();if(p.team&&!p.teams){p.teams=[p.team];p.ti=0;delete p.team;save('rg-profs',PROFS)}return p.teams||[]}
 function curTeam(p){p=p||PROF();const L=teamsOf(p);return L[Math.min(p.ti||0,L.length-1)]||null}
+const EPGOFF=()=>(ST.epgOff||0)*3600e3;
+const LGTR0={'Turkish Super Lig':'Süper Lig','Turkish 1. Lig':'1. Lig','UEFA Champions League':'Şampiyonlar Ligi','UEFA Europa League':'Avrupa Ligi','UEFA Conference League':'Konferans Ligi','English Premier League':'Premier League','Spanish LALIGA':'LaLiga','German Bundesliga':'Bundesliga','Italian Serie A':'Serie A','French Ligue 1':'Ligue 1'};
 const LEAGUES=[['tur.1','Süper Lig'],['eng.1','Premier League'],['esp.1','LaLiga'],['ger.1','Bundesliga'],['ita.1','Serie A'],['fra.1','Ligue 1'],['ned.1','Eredivisie'],['por.1','Liga Portugal']];
 const SP={async get(url,ttl,xml){const ck='rg-sp-'+url.replace(/[^a-z0-9]/gi,'').slice(-90),c=load(ck,null);if(c&&Date.now()-c.t<ttl)return c.v;
   const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),9000);try{const r=await fetch(url,{signal:ctl.signal});if(!r.ok)throw new Error('HTTP '+r.status);const v=xml?await r.text():await r.json();try{save(ck,{t:Date.now(),v})}catch(e){}return v}
@@ -491,13 +493,23 @@ const STN={possessionPct:'Topla oynama',totalShots:'Şut',shotsOnTarget:'İsabet
 const tnorm=n=>fold(U(String(n||''))).replace(/\b(FK|SK|FC|AS|SC|JK|AFC|CF|CD|AC|SV|VFB|VFL|TSG|BK|IF|SL|KULUBU|SPOR KULUBU)\b/g,' ').replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
 const LC={open:false,ev:null,lg:null,t:null,
  async today(){const out=[];await Promise.all(MLGS.map(async lg=>{try{const j=await SP.get(`https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/scoreboard`,4*6e4);(j.events||[]).forEach(e=>out.push({e,lg}))}catch(x){}}));return out},
+ async live(){const L=await this.today(),now=Date.now();return L.filter(({e})=>{const st=(((e.competitions||[])[0]||{}).status||{}).type||{},t=Date.parse(e.date);return st.state==='in'||(st.state==='pre'&&t-now<30*6e4&&t-now>-5*6e4)}).slice(0,14)},
+ pickShow(){const q=$('#lhq');q.dataset.pick='1';$('#lhqt').textContent='Hangi maçı izliyorsun?';$('#lhqp').textContent='Kanalın rehberinde maç bilgisi yok. Listeden seç; istatistikler ve Hue gol kutlaması o maça göre çalışır.';
+  $('#lhqb').innerHTML=this.list.map(({e,lg},i)=>{const c=(e.competitions||[])[0]||{},cs=c.competitors||[],h=cs.find(x=>x.homeAway==='home')||cs[0]||{},a=cs.find(x=>x!==h)||{},st=(c.status||{}).type||{};const nm=x=>esc(trn((x.team||{}).shortDisplayName||(x.team||{}).displayName||''));
+   return`<div class="btn" data-f data-act="lpick" data-i="${i}">${nm(h)} ${st.state==='in'?esc(h.score||'0')+' – '+esc(a.score||'0'):'–'} ${nm(a)}<small style="display:block;font-weight:600;opacity:.7">${esc((LGTR0[(e.league||{}).name]||(e.league||{}).name||lg))} · ${esc(st.shortDetail||'')}</small></div>`}).join('')+'<div class="btn" data-f data-act="lhn">Vazgeç</div>';
+  q.classList.add('on','pick');focus($('#lhqb [data-f]'))},
  async find(title){const T=tnorm(title);if(!T)return null;const L=await this.today();
   for(const{e,lg}of L){const cs=((e.competitions||[])[0]||{}).competitors||[];if(cs.length<2)continue;
    const hit=cs.every(c=>{const t=c.team||{};const names=[t.shortDisplayName,t.displayName,t.name,t.location,trn(t.displayName),trn(t.shortDisplayName)].filter(Boolean).map(tnorm);return names.some(n=>n.split(' ').filter(w=>w.length>=4).some(w=>T.includes(w)))});
    if(hit)return{id:e.id,lg,e}}return null},
  async check(){const b=$('#lstat');if(!b)return;b.style.display='none';this.ev=null;const it=LV;if(!it||it.radio)return;const cat=(await API.cats('live').catch(()=>[])).find(c=>c.id===it.cat);
-  if(!SPORTRX.test(clean(it.name))&&!SPORTRX.test((cat&&cat.name)||''))return;const now=Date.now()-lag*1000,cur=LEPG.find(e=>e.s<=now&&e.e>now);if(!cur||!cur.title)return;
-  const m=await this.find(cur.title+' '+(cur.desc||''));if(LV!==it||!m)return;this.ev=m;b.style.display='';LOG.add('info','Canlı maç bulundu',{kanal:clean(it.name),lig:m.lg});this.ask(m)},
+  if(!SPORTRX.test(clean(it.name))&&!SPORTRX.test((cat&&cat.name)||''))return;const now=Date.now()-lag*1000;
+  const near=LEPG.filter(e=>e.title&&((e.s<=now&&e.e>now)||(e.s>now&&e.s-now<25*6e4)||(e.e<=now&&now-e.e<15*6e4)));
+  let m=null;for(const e of near){m=await this.find(e.title+' '+(e.desc||''));if(m)break}if(LV!==it)return;
+  if(!m){for(const e of LEPG.filter(x=>x.title&&Math.abs(x.s-now)<4.5*3600e3)){const f=await this.find(e.title+' '+(e.desc||''));if(!f)continue;const h=(e.s-Date.parse(f.e.date))/3600e3,r=Math.round(h);
+    if(r&&Math.abs(h-r)<0.4&&Math.abs(Date.parse(f.e.date)-now)<3*3600e3){m=f;if(!this.offAsk){this.offAsk=1;const v=-r,i=[0,-1,-2,-3,1,2,3].indexOf(Math.max(-3,Math.min(3,(ST.epgOff||0)+v)));
+     toast('Rehber saatleri '+Math.abs(r)+' saat '+(r>0?'ileri':'geri')+' görünüyor','Bu kanalın rehberi maçı '+hhmm(e.s)+' diye gösteriyor, maç '+hhmm(Date.parse(f.e.date))+' başlıyor. Rehber saatleri düzeltilsin mi?',`<div class="bt"><div class="btn sm pri" data-f data-act="epgfix" data-i="${i}">Düzelt</div><div class="btn sm" data-f data-act="toastx">Hayır</div></div>`,20000);LOG.add('info','Rehber saat kayması fark edildi',{saat:r})}break}}}if(LV!==it)return;
+  if(!m){const L=await this.live();if(LV!==it||!L.length)return;this.ev=null;this.list=L;b.style.display='';LOG.add('info','Spor kanalı: maç seçtirilecek',{kanal:clean(it.name),canli:L.length});return}this.ev=m;b.style.display='';LOG.add('info','Canlı maç bulundu',{kanal:clean(it.name),lig:m.lg});this.ask(m)},
  ask(m){if(!GOAL.on()||GOAL.pick[m.id]||!m.e)return;const cs=((m.e.competitions||[])[0]||{}).competitors||[];if(cs.length<2)return;const st=(((m.e.competitions||[])[0]||{}).status||{}).type||{};if(st.state==='post')return;
   const mine=teamsOf().find(T=>cs.some(c=>c.team&&String(c.team.id)===String(T.id)));const tn=c=>trn((c.team||{}).shortDisplayName||(c.team||{}).displayName||'');
   const q=$('#lhq');q.dataset.ev=m.id;q.dataset.lg=m.lg;
@@ -1015,7 +1027,7 @@ function lpause(){if(!lpaused){AV.pause();lpaused=true;pausedAt=Date.now();osd(I
 function liveSeek(st){if(!LV.arch)return osd('Bu kanalda geri sarma yok');lag=Math.max(0,Math.min((LV.archD||1)*86400,lag+st));drawLag();showBand();bandEpg();osd(lag?'−'+fmt(lag):'● Canlı',lpaused);
  clearTimeout(LGT);LGT=setTimeout(()=>{lpaused=false;liveOpen()},900)}
 function liveBack(){if(LC.hide())return;if(!$('#pan').classList.contains('hide')){hidePan();return focus($('[data-act=lset]'))}if($('#epg').classList.contains('on'))return closeEpg();const vis=$$('#live .lf').some(x=>!x.classList.contains('fade'));if(!$('#lerr2').classList.contains('on')&&(cur||vis)){unf();clearTimeout(hideT);if(!lpaused)$$('#live .lf').forEach(x=>x.classList.add('fade'));return}exit()}
-function lKey(e,m,b,cu,cd,pp,ff,rw){if($('#lhq').classList.contains('on')){if(b){const n=$('#lhq [data-act=lhn]');if(n)ok(n);return}if(m==='l'||m==='r'){const B=$$('#lhqb [data-f]'),i=B.indexOf(cur);const n=B[i+(m==='r'?1:-1)];if(n)focus(n)}else if(!cur||!cur.closest('#lhq'))focus($('#lhqb [data-f]'));if(e.keyCode===13&&cur&&cur.closest('#lhq'))ok(cur);return}
+function lKey(e,m,b,cu,cd,pp,ff,rw){if($('#lhq').classList.contains('on')){if(b){const n=$('#lhq [data-act=lhn]');if(n)ok(n);return}if(m){const B=$$('#lhqb [data-f]'),i=B.indexOf(cur),fw=$('#lhq').classList.contains('pick')?(m==='d'||m==='r'):(m==='r');const bw=$('#lhq').classList.contains('pick')?(m==='u'||m==='l'):(m==='l');const n=fw?B[i+1]:bw?B[i-1]:null;if(n)focus(n);else if(i<0)focus(B[0])}else if(!cur||!cur.closest('#lhq'))focus($('#lhqb [data-f]'));if(e.keyCode===13&&cur&&cur.closest('#lhq'))ok(cur);return}
 if(LC.open){if(b){LC.hide();return}if(m){const L=$$('#lcl [data-f]');if(!cur||!cur.closest('#lcomp'))return focus(L[0]);if(m==='l'||m==='r'){const row=cur.parentElement,K=[...row.children],i=K.indexOf(cur),n=K[i+(m==='r'?1:-1)];if(n){focus(n);n.scrollIntoView&&n.scrollIntoView({inline:'center',block:'nearest'})}return}const rows=$$('#lcl .lcp'),ri=rows.indexOf(cur.parentElement),nr=rows[ri+(m==='d'?1:-1)];if(nr&&nr.children.length)focus(nr.children[Math.min([...cur.parentElement.children].indexOf(cur),nr.children.length-1)]);return}if(pp||e.keyCode===13)return;if(cu||cd){LC.hide();return lKey(e,m,b,cu,cd,pp,ff,rw)}return}
 const epg=$('#epg').classList.contains('on'),pan=!$('#pan').classList.contains('hide'),ov=$('#lerr2').classList.contains('on');
  if(b)return liveBack();
@@ -1035,9 +1047,9 @@ async function openEpg(sel){const L=CTX.length?CTX:[LV],p=Math.max(0,L.findIndex
  for(let t=Math.ceil(ws/1800000)*1800000;t<ws+span;t+=1800000)h+=`<span style="left:${x(t)}px">${hhmm(t)}</span>`;
  h+=`</div>`+rows.map(c=>`<div class="er" data-row="${esc(c.id)}"><div class="nm"><span>${c.num||''}</span>${esc(clean(c.name))}</div><div class="tlw"><div class="nowl" style="left:${x(now)}px"></div><div class="pgm now" data-f data-act="tune" data-key="${reg(c)}" style="left:0;width:${W}px">Yükleniyor…</div></div></div>`).join('');
  $('#epg').innerHTML=h;$('#epg').classList.add('on');clearTimeout(hideT);focus((sel&&$('#epg '+sel))||$(`#epg [data-row="${LV.id}"] [data-f]`));
- for(let i=0;i<rows.length;i+=4)await Promise.all(rows.slice(i,i+4).map(async c=>{if(!$('#epg').classList.contains('on'))return;const ep=await API.epg(c.id,10);const box=$(`#epg [data-row="${c.id}"] .tlw`);if(!box||!$('#epg').classList.contains('on'))return;
+ for(let i=0;i<rows.length;i+=4)await Promise.all(rows.slice(i,i+4).map(async c=>{if(!$('#epg').classList.contains('on'))return;let ep=[];try{ep=await API.epg(c.id,10)||[]}catch(e){}const box=$(`#epg [data-row="${c.id}"] .tlw`);if(!box||!$('#epg').classList.contains('on'))return;
   const k=reg(c),vis=ep.filter(e=>e.e>ws&&e.s<ws+span),wasF=cur&&box.contains(cur);
-  if(!vis.length)return;box.innerHTML=`<div class="nowl" style="left:${x(now)}px"></div>`+vis.map(e=>{const past=e.e<=now,nw=e.s<=now&&e.e>now,rk=c.id+'@'+e.s,rm=REM.some(r=>r.rk===rk);
+  if(!vis.length){const p0=box.querySelector('.pgm');if(p0)p0.textContent='Program bilgisi yok';return}box.innerHTML=`<div class="nowl" style="left:${x(now)}px"></div>`+vis.map(e=>{const past=e.e<=now,nw=e.s<=now&&e.e>now,rk=c.id+'@'+e.s,rm=REM.some(r=>r.rk===rk);
    const act=past?`data-act="catch" data-s="${e.s}" data-e="${e.e}"`:nw?'data-act="tune"':`data-act="remind" data-rk="${rk}" data-s="${e.s}" data-t="${esc(e.title)}"`;
    return`<div class="pgm ${past?'past':nw?'now':'next'}" data-f ${act} data-key="${k}" style="left:${x(e.s)}px;width:${Math.max(4,x(e.e)-x(e.s)-4)}px">${past&&c.arch?IC.re:''}${rm?IC.bell:''}${esc(e.title)}<small>${hhmm(e.s)} – ${hhmm(e.e)}</small></div>`}).join('');
   if(wasF)focus(box.querySelector('.now')||box.querySelector('[data-f]'))}))}
@@ -1102,9 +1114,11 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
  case'hueoff':{if(!e.dataset.arm){e.dataset.arm='1';e.querySelector('span').textContent='Emin misin? Tekrar bas';return}HUE.restore().then(()=>{delete ST.hue;saveST();render('hue');focus($('#view [data-f]'))});return}
  case'hqY':HUE.dim('film');return HQGO&&HQGO();
  case'hqN':return HQGO&&HQGO();
- case'lstat':return LC.show();
+ case'epgfix':{ST.epgOffI=+d.i;ST.epgOff=[0,-1,-2,-3,1,2,3][ST.epgOffI];saveST();Object.keys(API.C).forEach(k=>{if(k[0]==='e')delete API.C[k]});$('#toast').classList.remove('on');osd('Rehber saatleri düzeltildi');if(LV){API.epg(LV.id,4).then(ep=>{LEPG=ep;bandEpg()})}return}
+ case'lstat':if(!LC.ev&&LC.list&&LC.list.length)return LC.pickShow();return LC.show();
+ case'lpick':{const x=LC.list[+d.i];const q=$('#lhq');q.classList.remove('on','pick');delete q.dataset.pick;if(!x)return;LC.ev={id:x.e.id,lg:x.lg,e:x.e};LOG.add('info','Maç elle seçildi',{lig:x.lg});LC.show().then(()=>LC.ask(LC.ev));return}
  case'lhy':{const q=$('#lhq');q.classList.remove('on');GOAL.setPick(q.dataset.ev,{yes:1});osd('Gol kutlaması bu maç için açık');return focus($('#lstat'))}
- case'lhn':{const q=$('#lhq');q.classList.remove('on');GOAL.setPick(q.dataset.ev,{no:1});return focus($('#lstat'))}
+ case'lhn':{const q=$('#lhq');if(q.dataset.pick){q.classList.remove('on','pick');delete q.dataset.pick;return focus($('#lstat'))}q.classList.remove('on');GOAL.setPick(q.dataset.ev,{no:1});return focus(LC.open?$('#lcl [data-f]'):$('#lstat'))}
  case'lht':{const q=$('#lhq');q.classList.remove('on');GOAL.setPick(q.dataset.ev,{lg:q.dataset.lg,team:{id:d.id,name:d.n,c1:d.c1||null,c2:d.c2||null,lg:q.dataset.lg}});LOG.add('info','Maç için takım seçildi',{});osd(trn(d.n)+' gol atınca salon kutlayacak');return focus($('#lstat'))}
  case'sfil':SF=d.k||null;drawSearch();return focus($(`#sres [data-act=sfil][data-k="${d.k||''}"]`));
  case'rq':Q=d.q;drawSearch();return focus($('#sres [data-f]')||$('[data-act=key]'));
@@ -1121,7 +1135,7 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
  case'live':return openLive(d.key,e.closest('#chl')?CTX:e.closest('#hlive')?HL:e.closest('#hrows')?FAVL:null);
  case'season':return drawSeason(+d.s,`[data-s="${d.s}"]`);
  case'mylist':{if(inMy(it))MYL=MYL.filter(m=>!(m.k===it.k&&m.id===it.id));else MYL.push(it);save(pkey('rg-my'),MYL);e.textContent=inMy(it)?'Listemde':'Listeme ekle';return}
- case'set':{const o=SET.find(s=>s[0]===d.k);ST[d.k]=((ST[d.k]||0)+1)%o[2].length;if(d.k==='pin')UNL=false;saveST();clock();const sp=e.querySelector('span');if(sp)sp.textContent='‹ '+o[2][ST[d.k]]+' ›';return}
+ case'set':{const o=SET.find(s=>s[0]===d.k);ST[d.k]=((ST[d.k]||0)+1)%o[2].length;if(d.k==='epgOffI'){ST.epgOff=[0,-1,-2,-3,1,2,3][ST.epgOffI];Object.keys(API.C).forEach(k=>{if(k[0]==='e')delete API.C[k]})}if(d.k==='pin')UNL=false;saveST();clock();const sp=e.querySelector('span');if(sp)sp.textContent='‹ '+o[2][ST[d.k]]+' ›';return}
  case'pinchg':return pad('pin',()=>setTimeout(()=>pad('newpin',()=>{}),50));
  case'cats':return render('cats',d.t);
  case'diag':return render('diag');
