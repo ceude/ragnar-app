@@ -155,7 +155,7 @@ const fmtDur=d=>{const m=String(d||'').match(/^(\d{1,2}):(\d{2}):(\d{2})$/);if(!
 /* 'Run Away - S01E01 - Görmek İnanmaktır' -> 'Görmek İnanmaktır' */
 const epTitle=e=>{let t=String(e.name||'');const sn=String(e.sname||'');if(sn&&t.toLowerCase().indexOf(sn.toLowerCase())===0)t=t.slice(sn.length);const tr=x=>x.replace(/^[\s\-–:.|]+|[\s\-–:.|]+$/g,'');t=tr(tr(t.replace(/\bS\d{1,2}\s*[.\-_ ]?\s*E\d{1,3}\b/i,'')).replace(/^\d{1,2}x\d{1,3}\b/i,'')).trim();return t&&!/^\d+$/.test(t)&&!/^b[öo]l[üu]m\s*\d+$/i.test(t)?t:''};
 const TAGS=/\s*\b(NF|ATVP|AMZN|DSNP|HMAX|MAX|TVBU|PMTP|HULU|PCOK|SKST|CRAV|STAN|RTL\+?|WEB[- ]?DL|WEBRip|HDR|DV|4K|UHD|FHD|HD|1080p|720p|2160p|x264|x265|HEVC|MULTI|DUAL|TR|Altyaz[ıi]l[ıi]|Dublaj)\b\s*$/i;
-const dispName=n=>{let t=clean(n),y='';for(let k=0;k<4;k++){const b=t.replace(TAGS,'');if(b===t)break;t=b}const m=t.match(/^(.*\S)\s*[\(\[](\d{4})[\)\]]\s*$/);if(m&&m[1].length>1){t=m[1];y=m[2]}for(let k=0;k<4;k++){const b=t.replace(TAGS,'');if(b===t)break;t=b}return{t:t.trim()||clean(n),y}};
+const dispName=n=>{let t=clean(n),y='';for(let k=0;k<4;k++){const b=t.replace(TAGS,'');if(b===t)break;t=b}const m=t.match(/^(.*\S)\s*[\(\[](\d{4})[\)\]]\s*([^()\[\]]{0,24})$/);if(m&&m[1].length>1&&(!m[3]||!/[a-zçğıöşü]{4,}\s+[a-zçğıöşü]{4,}/.test(m[3]))){t=m[1];y=m[2]}for(let k=0;k<4;k++){const b=t.replace(TAGS,'');if(b===t)break;t=b}return{t:t.trim()||clean(n),y}};
 function heroHTML(it,btns){const bd=it.bd||'',pic=bd||it.icon;
  const dn=dispName(it.name);let nm=dn.t,dt='';if(dn.y&&!it.year)it={...it,year:dn.y};const dm=nm.match(/^(.*?)\s*\(?(\d{2}\.\d{2}\.\d{4})\)?\s*$/);if(dm&&dm[1].length>2){nm=dm[1].replace(/[\s:\-]+$/,'');dt=dm[2]}
  const meta=[it.year,it.rating&&+it.rating?'Puan '+(+it.rating).toFixed(1):'',it.genre,fmtDur(it.dur),dt].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('');
@@ -1025,23 +1025,28 @@ let SSM=null,SSMI=0,SSART=[],SSAI=0;
 function ssShow(force){if($('#ss'))return;const d=document.createElement('div');d.id='ss';
  d.innerHTML=`<div class="ssb" id="ssa"></div><div class="ssb" id="ssb2"></div><div class="ssv"></div><div id="ssw"><div class="ssl"><svg viewBox="16 4 168 262">${HELM}</svg><span>RAGNAR</span></div><div id="ssm"></div></div>`;
  $('#stage').appendChild(d);d.classList.add('on');SSMI=0;const mode=AMODES[ST.amode||0];SSM=mode==='mix'?'clock':mode;ssRender();
- let sec=0;SSI=setInterval(()=>{sec++;ssTick();if(sec%12===0&&(SSM==='posters'||SSM==='art'))ssStep();if(sec%180===0){const w=$('#ssw');if(w)w.style.transform=`translate(${Math.round(Math.random()*16-8)}px,${Math.round(Math.random()*12-6)}px)`}
+ let sec=0;SSI=setInterval(()=>{sec++;ssTick();if((SSM==='posters'&&sec%30===0)||(SSM==='art'&&sec%60===0))ssStep();if(sec%180===0){const w=$('#ssw');if(w)w.style.transform=`translate(${Math.round(Math.random()*16-8)}px,${Math.round(Math.random()*12-6)}px)`}
   SSMS++;if(AMODES[ST.amode||0]==='mix'&&SSMS>=120){SSMS=0;const L=['clock','cal','art','posters'];SSM=L[(L.indexOf(SSM)+1)%L.length];ssRender()}},1000);
  ssDots();LOG.add('info','Ambient açıldı',{duzen:mode,elle:!!force})}
 const SSL=['clock','cal','art','posters'],SSLN={clock:'Saat ve hava',cal:'Takvim',art:'Sanat',posters:'Afişler'};
 function ssNav(d){if(!$('#ss'))return;SSM=SSL[(SSL.indexOf(SSM)+d+SSL.length)%SSL.length];SSMS=0;ssRender();ssDots()}
 function ssDots(){let el=$('#ssdots');if(!el){el=document.createElement('div');el.id='ssdots';$('#ss').appendChild(el)}el.innerHTML=SSL.map(x=>`<i class="${x===SSM?'on':''}"></i>`).join('')+`<span>${SSLN[SSM]} · ◀ ▶ ile değiştir</span>`;el.classList.add('on');clearTimeout(ssDots.t);ssDots.t=setTimeout(()=>el.classList.remove('on'),3000)}
 let SSMS=0;
-function ssBg(src){const a=$('#ssa'),b=$('#ssb2');if(!a)return;const on=a.classList.contains('on'),el=on?b:a,ot=on?a:b;if(!src){a.classList.remove('on');b.classList.remove('on');return}
- const im=new Image();im.onload=()=>{el.style.backgroundImage=`url("${src}")`;el.classList.remove('kb');void el.offsetWidth;el.classList.add('kb','on');ot.classList.remove('on')};im.src=src}
+let SSBT=0;
+function ssBg(src,done,alt){const a=$('#ssa'),b=$('#ssb2');if(!a)return;const tk=++SSBT,on=a.classList.contains('on'),el=on?b:a,ot=on?a:b;if(!src){a.classList.remove('on');b.classList.remove('on');return}
+ let fin=false;const im=new Image(),to=setTimeout(()=>fail('zaman aşımı'),20000);
+ function fail(why){if(fin)return;fin=true;clearTimeout(to);if(alt&&tk===SSBT)return ssBg(alt,done);if(!ssBg.logged){ssBg.logged=1;LOG.add('warn','Ambient görseli yüklenemedi',{neden:why,adres:String(src).split('/').slice(0,3).join('/')})}done&&done(false)}
+ im.onerror=()=>fail('hata');im.onload=()=>{if(fin)return;fin=true;clearTimeout(to);if(!$('#ss')||tk!==SSBT)return;el.style.backgroundImage=`url("${im.src}")`;el.classList.remove('kb');void el.offsetWidth;el.classList.add('kb','on');ot.classList.remove('on');done&&done(true)};im.src=src}
 function ssTick(){const n=new Date(),c=$('#ssclk');if(c){c.textContent=hhmm(n);const dd=$('#ssd');if(dd)dd.textContent=n.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'})}}
 let SSP=[],SSPI=0;
-function ssStep(){if(SSM==='posters'){if(!SSP.length)return;const p=SSP[SSPI++%SSP.length];ssBg(p.src);const n=$('#ssn');if(n){n.textContent=dispName(p.title).t;$('#sss').textContent=p.sub}}
- else if(SSM==='art'){if(!SSART.length)return;const a=SSART[SSAI++%SSART.length];ssBg(a.src);const n=$('#ssn');if(n){n.textContent=a.t;$('#sss').textContent=a.a}}}
+const artTitle=t=>String(t||'').replace(/,?\s*from the series[\s\S]*$/i,'').replace(/\s*\([^)]*\)\s*$/,'').trim();
+function ssStep(tries){tries=tries||0;if(tries>4){if(SSM==='art'){LOG.add('warn','Sanat görselleri açılamadı, saate geçildi',{});SSM='clock';ssRender()}return}const my=SSM;
+ if(SSM==='posters'){if(!SSP.length)return;const p=SSP[SSPI++%SSP.length];ssBg(p.src,ok=>{if(SSM!==my)return;if(!ok)return ssStep(tries+1);const n=$('#ssn');if(n){n.textContent=dispName(p.title).t;$('#sss').textContent=p.sub}})}
+ else if(SSM==='art'){if(!SSART.length)return;const a=SSART[SSAI++%SSART.length];ssBg(a.src,ok=>{if(SSM!==my)return;if(!ok)return ssStep(tries+1);const n=$('#ssn');if(n){n.textContent=artTitle(a.t);$('#sss').textContent=a.a+' · Chicago Sanat Enstitüsü'}},a.src.replace('/1686,/','/843,/'))}}
 async function ssRender(){const m=$('#ssm');if(!m)return;const my=SSM;
  const clockB=`<div class="ssc"><b id="ssclk"></b><small id="ssd"></small></div>`;
  if(my==='posters'){SSP=ssPics();SSPI=0;m.innerHTML=`<div class="sst"><small id="sss"></small><b id="ssn"></b></div>${clockB}`;ssTick();if(SSP.length)ssStep();else ssBg('');return}
- if(my==='art'){m.innerHTML=`<div class="sst"><small id="sss"></small><b id="ssn"></b></div>${clockB}`;ssTick();try{if(!SSART.length){SSART=await artList();SSAI=Math.floor(Math.random()*SSART.length)}}catch(e){}if(SSM!==my)return;if(SSART.length)ssStep();else{SSM='clock';ssRender()}return}
+ if(my==='art'){m.innerHTML=`<div class="sst art"><small id="sss"></small><b id="ssn"></b></div>${clockB}`;ssTick();try{if(!SSART.length){SSART=await artList();SSAI=Math.floor(Math.random()*SSART.length)}}catch(e){}if(SSM!==my)return;if(SSART.length)ssStep();else{SSM='clock';ssRender()}return}
  ssBg('');
  if(my==='clock'){m.innerHTML=`<div class="ssbig"><b id="ssclk"></b><small id="ssd"></small><div id="sswx"></div></div>`;ssTick();
   try{const w=await weather();if(SSM!==my||!w)return;const c=w.j.current||{},dl=w.j.daily||{},k=WX[c.weather_code]||['','cloud'];

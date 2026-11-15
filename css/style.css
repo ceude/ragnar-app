@@ -519,3 +519,7 @@ html.tv [data-f]{transition:none!important}
 .tmt{table-layout:fixed}.tmt th:first-child,.tmt td:first-child{width:28px}
 .tmt th:nth-child(n+3),.tmt td:nth-child(n+3){width:38px}.tmt th:last-child,.tmt td:last-child{width:44px}
 .tmt td:nth-child(2){max-width:none}
+
+/* sanat düzeninde yazı küçük ve kısa; görsel ön planda */
+#ss .sst.art b{font-size:26px;max-width:620px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#ss .sst.art small{font-size:12px;letter-spacing:.08em;text-transform:none}
