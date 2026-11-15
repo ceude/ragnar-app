@@ -530,3 +530,22 @@ html.tv [data-f]{transition:none!important}
 /* profil seçimi: yan menü yok, menüye kaçılamaz */
 #app.noside #side{display:none}
 #app.noside #view{padding-left:48px}
+
+/* ---- canlı maç yardımcısı: yayın sol üstte küçülür; sağda istatistik, altta kadrolar ---- */
+#lcomp{position:absolute;top:0;right:0;bottom:0;left:0;display:none;z-index:5;pointer-events:none}
+#lcomp.on{display:block;background:linear-gradient(90deg,transparent 0,transparent 1330px,#0a0d12f2 1330px),linear-gradient(0deg,#0a0d12f2 0,#0a0d12f2 300px,transparent 300px)}
+#lcst{position:absolute;top:40px;right:36px;width:520px;bottom:320px;overflow:hidden;color:#fff}
+.lch{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;text-align:center;gap:10px;margin-bottom:6px}
+.lch img{width:54px;height:54px;object-fit:contain}.lch small{display:block;font-weight:700;font-size:14px;margin-top:4px}
+.lch>b{font-family:var(--fo);font-size:52px;font-weight:600;letter-spacing:.04em}
+.lcs{text-align:center;color:var(--acc);font-weight:800;font-size:14px;letter-spacing:.06em;margin-bottom:14px}
+.lcr{display:grid;grid-template-columns:60px 1fr 60px;align-items:center;row-gap:4px;margin:7px 0}
+.lcr b{font-size:17px;text-align:center}.lcr span{text-align:center;color:var(--mut);font-size:14px;font-weight:600}
+.lcr i{grid-column:1/4;height:4px;border-radius:2px;background:#3a4256;overflow:hidden;display:block}.lcr i em{display:block;height:100%;background:var(--acc)}
+#lcl{position:absolute;left:40px;right:36px;bottom:24px;height:262px;display:flex;flex-direction:column;gap:10px;color:#fff}
+.lcl h4{margin:0 0 6px;font-size:14px;color:var(--acc);letter-spacing:.04em}
+.lcp{display:flex;gap:10px;overflow:hidden;scroll-behavior:smooth}
+.lpl{flex:none;width:118px;height:84px;border-radius:10px;background:var(--s1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:4px;text-align:center}
+.lpl img{width:34px;height:34px;border-radius:50%;object-fit:cover}.lpl i{width:30px;height:30px;border-radius:50%;background:#2a3142;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:13px}
+.lpl b{font-size:12px;line-height:1.15;max-width:110px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.lpl small{font-size:10px;color:var(--mut)}
+.lpl.sub{opacity:.6}.lpl.fx{background:var(--tx);color:#0a0d12;opacity:1}.lpl.fx small{color:#333}

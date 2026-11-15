@@ -265,7 +265,7 @@ async function catPick(t){const cs=visCats(t,await API.cats(t));$('#catov h2').t
 
 V.detail=key=>{const it=REG.get(key);return`<div class="hero" id="dhero">${heroHTML(it,'<div class="spin sm"></div>')}</div><div id="dmore"></div>`};
 let EPS=[],SEAS=null;
-AF.detail=async(key,tok)=>{const it=REG.get(key);const my=`<div class="btn" data-f data-act="mylist" data-key="${key}">${inMy(it)?'Listemde':'Listeme ekle'}</div>`;
+AF.detail=async(key,tok)=>{const it=REG.get(key);setTimeout(()=>{if(cv==='detail'&&RT===tok)CINE.detail(it)},300);const my=`<div class="btn" data-f data-act="mylist" data-key="${key}">${inMy(it)?'Listemde':'Listeme ekle'}</div>`;
  if(it.k==='vod'){let inf={};if(ACC.type==='xt'){const j=await API.vodInfo(it.id).catch(()=>null);inf=(j&&j.info)||{}}if(tok!==RT)return;
   const x={...it,plot:inf.plot||inf.description||'',genre:inf.genre||'',year:String(inf.releasedate||inf.release_date||'').slice(0,4),rating:inf.rating||it.rating,dur:inf.duration||'',bd:(Array.isArray(inf.backdrop_path)&&inf.backdrop_path[0])||'',icon:it.icon||inf.movie_image};
   const h=HIST['vod:'+it.id],res=hPart(h);
@@ -452,11 +452,11 @@ const HUE={saved:null,on:false,busy:false,
  base(){return`http://${ST.hue.ip}/api/${ST.hue.u}`},
  async req(path,method,body){const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);try{const r=await fetch(this.base()+path,{method:method||'GET',body:body?JSON.stringify(body):undefined,signal:c.signal});return await r.json()}finally{clearTimeout(t)}},
  eve(){return ST.hueEve==null?1:ST.hueEve},hour(){if(ST.hueHr==null&&ST.hueH!=null&&HUEO.hr[ST.hueH]!=null){ST.hueHr=HUEO.hr[ST.hueH];delete ST.hueH}return ST.hueHr==null?17:ST.hueHr},
- ask(){return this.ok()&&ST.hueOn!==1&&this.when()&&ST.hueAsk!==1&&!this.on},auto(){return this.ok()&&ST.hueOn!==1&&this.when()&&ST.hueAsk===1},
+ ask(){return this.ok()&&ST.hueOn!==1&&this.when()&&ST.hueAsk!==1&&(!this.on||!!CINE.xy)},auto(){return this.ok()&&ST.hueOn!==1&&this.when()&&ST.hueAsk===1},
  when(){if(this.eve()===0)return true;const h=new Date().getHours();return h>=this.hour()||h<6},
  lvl(){return HUEO.lv[ST.hueLv==null?1:ST.hueLv]},
  async need(){try{const t=new Promise((_,no)=>setTimeout(()=>no(new Error('zaman aşımı')),1800));const run=(async()=>{const g=await this.req('/groups/'+ST.hue.g);const ids=(g&&g.lights)||[];const L=await Promise.all(ids.map(id=>this.req('/lights/'+id).catch(()=>null)));const b=Math.round(this.lvl()*254/100);return L.some(l=>l&&l.state&&l.state.on&&l.state.reachable!==false&&l.state.bri>b)})();return await Promise.race([run,t])}catch(e){return false}},
- async dim(why){if(!this.ok()||ST.hueOn===1||!this.when())return;try{
+ async dim(why){if(!this.ok()||ST.hueOn===1||!this.when())return;if(CINE.xy&&why==='film'&&ST.hueCine!==1){await CINE.apply(this.lvl());LOG.add('info','Hue: ışıklar afiş renginde kısıldı',{seviye:this.lvl()});return}try{
    if(!this.on){const g=await this.req('/groups/'+ST.hue.g);const ids=(g&&g.lights)||[];const st={};for(const id of ids){const l=await this.req('/lights/'+id);if(l&&l.state)st[id]=l.state}this.saved=st;this.on=true;
     if(!Object.values(st).some(x=>x.on)){this.saved=null;this.on=false;return}}
    if(scr!=='player'&&scr!=='live'&&why!=='deneme'){this.on=false;this.saved=null;return}
@@ -465,6 +465,88 @@ const HUE={saved:null,on:false,busy:false,
  async pause(p){if(!this.on||!this.ok())return;const z=HUEO.pz[ST.huePz||0];if(z<0)return;try{const b=Math.round((p?z:this.lvl())*254/100);for(const[id,x]of Object.entries(this.saved||{}))if(x.on&&x.bri>Math.round(this.lvl()*254/100))await this.req('/lights/'+id+'/state','PUT',{bri:Math.max(1,Math.min(b,x.bri)),transitiontime:p?15:20})}catch(e){}},
  async restore(){if(!this.on||!this.ok())return;const S=this.saved||{};this.on=false;this.saved=null;try{for(const[id,x]of Object.entries(S)){if(!x.on)continue;const st={on:true,bri:x.bri,transitiontime:25};if(x.colormode==='ct'&&x.ct)st.ct=x.ct;else if(x.colormode==='xy'&&x.xy)st.xy=x.xy;else if(x.colormode==='hs'&&x.hue!=null){st.hue=x.hue;st.sat=x.sat}await this.req('/lights/'+id+'/state','PUT',st)}LOG.add('info','Hue: ışıklar eski hâline döndü',{})}catch(e){LOG.add('warn','Hue geri alma hatası: '+e.message,{})}}};
 document.addEventListener('visibilitychange',()=>{if(document.hidden)HUE.restore()});
+/* renk: onaltılık RGB -> Hue xy */
+function hexXY(hex){const h=String(hex||'').replace('#','');if(h.length<6)return null;const c=[0,2,4].map(i=>parseInt(h.substr(i,2),16)/255).map(v=>v>0.04045?Math.pow((v+0.055)/1.055,2.4):v/12.92);
+ const X=c[0]*0.664511+c[1]*0.154324+c[2]*0.162028,Y=c[0]*0.283881+c[1]*0.668433+c[2]*0.047685,Z=c[0]*0.000088+c[1]*0.07231+c[2]*0.986039,S=X+Y+Z;return S?[+(X/S).toFixed(4),+(Y/S).toFixed(4)]:null}
+async function hueStates(){const g=await HUE.req('/groups/'+ST.hue.g);const ids=(g&&g.lights)||[];const st={};for(const id of ids){const l=await HUE.req('/lights/'+id);if(l&&l.state)st[id]=l.state}return st}
+async function hueRestoreStates(S){for(const[id,x]of Object.entries(S||{})){const st={on:!!x.on,transitiontime:15};if(x.on){st.bri=x.bri;if(x.colormode==='ct'&&x.ct)st.ct=x.ct;else if(x.colormode==='xy'&&x.xy)st.xy=x.xy;else if(x.colormode==='hs'&&x.hue!=null){st.hue=x.hue;st.sat=x.sat}}try{await HUE.req('/lights/'+id+'/state','PUT',st)}catch(e){}}}
+/* ===== SİNEMA IŞIĞI: ayrıntı sayfasında afişin baskın rengi; film başlayınca aynı renkte kısılır ===== */
+const CINE={xy:null,key:null,
+ on(){return HUE.ok()&&ST.hueCine!==1&&ST.hueOn!==1&&HUE.when()},
+ /* görseli küçültüp piksel piksel okur; doygun ve parlak renkleri kovalara ayırır, en baskın kovanın ortalamasını alır */
+ color(src){return new Promise(res=>{if(!src)return res(null);const im=new Image();im.crossOrigin='anonymous';const to=setTimeout(()=>res(null),6000);
+  im.onload=()=>{clearTimeout(to);try{const c=document.createElement('canvas');c.width=48;c.height=27;const g=c.getContext('2d');g.drawImage(im,0,0,48,27);const d=g.getImageData(0,0,48,27).data;
+   const B={};let best=null;for(let i=0;i<d.length;i+=4){const r=d[i],gg=d[i+1],b=d[i+2],mx=Math.max(r,gg,b),mn=Math.min(r,gg,b),sat=mx?(mx-mn)/mx:0;if(mx<50||sat<0.3)continue;
+    const k=(r>>5)*64+(gg>>5)*8+(b>>5),o=B[k]||(B[k]={w:0,r:0,g:0,b:0,n:0});o.w+=sat*mx/255;o.r+=r;o.g+=gg;o.b+=b;o.n++;if(!best||o.w>best.w)best=o}
+   if(!best||best.n<12)return res(null);const r=best.r/best.n,gg=best.g/best.n,b=best.b/best.n,mx=Math.max(r,gg,b)||1;
+   res(hexXY([r,gg,b].map(v=>Math.round(v/mx*255).toString(16).padStart(2,'0')).join('')))}catch(e){res(null)}};im.onerror=()=>{clearTimeout(to);res(null)};im.src=src})},
+ async detail(it){if(!this.on()||!it)return;const key=it.k+':'+it.id;if(this.key===key&&this.xy)return this.apply(60);this.key=key;const xy=await this.color(isz(it.bd||it.icon,'w300'));if(this.key!==key||cv!=='detail')return;
+  if(!xy){this.xy=null;LOG.add('info','Sinema ışığı: afiş rengi okunamadı',{kaynak:String(it.bd||it.icon||'').split('/').slice(0,3).join('/')});return}this.xy=xy;this.apply(60)},
+ async apply(pct){if(!this.xy||!HUE.ok())return;try{if(!HUE.saved){const st=await hueStates();if(!Object.values(st).some(x=>x.on))return;HUE.saved=st;HUE.on=true}
+  for(const[id,x]of Object.entries(HUE.saved))if(x.on)await HUE.req('/lights/'+id+'/state','PUT',{xy:this.xy,bri:Math.max(1,Math.min(x.bri,Math.round(pct*254/100))),transitiontime:20})}catch(e){}}};
+/* ===== CANLI MAÇ YARDIMCISI: spor kanalında yayındaki maçın istatistikleri ve kadroları ===== */
+const SPORTRX=/spor|sport|bein|exxen|tivibu|dazn|eurosport|s\s*sport|tabii|a\s*spor|trt\s*spor|smart\s*spor|sky\s*sport|tv8,5|tv\s*8,5/i;
+const MLGS=['tur.1','tur.2','eng.1','esp.1','ger.1','ita.1','fra.1','ned.1','por.1','uefa.champions','uefa.europa','uefa.europa.conf'];
+const STN={possessionPct:'Topla oynama',totalShots:'Şut',shotsOnTarget:'İsabetli şut',wonCorners:'Korner',foulsCommitted:'Faul',yellowCards:'Sarı kart',redCards:'Kırmızı kart',offsides:'Ofsayt',saves:'Kurtarış',accuratePasses:'İsabetli pas',totalPasses:'Pas',totalTackles:'Top kapma',effectiveClearance:'Uzaklaştırma'};
+const tnorm=n=>fold(U(String(n||''))).replace(/\b(FK|SK|FC|AS|SC|JK|AFC|CF|CD|AC|SV|VFB|VFL|TSG|BK|IF|SL|KULUBU|SPOR KULUBU)\b/g,' ').replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+const LC={open:false,ev:null,lg:null,t:null,
+ async today(){const out=[];await Promise.all(MLGS.map(async lg=>{try{const j=await SP.get(`https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/scoreboard`,4*6e4);(j.events||[]).forEach(e=>out.push({e,lg}))}catch(x){}}));return out},
+ async find(title){const T=tnorm(title);if(!T)return null;const L=await this.today();
+  for(const{e,lg}of L){const cs=((e.competitions||[])[0]||{}).competitors||[];if(cs.length<2)continue;
+   const hit=cs.every(c=>{const t=c.team||{};const names=[t.shortDisplayName,t.displayName,t.name,t.location,trn(t.displayName),trn(t.shortDisplayName)].filter(Boolean).map(tnorm);return names.some(n=>n.split(' ').filter(w=>w.length>=4).some(w=>T.includes(w)))});
+   if(hit)return{id:e.id,lg,e}}return null},
+ async check(){const b=$('#lstat');if(!b)return;b.style.display='none';this.ev=null;const it=LV;if(!it||it.radio)return;const cat=(await API.cats('live').catch(()=>[])).find(c=>c.id===it.cat);
+  if(!SPORTRX.test(clean(it.name))&&!SPORTRX.test((cat&&cat.name)||''))return;const now=Date.now()-lag*1000,cur=LEPG.find(e=>e.s<=now&&e.e>now);if(!cur||!cur.title)return;
+  const m=await this.find(cur.title+' '+(cur.desc||''));if(LV!==it||!m)return;this.ev=m;b.style.display='';LOG.add('info','Canlı maç bulundu',{kanal:clean(it.name),lig:m.lg});this.ask(m)},
+ ask(m){if(!GOAL.on()||GOAL.pick[m.id]||!m.e)return;const cs=((m.e.competitions||[])[0]||{}).competitors||[];if(cs.length<2)return;const st=(((m.e.competitions||[])[0]||{}).status||{}).type||{};if(st.state==='post')return;
+  const mine=teamsOf().find(T=>cs.some(c=>c.team&&String(c.team.id)===String(T.id)));const tn=c=>trn((c.team||{}).shortDisplayName||(c.team||{}).displayName||'');
+  const q=$('#lhq');q.dataset.ev=m.id;q.dataset.lg=m.lg;
+  if(mine){$('#lhqt').textContent='Bu maçta Hue gol kutlaması açılsın mı?';$('#lhqp').textContent=trn(mine.name)+' gol atınca salon takım renklerine bürünür.';$('#lhqb').innerHTML='<div class="btn pri" data-f data-act="lhy">Evet</div><div class="btn" data-f data-act="lhn">Hayır</div>'}
+  else{$('#lhqt').textContent='Bu maçta Hue gol kutlaması var';$('#lhqp').textContent='Hangi takımı tutuyorsun? O takım gol atınca salon takım renklerine bürünür.';
+   $('#lhqb').innerHTML=cs.map(c=>`<div class="btn" data-f data-act="lht" data-id="${esc((c.team||{}).id)}" data-n="${esc((c.team||{}).displayName||'')}" data-c1="${esc((c.team||{}).color||'')}" data-c2="${esc((c.team||{}).alternateColor||'')}">${esc(tn(c))}</div>`).join('')+'<div class="btn" data-f data-act="lhn">İstemiyorum</div>'}
+  q.classList.add('on');focus($('#lhqb [data-f]'))},
+ async show(){if(!this.ev)return;this.open=true;const el=$('#lcomp');el.classList.add('on');$$('#live .lf').forEach(x=>x.classList.add('fade'));AV.rect({x:40,y:40,w:1280,h:720});await this.load();focus($('#lcomp [data-f]'));clearInterval(this.t);this.t=setInterval(()=>this.load(),30000)},
+ hide(){if(!this.open)return false;this.open=false;clearInterval(this.t);$('#lcomp').classList.remove('on');AV.rect(null);showBand&&showBand();focus($('#lstat'));return true},
+ async load(){const{id,lg}=this.ev;let j=null;try{const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);const r=await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/summary?event=${id}`,{signal:c.signal});clearTimeout(to);j=await r.json()}catch(e){}
+  if(!this.open)return;if(!j){$('#lcst').innerHTML='<p class="empty">Maç verisi alınamadı.</p>';return}
+  const hc=((j.header||{}).competitions||[])[0]||{},cs=hc.competitors||[],home=cs.find(c=>c.homeAway==='home')||cs[0]||{},away=cs.find(c=>c!==home)||{},st=((hc.status||{}).type||{});
+  const nm=c=>esc(trn((c.team||{}).shortDisplayName||(c.team||{}).displayName||''));const lo=c=>{const t=c.team||{};const l=(t.logos&&t.logos[0]&&t.logos[0].href)||t.logo;return l?`<img src="${esc(l)}" alt="">`:''};
+  const bt=((j.boxscore||{}).teams)||[],sH=(bt.find(t=>String((t.team||{}).id)===String((home.team||{}).id))||bt[0]||{}).statistics||[],sA=(bt.find(t=>String((t.team||{}).id)===String((away.team||{}).id))||bt[1]||{}).statistics||[];
+  const rows=Object.keys(STN).map(k=>{const a=sH.find(x=>x.name===k),b=sA.find(x=>x.name===k);if(!a&&!b)return'';const av=parseFloat(a&&a.displayValue)||0,bv=parseFloat(b&&b.displayValue)||0,tot=av+bv||1;
+   return`<div class="lcr"><b>${esc(a?a.displayValue:'0')}${k==='possessionPct'?'%':''}</b><span>${STN[k]}</span><b>${esc(b?b.displayValue:'0')}${k==='possessionPct'?'%':''}</b><i><em style="width:${Math.round(av/tot*100)}%"></em></i></div>`}).join('');
+  $('#lcst').innerHTML=`<div class="lch"><div>${lo(home)}<small>${nm(home)}</small></div><b>${esc(home.score||'0')} – ${esc(away.score||'0')}</b><div>${lo(away)}<small>${nm(away)}</small></div></div><div class="lcs">${esc(st.shortDetail||st.detail||'')}</div>${rows||'<p class="empty">İstatistik henüz yok.</p>'}`;
+  const ro=j.rosters||[];const side=(r,c)=>{const L=(r&&r.roster)||[];const st=L.filter(p=>p.starter),sub=L.filter(p=>!p.starter);return`<div class="lcl"><h4>${nm(c)}${r&&r.formation?' · '+esc(r.formation):''}</h4><div class="lcp">${st.concat(sub).map(p=>{const a=p.athlete||{},hs=a.headshot&&a.headshot.href;return`<div class="lpl${p.starter?'':' sub'}" data-f>${hs?`<img src="${esc(hs)}" alt="">`:`<i>${esc(p.jersey||'')}</i>`}<b>${esc(a.shortName||a.displayName||'')}</b><small>${esc((p.position&&p.position.abbreviation)||'')}${p.starter?'':' · yedek'}</small></div>`}).join('')}</div></div>`};
+  const rH=ro.find(r=>String((r.team||{}).id)===String((home.team||{}).id))||ro[0],rA=ro.find(r=>String((r.team||{}).id)===String((away.team||{}).id))||ro[1];
+  const keep=cur&&cur.closest('#lcl')?[...$$('#lcl [data-f]')].indexOf(cur):-1;
+  $('#lcl').innerHTML=ro.length?side(rH,home)+side(rA,away):'<p class="empty" style="padding:20px">Kadrolar maç başlamadan kısa süre önce açıklanır.</p>';if(keep>=0){const n=$$('#lcl [data-f]')[keep];if(n)focus(n)}}};
+/* ===== GOL KUTLAMASI: takımın gol atınca salon takım renklerine bürünür ===== */
+const GOAL={last:{},pend:{},busy:false,pick:load('rg-goalpick',{}),
+ setPick(ev,v){this.pick[ev]=Object.assign({t:Date.now()},v);for(const k in this.pick)if(Date.now()-this.pick[k].t>2*864e5)delete this.pick[k];save('rg-goalpick',this.pick)},
+ delay(){return[0,15,30,45,60,90][ST.goalDl==null?3:ST.goalDl]},
+ on(){return HUE.ok()&&ST.goalOn!==1},
+ async watch(evId,lg,T){let sb=null;try{const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);const r=await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/scoreboard`,{signal:c.signal});clearTimeout(to);sb=await r.json()}catch(e){return}
+  const ev=(sb.events||[]).find(e=>String(e.id)===String(evId));if(!ev)return;const c=(ev.competitions||[])[0]||{},me=(c.competitors||[]).find(x=>x.team&&String(x.team.id)===String(T.id));if(!me)return;
+  if(me.team.color&&!T.c1){T.c1=me.team.color;T.c2=me.team.alternateColor||'ffffff'}const sc=+me.score||0,k='x'+evId,prev=this.last[k];this.last[k]=sc;const st=((c.status||{}).type||{}).state;
+  if(prev!=null&&sc>prev&&st==='in'){const op=(c.competitors||[]).find(x=>x!==me);const txt=trn(T.name)+' '+sc+' – '+(op?op.score:'');clearTimeout(this.pend[k]);this.pend[k]=setTimeout(()=>{if((this.last[k]||0)>=sc){toast('GOOOL!',txt,'',8000);this.party(T,'seçilen maç')}},this.delay()*1000)}
+  if(prev!=null&&sc<prev)clearTimeout(this.pend[k])},
+ async colors(T){if(T.c1)return[T.c1,T.c2||'ffffff'];try{const j=await SP.get(TU.teams(T.lg),7*864e5);const L=(((j.sports||[])[0]||{}).leagues||[{}])[0].teams.map(x=>x.team);const t=L.find(x=>String(x.id)===String(T.id));if(t&&t.color){T.c1=t.color;T.c2=t.alternateColor||'ffffff';save('rg-profs',PROFS);return[T.c1,T.c2]}}catch(e){}return['ffcc00','1a2a6c']},
+ async party(T,why){if(this.busy||!HUE.ok())return;this.busy=true;try{const[c1,c2]=await this.colors(T),x1=hexXY(c1),x2=hexXY(c2)||x1;const S=await hueStates(),ids=Object.keys(S).filter(id=>S[id].on&&S[id].reachable!==false);
+  if(!ids.length){this.busy=false;return}LOG.add('info','Gol kutlaması',{neden:why,renk:c1+'/'+c2});
+  for(let k=0;k<10;k++){for(let i=0;i<ids.length;i++){const xy=(i+k)%2?x2:x1;HUE.req('/lights/'+ids[i]+'/state','PUT',{on:true,xy,bri:254,transitiontime:2}).catch(()=>{})}await new Promise(r=>setTimeout(r,900))}
+  await hueRestoreStates(S)}catch(e){LOG.add('warn','Gol kutlaması hatası: '+e.message,{})}finally{this.busy=false}},
+ async poll(){if(!this.on())return;
+  for(const[ev,P]of Object.entries(this.pick)){if(!P.team||Date.now()-P.t>4*3600e3)continue;await this.watch(ev,P.lg,P.team)}
+  for(const T of teamsOf()){const j=SP.fresh(TU.fix(T.id),12*36e5);if(!j){SP.get(TU.fix(T.id),30*6e4).catch(()=>{});continue}
+   const m=(j.events||[]).map(e=>evParse(e,T.id)).find(m=>!m.done&&m.t<Date.now()+5*6e4&&m.t>Date.now()-170*6e4);if(!m)continue;
+   const lg=m.slug||T.lg;let sb=null;try{const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);const r=await fetch(`https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/scoreboard`,{signal:c.signal});clearTimeout(to);sb=await r.json()}catch(e){continue}
+   if(this.pick[m.id]&&(this.pick[m.id].no||this.pick[m.id].team))continue;
+   const ev=(sb.events||[]).find(e=>String(e.id)===String(m.id));if(!ev)continue;const c=(ev.competitions||[])[0]||{},me=(c.competitors||[]).find(x=>x.team&&String(x.team.id)===String(T.id));if(!me)continue;
+   if(me.team.color&&!T.c1){T.c1=me.team.color;T.c2=me.team.alternateColor||'ffffff';save('rg-profs',PROFS)}
+   const sc=+me.score||0,k=m.id,prev=this.last[k];this.last[k]=sc;const st=((c.status||{}).type||{}).state;
+   if(prev!=null&&sc>prev&&st==='in'){const op=(c.competitors||[]).find(x=>x!==me);const txt=trn(T.name)+' '+sc+' – '+(op?op.score:'');
+    clearTimeout(this.pend[k]);this.pend[k]=setTimeout(()=>{if((this.last[k]||0)>=sc){toast('GOOOL!',txt,'',8000);this.party(T,'gol')}},this.delay()*1000)}
+   if(prev!=null&&sc<prev){clearTimeout(this.pend[k]);LOG.add('info','Gol iptal (VAR)',{})}}}};
+setInterval(()=>GOAL.poll(),20000);
 let HPAIR=null,HIP='';
 V.hue=()=>{const c=HUE.ok(),h=ST.hue||{};return`<h1>Philips Hue ışıkları</h1><p class="sub2">Film ya da dizi başlayınca seçtiğin odanın ışıkları yavaşça kısılır; duraklatınca biraz açılır, çıkınca izlemeden önceki hâline döner. Kapalı lambalar açılmaz.</p>
  ${!h.u?`<div class="set" data-f data-act="nav" data-v="huepair">Hue köprüsünü bağla<span>›</span></div>`:`<div class="set" data-f data-act="huegrp">Oda<span>‹ ${esc(h.gname||'Seç')} ›</span></div>
@@ -476,6 +558,10 @@ V.hue=()=>{const c=HUE.ok(),h=ST.hue||{};return`<h1>Philips Hue ışıkları</h1
  ${HUE.eve()===1?`<div class="set" data-f data-act="hset" data-k="hueHr">Akşam başlangıcı<span>‹ ${String(HUE.hour()).padStart(2,'0')}:00 sonrası (sabah 06:00'ya kadar) ›</span></div>
  <div class="set" data-f data-act="hset" data-k="hueAsk">Her film ve bölümden önce sor<span>‹ ${['Evet','Hayır'][ST.hueAsk||0]} ›</span></div>`:''}
  <div class="set" data-f data-act="huetest">Şimdi dene<span>5 saniye kıs, sonra geri getir ›</span></div>
+ <div class="set" data-f data-act="hset" data-k="hueCine">Sinema ışığı (ayrıntı sayfasında afişin rengi)<span>‹ ${['Açık','Kapalı'][ST.hueCine||0]} ›</span></div>
+ <div class="set" data-f data-act="hset" data-k="goalOn">Gol kutlaması (takımın gol atınca takım renkleri)<span>‹ ${['Açık','Kapalı'][ST.goalOn||0]} ›</span></div>
+ <div class="set" data-f data-act="hset" data-k="goalDl">Kutlama gecikmesi<span>‹ ${GOAL.delay()} saniye ›</span></div>
+ <div class="set" data-f data-act="goaltest">Gol kutlamasını dene<span>${esc(trn((curTeam()||{}).name||'Takım seçilmedi'))} ›</span></div>
  <div class="set" data-f data-act="hueoff">Bağlantıyı kaldır<span>${esc(h.ip||'')} ›</span></div>`}`};
 let HGROUPS=[];
 AF.hue=async(a,tok)=>{if(!(ST.hue&&ST.hue.u))return;try{const g=await HUE.req('/groups');HGROUPS=Object.entries(g||{}).filter(([,x])=>x&&(x.type==='Room'||x.type==='Zone')).map(([id,x])=>({id,name:x.name}))}catch(e){HGROUPS=[]}};
@@ -498,9 +584,9 @@ function drawCats(t,cs,sel){const h=ST['h_'+t]||[],nm={};visCats(t,cs).forEach(c
  if(sel)focus($('#cbox '+sel))}
 
 /* ---------- gezinme ---------- */
-function go(s){const was=scr;scr=s;if(s==='live'&&was!=='live'&&ST.hueLive===1)HUE.dim('canlı');else if((s==='app'||s==='login')&&(was==='player'||was==='live'))HUE.restore();if(s==='login'){if(was!=='login'||!PAIR.t)PAIR.start()}else PAIR.stop();$$('.scr').forEach(x=>x.classList.toggle('on',x.id===s));document.documentElement.classList.toggle('vid',s==='player'||s==='live')}
+function go(s){const was=scr;scr=s;if(s==='live'&&was!=='live'&&ST.hueLive===1)HUE.dim('canlı');else if((s==='app'||s==='login')&&(was==='player'||was==='live')){if(s==='app'&&cv==='detail'&&CINE.xy)CINE.apply(60);else HUE.restore()}if(s==='login'){if(was!=='login'||!PAIR.t)PAIR.start()}else PAIR.stop();$$('.scr').forEach(x=>x.classList.toggle('on',x.id===s));document.documentElement.classList.toggle('vid',s==='player'||s==='live')}
 function sideCur(v,a){const sv={hue:'settings',huepair:'settings',rsearch:'radio',teams:'team',radio:'radio',city:'settings',team:'team',amb:'amb',teampick:'team',pinrec:'settings',who:'who',profs:'settings',pname:'settings',kidcats:'settings',diag:'settings',cat:a&&a.t==='vod'?'films':'series',tv:'live',detail:REG.get(a)&&REG.get(a).k==='vod'?'films':'series',cats:'settings',search:a==='live'?'live':a==='vod'?'films':a==='series'?'series':'search'}[v]||v;$$('.sn').forEach(s=>s.classList.toggle('cur',s.dataset.v===sv))}
-async function render(v,a,push=true,sel){if(push||!nav.length)nav.push([v,a]);else nav[nav.length-1]=[v,a];$('#app').classList.toggle('noside',v==='who');if(cv==='tv'||v!=='tv')miniStop();if(cv==='search'&&v!=='search'&&v!=='detail')API.purge();if(REG.size>6000&&(v==='home'||v==='tv'||v==='series'||v==='films'))REG.clear();cv=v;GRID=null;BR=null;COLDR=null;
+async function render(v,a,push=true,sel){if(push||!nav.length)nav.push([v,a]);else nav[nav.length-1]=[v,a];$('#app').classList.toggle('noside',v==='who');if(v!=='detail'&&CINE.key){CINE.key=null;CINE.xy=null;if(HUE.on&&scr==='app')HUE.restore()}if(cv==='tv'||v!=='tv')miniStop();if(cv==='search'&&v!=='search'&&v!=='detail')API.purge();if(REG.size>6000&&(v==='home'||v==='tv'||v==='series'||v==='films'))REG.clear();cv=v;GRID=null;BR=null;COLDR=null;
  $('#catov').classList.remove('on');const w=$('#view'),tok=++RT;w.className=v==='home'||v==='series'||v==='films'?'home':v==='tv'?'tvv':'';w.innerHTML=V[v](a);w.scrollTop=0;sideCur(v,a);focus((sel&&$('#view '+sel))||$('#view [data-f]'));
  if(AF[v]){try{await AF[v](a,tok,sel)}catch(e){if(tok===RT)toast('Yüklenemedi',e.message);LOG.add('api',e.message,{gorunum:v})}}}
 function exit(){scanStop();extStop();LRN=null;AV.close();clearTimeout(SLEEP);go('app');const[v,a]=nav[nav.length-1]||['home'];render(v,a,false,retSel);if(UPD)setTimeout(updApply,400)}
@@ -915,7 +1001,7 @@ function liveDraw(){const L=CTX.length?CTX:[LV],n=L.length,p=Math.max(0,L.findIn
  $('#strip').innerHTML=(n>1?[2,1,0,-1,-2]:[0]).map(o=>{const c=L[(p+o+n*5)%n];return`<div class="chi${o?'':' cur'}" data-key="${reg(c)}"><span>${c.num||''}</span>${esc(clean(c.name))}</div>`}).join('');
  $('#bn').innerHTML=img(LV.icon)||String(LV.num||'');favDraw();$('#bt').textContent=(isFav(LV.id)?'★ ':'')+clean(LV.name);$('#lvl').textContent='';
  $('#bnow').textContent='…';$('#bnowt').textContent='';$('#bnext').textContent='';$('#bp').style.width='0';drawLag();showBand();const it=LV;
- LEPG=[];clearTimeout(liveDraw.t);liveDraw.t=setTimeout(()=>API.epg(it.id,4).then(ep=>{if(LV!==it)return;LEPG=ep;bandEpg()}).catch(()=>{}),800)}
+ LEPG=[];LC.hide();{const b=$('#lstat');if(b)b.style.display='none';const q=$('#lhq');if(q)q.classList.remove('on')}clearTimeout(liveDraw.t);liveDraw.t=setTimeout(()=>API.epg(it.id,4).then(ep=>{if(LV!==it)return;LEPG=ep;bandEpg();LC.check()}).catch(()=>{}),800)}
 function bandEpg(){const t=Date.now()-lag*1000,n=LEPG.find(e=>e.s<=t&&e.e>t),x=LEPG.find(e=>e.s>t);
  $('#bnow').textContent=n?n.title:'Program bilgisi yok';$('#bnowt').textContent=n?`${hhmm(n.s)} – ${hhmm(n.e)}`:'';$('#bp').style.width=n?Math.min(100,(t-n.s)/(n.e-n.s)*100)+'%':'0';$('#bnext').textContent=x?`${x.title}, ${hhmm(x.s)}`:'–'}
 function showBand(){$$('#live .lf').forEach(x=>x.classList.remove('fade'));clearTimeout(hideT);hideT=setTimeout(()=>{if(!cur&&!lpaused)$$('#live .lf').forEach(x=>x.classList.add('fade'))},5000)}
@@ -924,8 +1010,10 @@ function lpause(){if(!lpaused){AV.pause();lpaused=true;pausedAt=Date.now();osd(I
   if(LV.arch&&gone>20){lag+=Math.round(gone);liveOpen()}else AV.play()}drawLag();showBand()}
 function liveSeek(st){if(!LV.arch)return osd('Bu kanalda geri sarma yok');lag=Math.max(0,Math.min((LV.archD||1)*86400,lag+st));drawLag();showBand();bandEpg();osd(lag?'−'+fmt(lag):'● Canlı',lpaused);
  clearTimeout(LGT);LGT=setTimeout(()=>{lpaused=false;liveOpen()},900)}
-function liveBack(){if(!$('#pan').classList.contains('hide')){hidePan();return focus($('[data-act=lset]'))}if($('#epg').classList.contains('on'))return closeEpg();const vis=$$('#live .lf').some(x=>!x.classList.contains('fade'));if(!$('#lerr2').classList.contains('on')&&(cur||vis)){unf();clearTimeout(hideT);if(!lpaused)$$('#live .lf').forEach(x=>x.classList.add('fade'));return}exit()}
-function lKey(e,m,b,cu,cd,pp,ff,rw){const epg=$('#epg').classList.contains('on'),pan=!$('#pan').classList.contains('hide'),ov=$('#lerr2').classList.contains('on');
+function liveBack(){if(LC.hide())return;if(!$('#pan').classList.contains('hide')){hidePan();return focus($('[data-act=lset]'))}if($('#epg').classList.contains('on'))return closeEpg();const vis=$$('#live .lf').some(x=>!x.classList.contains('fade'));if(!$('#lerr2').classList.contains('on')&&(cur||vis)){unf();clearTimeout(hideT);if(!lpaused)$$('#live .lf').forEach(x=>x.classList.add('fade'));return}exit()}
+function lKey(e,m,b,cu,cd,pp,ff,rw){if($('#lhq').classList.contains('on')){if(b){const n=$('#lhq [data-act=lhn]');if(n)ok(n);return}if(m==='l'||m==='r'){const B=$$('#lhqb [data-f]'),i=B.indexOf(cur);const n=B[i+(m==='r'?1:-1)];if(n)focus(n)}else if(!cur||!cur.closest('#lhq'))focus($('#lhqb [data-f]'));if(e.keyCode===13&&cur&&cur.closest('#lhq'))ok(cur);return}
+if(LC.open){if(b){LC.hide();return}if(m){const L=$$('#lcl [data-f]');if(!cur||!cur.closest('#lcomp'))return focus(L[0]);if(m==='l'||m==='r'){const row=cur.parentElement,K=[...row.children],i=K.indexOf(cur),n=K[i+(m==='r'?1:-1)];if(n){focus(n);n.scrollIntoView&&n.scrollIntoView({inline:'center',block:'nearest'})}return}const rows=$$('#lcl .lcp'),ri=rows.indexOf(cur.parentElement),nr=rows[ri+(m==='d'?1:-1)];if(nr&&nr.children.length)focus(nr.children[Math.min([...cur.parentElement.children].indexOf(cur),nr.children.length-1)]);return}if(pp||e.keyCode===13)return;if(cu||cd){LC.hide();return lKey(e,m,b,cu,cd,pp,ff,rw)}return}
+const epg=$('#epg').classList.contains('on'),pan=!$('#pan').classList.contains('hide'),ov=$('#lerr2').classList.contains('on');
  if(b)return liveBack();
  if((cu||cd)&&!ov)return zap(cu?1:-1);if(pp&&!ov)return lpause();
  if(!epg&&!pan&&!ov&&cur&&cur.closest('#band')&&m==='u'){unf();showBand();return}
@@ -1004,11 +1092,16 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
  case'hipk':HIP=d.v==='DEL'?HIP.slice(0,-1):(HIP+d.v).slice(0,15);$('#hipbox').innerHTML=esc(HIP)||'<span style="color:var(--dim)">Örnek: 192.168.1.20</span>';return;
  case'hipgo':if(!/^\d+\.\d+\.\d+\.\d+$/.test(HIP))return osd('Geçerli bir IP adresi yaz');return huePair(HIP,RT);
  case'huegrp':{if(!HGROUPS.length){osd('Odalar alınamadı; köprü bağlantısını kontrol et');return}const h=ST.hue,i=HGROUPS.findIndex(g=>g.id===h.g),n=HGROUPS[(i+1)%HGROUPS.length];h.g=n.id;h.gname=n.name;saveST();return keepRender('hue','[data-act=huegrp]')}
- case'hset':{if(d.k==='hueHr'){ST.hueHr=(HUE.hour()+1)%24;saveST();return keepRender('hue','[data-act=hset][data-k="hueHr"]')}const k=d.k,m={hueOn:2,hueLv:4,huePz:3,hueLive:2,hueEve:2,hueAsk:2}[k];const c=ST[k]==null?(k==='hueLv'||k==='hueEve'||k==='hueH'?1:0):ST[k];ST[k]=(c+1)%m;saveST();return keepRender('hue',`[data-act=hset][data-k="${k}"]`)}
+ case'hset':{if(d.k==='hueHr'){ST.hueHr=(HUE.hour()+1)%24;saveST();return keepRender('hue','[data-act=hset][data-k="hueHr"]')}const k=d.k,m={hueOn:2,hueLv:4,huePz:3,hueLive:2,hueEve:2,hueAsk:2,goalOn:2,goalDl:6,hueCine:2}[k];if(k==='goalDl'&&ST.goalDl==null)ST.goalDl=3;const c=ST[k]==null?(k==='hueLv'||k==='hueEve'||k==='hueH'?1:0):ST[k];ST[k]=(c+1)%m;saveST();return keepRender('hue',`[data-act=hset][data-k="${k}"]`)}
+ case'goaltest':{const T=curTeam();if(!T)return osd('Önce Takımım\'dan bir takım seç');if(!HUE.ok())return osd('Önce Hue bağlantısını kur');osd('Kutlama başlıyor');GOAL.party(T,'deneme');return}
  case'huetest':{if(!HUE.ok())return osd('Önce oda seç');const ev=ST.hueEve,on=ST.hueOn;ST.hueEve=0;ST.hueOn=0;HUE.dim('deneme').then(()=>{ST.hueEve=ev;ST.hueOn=on;osd(HUE.on?'Işıklar kısıldı; 5 saniye sonra geri gelecek':'Odadaki lambalar kapalı ya da köprüye ulaşılamadı');if(HUE.on)setTimeout(()=>HUE.restore(),5000)});return}
  case'hueoff':{if(!e.dataset.arm){e.dataset.arm='1';e.querySelector('span').textContent='Emin misin? Tekrar bas';return}HUE.restore().then(()=>{delete ST.hue;saveST();render('hue');focus($('#view [data-f]'))});return}
  case'hqY':HUE.dim('film');return HQGO&&HQGO();
  case'hqN':return HQGO&&HQGO();
+ case'lstat':return LC.show();
+ case'lhy':{const q=$('#lhq');q.classList.remove('on');GOAL.setPick(q.dataset.ev,{yes:1});osd('Gol kutlaması bu maç için açık');return focus($('#lstat'))}
+ case'lhn':{const q=$('#lhq');q.classList.remove('on');GOAL.setPick(q.dataset.ev,{no:1});return focus($('#lstat'))}
+ case'lht':{const q=$('#lhq');q.classList.remove('on');GOAL.setPick(q.dataset.ev,{lg:q.dataset.lg,team:{id:d.id,name:d.n,c1:d.c1||null,c2:d.c2||null,lg:q.dataset.lg}});LOG.add('info','Maç için takım seçildi',{});osd(trn(d.n)+' gol atınca salon kutlayacak');return focus($('#lstat'))}
  case'sfil':SF=d.k||null;drawSearch();return focus($(`#sres [data-act=sfil][data-k="${d.k||''}"]`));
  case'rq':Q=d.q;drawSearch();return focus($('#sres [data-f]')||$('[data-act=key]'));
  case'rqclr':RECS=[];save(pkey('rg-rec'),RECS);drawSearch();return focus($('[data-act=key]'));
