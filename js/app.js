@@ -460,13 +460,14 @@ const HUE={saved:null,on:false,busy:false,
  ask(){return this.ok()&&ST.hueOn!==1&&this.when()&&ST.hueAsk!==1&&!this.on},auto(){return this.ok()&&ST.hueOn!==1&&this.when()&&ST.hueAsk===1},
  when(){if(this.eve()===0)return true;const h=new Date().getHours();return h>=this.hour()||h<6},
  lvl(){return HUEO.lv[ST.hueLv==null?1:ST.hueLv]},
+ async need(){try{const t=new Promise((_,no)=>setTimeout(()=>no(new Error('zaman aşımı')),1800));const run=(async()=>{const g=await this.req('/groups/'+ST.hue.g);const ids=(g&&g.lights)||[];const L=await Promise.all(ids.map(id=>this.req('/lights/'+id).catch(()=>null)));const b=Math.round(this.lvl()*254/100);return L.some(l=>l&&l.state&&l.state.on&&l.state.reachable!==false&&l.state.bri>b)})();return await Promise.race([run,t])}catch(e){return false}},
  async dim(why){if(!this.ok()||ST.hueOn===1||!this.when())return;try{
    if(!this.on){const g=await this.req('/groups/'+ST.hue.g);const ids=(g&&g.lights)||[];const st={};for(const id of ids){const l=await this.req('/lights/'+id);if(l&&l.state)st[id]=l.state}this.saved=st;this.on=true;
     if(!Object.values(st).some(x=>x.on)){this.saved=null;this.on=false;return}}
    if(scr!=='player'&&scr!=='live'&&why!=='deneme'){this.on=false;this.saved=null;return}
-   const b=Math.max(1,Math.round(this.lvl()*254/100));for(const[id,x]of Object.entries(this.saved||{}))if(x.on)await this.req('/lights/'+id+'/state','PUT',{bri:b,transitiontime:30});
+   const b=Math.max(1,Math.round(this.lvl()*254/100));for(const[id,x]of Object.entries(this.saved||{}))if(x.on&&x.bri>b)await this.req('/lights/'+id+'/state','PUT',{bri:b,transitiontime:30});
    LOG.add('info','Hue: ışıklar kısıldı',{neden:why,seviye:this.lvl()})}catch(e){LOG.add('warn','Hue bağlantı hatası: '+e.message,{})}},
- async pause(p){if(!this.on||!this.ok())return;const z=HUEO.pz[ST.huePz||0];if(z<0)return;try{const b=Math.round((p?z:this.lvl())*254/100);for(const[id,x]of Object.entries(this.saved||{}))if(x.on)await this.req('/lights/'+id+'/state','PUT',{bri:Math.max(1,b),transitiontime:p?15:20})}catch(e){}},
+ async pause(p){if(!this.on||!this.ok())return;const z=HUEO.pz[ST.huePz||0];if(z<0)return;try{const b=Math.round((p?z:this.lvl())*254/100);for(const[id,x]of Object.entries(this.saved||{}))if(x.on&&x.bri>Math.round(this.lvl()*254/100))await this.req('/lights/'+id+'/state','PUT',{bri:Math.max(1,Math.min(b,x.bri)),transitiontime:p?15:20})}catch(e){}},
  async restore(){if(!this.on||!this.ok())return;const S=this.saved||{};this.on=false;this.saved=null;try{for(const[id,x]of Object.entries(S)){if(!x.on)continue;const st={on:true,bri:x.bri,transitiontime:25};if(x.colormode==='ct'&&x.ct)st.ct=x.ct;else if(x.colormode==='xy'&&x.xy)st.xy=x.xy;else if(x.colormode==='hs'&&x.hue!=null){st.hue=x.hue;st.sat=x.sat}await this.req('/lights/'+id+'/state','PUT',st)}LOG.add('info','Hue: ışıklar eski hâline döndü',{})}catch(e){LOG.add('warn','Hue geri alma hatası: '+e.message,{})}}};
 document.addEventListener('visibilitychange',()=>{if(document.hidden)HUE.restore()});
 let HPAIR=null,HIP='';
@@ -700,7 +701,7 @@ function openPlayer(it,start){if(scr!=='player')retSel=cur?selOf(cur):null;PL=it
  $('#t1').textContent='0:00';$('#t2').textContent='';$('#fl').style.width='0';$('#trk').textContent='';drawPP();
  const go2=()=>{$('#hueq').classList.remove('on');const h=HIST[it.k+':'+it.id];if(start==null&&hPart(h)){$('#rst').textContent=`${fmt(h.t)} noktasında kalmıştın.`;$('[data-act=rsY]').innerHTML=IC.play+' Kaldığın yerden devam et';$('[data-act=rsY]').dataset.t=h.t;$('#rs').classList.add('on');return focus($('[data-act=rsY]'))}
   startPlay(start||0)};HQGO=go2;
- if(HUE.ask()){$('#hueq').classList.add('on');return focus($('[data-act=hqY]'))}if(HUE.auto())HUE.dim('film');go2()}
+ if(HUE.ask()){const me=PL;HUE.need().then(n=>{if(PL!==me||scr!=='player')return;if(!n)return go2();$('#hueq').classList.add('on');focus($('[data-act=hqY]'))});return}if(HUE.auto())HUE.dim('film');go2()}
 let HQGO=null;
 async function startPlay(t){$('#rs').classList.remove('on');$('#perr').classList.remove('on');unf();tryN=0;loadingOn('player','Yükleniyor');PL.start=t;const me=PL;
  const pr=pref(PK);MKOK=false;if(!pr.mk&&pr.mkx!==2&&isTV){const t0=Date.now(),mk=await MKV.read(API.url(PL));if(PL!==me||scr!=='player')return;
