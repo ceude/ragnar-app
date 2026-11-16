@@ -585,3 +585,12 @@ html.tv [data-f]{transition:none!important}
 /* klavyenin sol kenarında ilk sol basış: hafif titreşim, ikinci basışta menüye geçer */
 .key.edge{animation:kbEdge .3s ease}
 @keyframes kbEdge{0%,100%{transform:translateX(0)}35%{transform:translateX(-5px)}70%{transform:translateX(2px)}}
+
+/* Sonraki bölüm: menünün parçası, beyaz; menü gizliyken de görünür */
+#nxb{background:#f2f2f2;color:#0a0d12}
+#nxb.fx{background:#fff;box-shadow:0 0 0 3px var(--acc)}
+
+/* son 15 saniye: düğmenin altında geri sayım */
+#nxb{flex-direction:column;align-items:center;gap:2px}
+#nxb small{display:none;font-size:11px;font-weight:600;opacity:.75}
+#nxb.cd small{display:block}

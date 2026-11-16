@@ -999,10 +999,10 @@ function pKey(e,m,b,cu,cd,pp,ff,rw){wake();setTimeout(skMark,0);const pan=!$('#p
  if(pan||ov){if(m)move(m);else if(e.keyCode===13)ok(cur);return}
  if(pp)return pause();if(ff||rw)return seek(ff?30:-30);
  if(cu||cd){const n=cu?nextEp():prevEp();if(n){histSet(PL,AV.time()/1000,AV.dur()/1000);return openPlayer(n,0)}return osd(PL.k!=='ep'?'Film':cu?'Son bölüm':'İlk bölüm')}
- if(cur){if(m){const bot=cur.closest('.cbot'),top=cur.closest('.ctop');if((m==='u'&&bot)||(m==='d'&&top)){unf();return skMark()}if((m==='u'&&top)||(m==='d'&&bot))return;move(m);return}if(e.keyCode===13)return ok(cur)}
+ if(cur){if(m){const nbOn=()=>{const n=$('#nxb');return n&&n.classList.contains('on')?n:null};if(cur.id==='nxb'){if(m==='d'){unf();return skMark()}if(m==='u')return focus($('#player [data-act=back]'));return}const bot=cur.closest('.cbot'),top=cur.closest('.ctop');if(m==='d'&&top&&nbOn())return focus(nbOn());if((m==='u'&&bot)||(m==='d'&&top)){unf();return skMark()}if((m==='u'&&top)||(m==='d'&&bot))return;move(m);return}if(e.keyCode===13)return ok(cur)}
  if(m==='l'||m==='r'){if(!e.repeat)hold=0;hold++;const st=hold<5?10:hold<15?30:60;return seek(m==='r'?st:-st)}
- if(m==='u')return focus($('#player [data-act=back]'));
- if(e.keyCode===13){const nb=$('#nxb');if(nb&&nb.classList.contains('on')){wake();return focus(nb)}if(!paused&&AV.st!=='none')pause();return focus($('#bpp'))}
+ if(m==='u'){const nb=$('#nxb');if(nb&&nb.classList.contains('on')&&$('#player').classList.contains('ui'))return focus(nb);return focus($('#player [data-act=back]'))}
+ if(e.keyCode===13){if(!paused&&AV.st!=='none')pause();return focus($('#bpp'))}
  if(m==='d')return focus($('#bpp'))}
 
 /* ---------- canlı tv ---------- */
@@ -1276,8 +1276,9 @@ setInterval(()=>{const d=new Date(),hm=hhmm(d);if(hm!==CLK){CLK=hm;$('#clk').tex
    if(scr==='player'){const cb0=AV.cb;AV.close();if(okR){loadingOn('player','Yeniden bağlanılıyor');setTimeout(()=>{if(scr==='player')AV.open(API.url(PL),null,Object.assign(cb0,{start:t/1000}))},1200)}else{$('#perrt').textContent='Yayın takıldı ve yeniden bağlanılamadı. Biraz sonra tekrar dene.';$('#perr').classList.add('on');focus($('[data-act=retry]'))}}
    else{const it=LV;AV.close();if(okR){loadingOn('live','Yeniden bağlanılıyor');setTimeout(()=>{if(LV===it&&scr==='live')liveOpen()},1200)}else liveFail(it,'takıldı')}}}
  if(scr==='player'&&PL&&AV.st==='play'&&!paused){const t=AV.time()/1000,du=AV.dur()/1000;if(++saveT>=10){saveT=0;histSet(PL,t,du)}
-  if($('#nx').classList.contains('on')){nxC--;$('#nxc').textContent=nxC+' sn içinde başlıyor';if(nxC<=0)playNext()}else if(!nxOn&&du>120&&du-t<=Math.max(25,tail8(du,true))&&nextEp())showNext()
-  {const nb=$('#nxb'),on=PL&&PL.k==='ep'&&du>120&&du-t<=tail8(du,true)&&!!nextEp();if(nb&&nb.classList.contains('on')!==on){nb.classList.toggle('on',on);if(!on&&cur===nb)unf()}}}
+  if($('#nx').classList.contains('on')){nxC--;$('#nxc').textContent=nxC+' sn içinde başlıyor';if(nxC<=0)playNext()}
+  {const nb=$('#nxb'),on=PL&&PL.k==='ep'&&du>120&&du-t<=tail8(du,true)&&!!nextEp();if(nb&&nb.classList.contains('on')!==on){nb.classList.toggle('on',on);if(!on&&cur===nb)unf()}
+   if(nb&&on){const left=Math.max(0,Math.ceil(du-t)),txt=left<=15?`${left} saniye sonra otomatik başlayacak`:'';const sm=nb.querySelector('small');if(sm&&sm.textContent!==txt){sm.textContent=txt;nb.classList.toggle('cd',!!txt)}}}}
  if(scr==='live'&&LV&&d.getSeconds()%30===0)bandEpg();
  if(d.getSeconds()%20===0)checkRem();if(d.getSeconds()===7)PERF.report()},1000);
 
