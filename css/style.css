@@ -581,3 +581,7 @@ html.tv [data-f]{transition:none!important}
 #nxb{position:absolute;right:40px;bottom:118px;display:none;z-index:4;padding:10px 20px;font-size:15px}
 #nxb.on{display:flex}
 #player:not(.ui) #nxb{bottom:40px}
+
+/* klavyenin sol kenarında ilk sol basış: hafif titreşim, ikinci basışta menüye geçer */
+.key.edge{animation:kbEdge .3s ease}
+@keyframes kbEdge{0%,100%{transform:translateX(0)}35%{transform:translateX(-5px)}70%{transform:translateX(2px)}}
