@@ -597,3 +597,18 @@ html.tv [data-f]{transition:none!important}
 
 /* ikinci altyazı: birincinin hemen üstü */
 #sub2{position:absolute;left:50%;transform:translateX(-50%);max-width:76%;text-align:center;padding:4px 14px;border-radius:4px;font-weight:600;line-height:1.25;display:none;bottom:70px}
+
+/* stadyuma giriş: yayın üst ortada, iki yanda takımlar, altta geri sayım (sahne 1280x720) */
+#prem{position:absolute;top:0;right:0;bottom:0;left:0;display:none;z-index:5;background:radial-gradient(ellipse at 50% 30%,#1a2338 0,#0a0d12 70%);color:#fff}
+#prem.on{display:block}
+#premvid{position:absolute;left:330px;top:28px;width:620px;height:349px;border-radius:6px;box-shadow:0 0 0 1px #ffffff22,0 18px 50px #000}
+.pmt{position:absolute;top:28px;width:270px;text-align:center}.pmt.l{left:30px}.pmt.r{right:30px}
+.pmt img{width:96px;height:96px;object-fit:contain;filter:drop-shadow(0 6px 18px #0009)}
+.pmt>b{display:block;font-family:var(--fo);font-size:22px;letter-spacing:.04em;margin:8px 0 10px}
+.pml{text-align:left;display:inline-block;font-size:12px;line-height:1.55;color:#dfe5f2}
+.pml small{display:block;color:var(--acc);font-weight:800;font-size:11px;letter-spacing:.06em;margin-bottom:3px}
+.pml i{display:inline-block;width:22px;color:var(--mut);font-style:normal;font-weight:700}
+.pmc{position:absolute;left:330px;width:620px;top:400px;text-align:center}
+.pmc small{display:block;color:var(--mut);font-size:12px;font-weight:600}
+.pmc b{display:block;font-family:var(--fo);font-size:76px;font-weight:600;letter-spacing:.04em;line-height:1.1;margin:6px 0}
+.pmc span{color:var(--acc);font-size:12px;font-weight:800;letter-spacing:.12em}
