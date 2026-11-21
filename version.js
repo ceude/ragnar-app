@@ -1,1 +1,1 @@
-window.RAGNAR_REMOTE={version:'1.8.14'};
+window.RAGNAR_REMOTE={version:'1.9.0'};

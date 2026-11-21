@@ -612,3 +612,133 @@ html.tv [data-f]{transition:none!important}
 .pmc small{display:block;color:var(--mut);font-size:12px;font-weight:600}
 .pmc b{display:block;font-family:var(--fo);font-size:76px;font-weight:600;letter-spacing:.04em;line-height:1.1;margin:6px 0}
 .pmc span{color:var(--acc);font-size:12px;font-weight:800;letter-spacing:.12em}
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:400;src:url(../fonts/inter-latin-ext-400-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:400;src:url(../fonts/inter-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:500;src:url(../fonts/inter-latin-ext-500-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:500;src:url(../fonts/inter-latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:600;src:url(../fonts/inter-latin-ext-600-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:600;src:url(../fonts/inter-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:700;src:url(../fonts/inter-latin-ext-700-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:700;src:url(../fonts/inter-latin-700-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:800;src:url(../fonts/inter-latin-ext-800-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:800;src:url(../fonts/inter-latin-800-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:900;src:url(../fonts/inter-latin-ext-900-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Inter';font-style:normal;font-display:swap;font-weight:900;src:url(../fonts/inter-latin-900-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+/* ================= 1.9: NETFLIX TARZI TASARIM DİLİ ================= */
+:root{--fd:Inter,system-ui,sans-serif;--fo:Inter,system-ui,sans-serif;--sl:96px}
+body,#app,#app *,#player *,#live *,#login *,.ov *,#toast *{font-family:Inter,system-ui,sans-serif}
+#splash,#splash *,.wm,.wm *{font-family:Oswald,Impact,sans-serif}
+h1,.tl,.pt,.rt,.btop h1{font-family:Inter,system-ui,sans-serif!important;letter-spacing:-.01em}
+.rt{font-size:18px;font-weight:700;color:#e8e8ec;margin:18px 0 0}
+/* ---- yan menü: ince ikon şeridi, odaklanınca genişleyen yarı saydam panel ---- */
+#side{display:flex!important;width:96px;padding:26px 0 26px 22px;gap:0;background:linear-gradient(90deg,#000c 0,#0008 60%,transparent);flex-direction:column}
+#side .brand{display:none!important}
+#side .snl{margin:auto 0;display:flex;flex-direction:column;gap:6px;background:#1418207a;border-radius:28px;padding:10px 6px;width:52px;transition:none}
+#side .sn{height:44px;width:40px;padding:0 10px;border-radius:999px;gap:16px;color:#c8cad0;font-size:17px;font-weight:600}
+#side .sn svg{width:22px;height:22px;stroke-width:1.6;flex:none}
+#side .sn span{opacity:0}
+#side .sn.cur{color:#fff}#side .sn.cur svg{color:#fff}
+#side .snp{margin:0;height:auto;padding:0;width:44px;background:none!important;gap:14px;align-items:center}
+#side .snp .av.s{width:40px;height:40px;border-radius:9px;font-size:18px}
+#side .snp span{display:flex;flex-direction:column;line-height:1.2}
+#side .snp b{font-size:17px;font-weight:700;color:#fff}#side .snp small{font-size:13px;color:#c0c3ca;font-weight:500}
+#side .snp em{font-style:normal;color:#c0c3ca;font-size:22px;opacity:0;margin-left:auto;padding-right:14px}
+#side.open{width:330px;background:linear-gradient(90deg,#0b0d12f5 0,#0b0d12e6 72%,#0b0d1200)}
+#side.open .snl{width:250px;background:transparent;padding:10px 0}
+#side.open .sn{width:228px}#side.open .sn span,#side.open .snp em{opacity:1}
+#side.open .snp{width:260px}
+#side .sn.fx{background:#f2f2f2;color:#111;box-shadow:none}#side .sn.fx svg{color:#111}
+#side .snp.fx{background:none!important}#side .snp.fx .av.s{box-shadow:0 0 0 3px #fff}
+#side .snp.fx b,#side .snp.fx small,#side .snp.fx em{color:#fff}
+#app.sopen #view{transform:none!important}
+#app.sopen #view::after{content:"";position:absolute;inset:0;background:#0006;pointer-events:none;z-index:15}
+#app.sopen{--sl:96px}
+/* ---- sayfa arka planı: odaktaki içeriğin görseli, koyu örtüyle ---- */
+#pbg{position:absolute;inset:0;background-size:cover;background-position:center 20%;opacity:0;transition:opacity .6s;z-index:0;pointer-events:none}
+#pbg.on{opacity:.38}
+#pbg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#0a0d12 0,#0a0d12cc 30%,#0a0d1255 70%,#0a0d12aa),linear-gradient(0deg,#0a0d12 0,#0a0d1200 55%)}
+html.tv #pbg{transition:none}
+#view{z-index:1}
+#app:not(.vv-home):not(.vv-series):not(.vv-films) #pbg{display:none}
+/* ---- şeritler: vitrin yok, şeritler üstten başlar ---- */
+.rows.nx{top:16px}
+#brows.nx{top:84px}
+.rows.nx .row{min-height:0;padding:10px 8px 12px}
+.rows.nx .po{width:150px;height:225px;border-radius:8px;transition:width .22s ease}
+html.tv .rows.nx .po{transition:none}
+.rows.nx .po img{width:100%;height:100%;object-fit:cover}
+.rows.nx .po .pbx{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
+.rows.nx .po.fx{width:400px;box-shadow:0 0 0 3px #fff!important;transform:none!important}
+.rows.nx .po.fx .pbx{opacity:1}
+.rows.nx .po.fx::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#000c 0,#0000 55%);z-index:1}
+.rows.nx .po .pt{z-index:2}
+.rows.nx .po.fx .pt{display:block!important;left:18px;right:18px;bottom:16px;font-size:28px;font-weight:900;line-height:1.02;letter-spacing:-.02em;text-transform:uppercase;text-shadow:0 2px 16px #000}
+.rows.nx .ls.fx{box-shadow:0 0 0 3px #fff!important;transform:none!important}
+.rinfo{margin:2px 0 6px;padding:0 4px;max-width:640px;min-height:76px}
+.rinfo .rim{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#fff}
+.rinfo .rim i{font-style:normal;color:#9aa0aa;font-size:10px}
+.rinfo .ris{font-size:13px;color:#d8dbe2;font-weight:600;margin-top:4px}
+.rinfo p{margin:6px 0 0;font-size:14px;line-height:1.45;color:#e2e4ea;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.btop{position:relative;z-index:2}
+/* ---- profil seçimi: solda dikey profiller, sağda büyük görsel ---- */
+#app.noside #view{padding:0!important}
+.whoN{position:absolute;inset:0;display:flex}
+.whoN .wbg{position:absolute;inset:0;overflow:hidden}
+.whoN .wbg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.whoN .wbg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#0a0d12 0,#0a0d12f0 18%,#0a0d1280 38%,#0a0d1200 60%),linear-gradient(0deg,#0a0d12d0 0,#0a0d1200 40%)}
+.whoN .wft{position:absolute;right:46px;bottom:44px;text-align:right;z-index:2;max-width:520px}
+.whoN .wft b{display:block;font-size:40px;font-weight:900;letter-spacing:-.02em;line-height:1.05;text-transform:uppercase;text-shadow:0 3px 18px #000}
+.whoN .wft small{display:block;margin-top:8px;font-size:15px;font-weight:700;color:#e8e8ec}
+.whoN .wl{position:relative;z-index:2;width:330px;padding:34px 0 0 60px;display:flex;flex-direction:column}
+.whoN .wlh{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:18px}
+.whoN .wlg{font-family:Oswald,Impact,sans-serif!important;letter-spacing:.28em;color:var(--acc);font-size:26px;font-weight:600}
+.whoN .wlh small{font-size:14px;color:#c8cad0;font-weight:500}
+.whoN .wps{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.whoN .wp{flex-direction:row;align-items:center;gap:18px;width:auto;padding:4px;border-radius:12px;background:none!important}
+.whoN .wp .av.l{width:76px;height:76px;font-size:34px;border-radius:10px;box-shadow:none;transition:width .18s,height .18s}
+.whoN .wp b{font-size:22px;font-weight:700;opacity:0;white-space:nowrap}
+.whoN .wp b small{font-size:12px;color:#c8cad0;font-weight:600;margin-left:6px}
+.whoN .wp.fx .av.l{width:112px;height:112px;font-size:48px;box-shadow:0 0 0 3px #fff}
+.whoN .wp.fx b{opacity:1}
+.whoN .wpm{margin-top:22px;align-self:flex-start}
+html.tv .whoN .wp .av.l{transition:none}
+#side .snp{overflow:visible}#side .snp .av.s{border-radius:9px!important;margin:0}
+#app.noside #side{display:none!important}
+.whoN .wp.fx{box-shadow:none!important;outline:none!important;transform:none!important}
+.whoN .wbg{background-size:cover}
+.rows.nx .row{min-height:0!important}
+.btop{left:0!important}
+/* düğmeler: Netflix gibi; odakta beyaz zemin, koyu yazı; odak dışında yarı saydam */
+#app .btn,#player .btn,#live .btn,.ov .btn{background:#ffffff26;color:#fff;border-radius:6px}
+#app .btn.pri:not(.fx),.ov .btn.pri:not(.fx){background:#ffffff3a;color:#fff}
+#app .btn.fx,#player .btn.fx,#live .btn.fx,.ov .btn.fx,#nxb.fx{background:#fff!important;color:#000!important;box-shadow:none!important;transform:none!important}
+#app .btn.fx svg,#player .btn.fx svg,#live .btn.fx svg,.ov .btn.fx svg{color:#000}
+.btop .btn{background:transparent}
+
+/* ---- arama: Netflix tarzı ---- */
+.srchN{position:absolute;top:0;bottom:0;left:var(--sl);right:0;display:flex;gap:34px}
+.srchN .sl{width:330px;flex:none;padding-top:28px;display:flex;flex-direction:column;overflow:hidden}
+.srchN .qbox{width:auto;font-size:22px;font-weight:600;border:none;margin:0 0 14px;padding:0 4px;min-height:30px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srchN .qbox .ph{color:#8a8f99;font-weight:500;font-size:18px}
+.srchN .qbox .caret{display:inline-block;width:2px;height:24px;background:#fff;margin-left:3px;vertical-align:-4px;animation:car 1s steps(1) infinite}
+@keyframes car{50%{opacity:0}}
+.srchN .kb{grid-template-columns:repeat(6,1fr);gap:4px;background:#ffffff0d;border-radius:10px;padding:8px;animation:none}
+.srchN .key{height:44px;background:#ffffff12;border-radius:6px;font-size:19px;font-weight:500;color:#e8e8ec;text-transform:none}
+.srchN .key.w{grid-column:span 3;background:#ffffff08}
+.srchN .key svg{width:24px;height:24px}
+.srchN .key.fx{background:#fff!important;color:#000!important;box-shadow:none!important;transform:none!important}
+.srchN .slist{margin-top:18px;display:flex;flex-direction:column;gap:2px;overflow:hidden}
+.srchN .slist small{color:#8a8f99;font-size:13px;font-weight:600;margin:0 0 6px 12px}
+.srchN .sli{padding:9px 12px;border-radius:6px;font-size:17px;font-weight:500;color:#e8e8ec;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srchN .sli.dim{color:#8a8f99;font-size:14px}
+.srchN .sli.fx{background:#fff!important;color:#000!important;box-shadow:none!important;transform:none!important}
+.srchN .sr{flex:1;min-width:0;overflow-y:auto;padding:28px 40px 40px 0;scrollbar-width:none}
+.srchN .srh{font-size:14px;color:#8a8f99;font-weight:600;margin-bottom:4px}
+.srchN .srt{font-size:22px;font-weight:600;color:#fff;margin:6px 0 14px}
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.sgrid .po{width:auto;height:auto;aspect-ratio:2/3;border-radius:8px}
+.sgrid .po img{width:100%;height:100%;object-fit:cover}
+/* odak: Netflix gibi beyaz çerçeve, büyütme yok */
+.po.fx,.ls.fx,.more.fx,.tvi.fx,.ep.fx{box-shadow:0 0 0 3px #fff!important;transform:none!important}
+.srchN .key.w{order:-1}
