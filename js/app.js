@@ -248,12 +248,13 @@ async function newItems(k){const ck='rg-new-'+k+'-'+(ACC.u||''),c=load(ck,null);
 /* yer tutucu hemen konur, sayfa kaymaz; içerik gelince yerine oturur. boş çıkarsa yumuşakça kapanır ve 3 saat bir daha yer tutulmaz */
 async function newRow(k,tok){const b=$('#brows');if(!b)return;const ck='rg-new-'+k+'-'+(ACC.u||''),c=load(ck,null),fresh=c&&Date.now()-c.t<12*3600e3;
  if(fresh&&!c.v.length)return;
- b.insertAdjacentHTML('afterbegin',`<div class="rt" id="rnewt">Yeni eklenenler<small class="rtn">${fresh?'son 7 gün':'son 7 gün · yükleniyor…'}</small></div><div class="row" id="rnew">${fresh?'':Array.from({length:7},()=>'<div class="po sk"><span>Yükleniyor…</span></div>').join('')}</div>`);
+ const cwT=b.firstElementChild&&b.firstElementChild.classList.contains('rt')&&/^İzlemeye devam et/.test(b.firstElementChild.textContent)?b.firstElementChild.nextElementSibling:null;
+ (cwT||b).insertAdjacentHTML(cwT?'afterend':'afterbegin',`<div class="rt" id="rnewt">Yeni eklenenler<small class="rtn">${fresh?'son 7 gün':'son 7 gün · yükleniyor…'}</small></div><div class="row" id="rnew">${fresh?'':Array.from({length:7},()=>'<div class="po sk"><span>Yükleniyor…</span></div>').join('')}</div>`);
  if(!fresh)await new Promise(r=>setTimeout(r,800));if(tok!==RT)return;let L=[];try{L=await newItems(k)}catch(e){}if(tok!==RT)return;const row=$('#rnew'),t=$('#rnewt');if(!row)return;
  if(!L.length){[t,row].forEach(x=>x.classList.add('gone'));setTimeout(()=>{t.remove();row.remove()},320);return}
  t.querySelector('.rtn').textContent='son 7 gün · '+L.length;
  row.innerHTML=L.slice(0,16).map(poster).join('')+(L.length>16?`<div class="more" data-f data-act="catall" data-t="${k}" data-c="__new" data-n="Yeni eklenenler"><b>Tümünü gör</b><small>${L.length} ${k==='vod'?'film':'dizi'}</small></div>`:'')}
-async function browseAF(k,tok){const cs=visCats(k,await API.cats(k));if(tok!==RT)return;BR={k,cs,shown:0,tok,busy:0};$('#brows').innerHTML=cs.length?'':'<div class="empty">Bu listede içerik yok.</div>';if(cs.length)newRow(k,tok);
+async function browseAF(k,tok){const cs=visCats(k,await API.cats(k));if(tok!==RT)return;BR={k,cs,shown:0,tok,busy:0};{const cw=cwList().filter(h=>k==='series'?!!h.sid:(!h.sid&&h.k!=='ep'&&h.k!=='nx'));$('#brows').innerHTML=(cw.length?row('İzlemeye devam et',cw.map(cwCard)):'')+(cs.length?'':'<div class="empty">Bu listede içerik yok.</div>')}if(cs.length)newRow(k,tok);
  await browseMore();if(tok===RT&&(!cur||!cur.isConnected||cur.closest('#view')))focus($('#hero [data-f]')||$('#brows [data-f]'))}
 AF.series=(a,t)=>browseAF('series',t);AF.films=(a,t)=>browseAF('vod',t);
 async function rowFill(B,cid,nm){const tok=B.tok;let it=[];try{it=await API.items(B.k,cid)}catch(e){}if(tok!==RT)return;const row=$(`#brows .row[data-cat="${CSS.escape(cid)}"]`);if(!row||row.dataset.cold)return;
@@ -711,13 +712,12 @@ function move(d){if(!cur||!cur.isConnected)return focus(vis()[0]);
  if(d==='l'&&scr==='app'&&!PAD&&cur.closest('#view')){const r0=cur.getBoundingClientRect();const left=$$('#view [data-f]').some(e=>{if(e===cur||e.offsetParent===null)return false;const r=e.getBoundingClientRect();return r.right<=r0.left+4&&Math.min(r.bottom,r0.bottom)-Math.max(r.top,r0.top)>-60});
   if(!left&&!(cur.parentElement&&cur.parentElement.matches(HROW)&&cur.previousElementSibling)){const sn=$('#side .sn.cur')||$('#side .sn');if(sn)return focus(sn)}}
  /* yan menüde sağ ok = seç: başka bir sayfaysa aç ve içeriğe geç */
- if(d==='r'&&scr==='app'&&!PAD&&cur.classList.contains('sn')&&cur.closest('#side')&&!cur.classList.contains('cur')){const v=cur.dataset.v;ok(cur);
-  let n=0;const go=()=>{if(PAD||cv==='who'&&v!=='who'&&$('#view .wp'))return;const t=$('#view [data-f]');if(t&&cur&&cur.closest('#side'))return focus(t);if(++n<12&&cur&&cur.closest('#side'))setTimeout(go,150)};setTimeout(go,60);return}
+ if(d==='r'&&scr==='app'&&!PAD&&cur.classList.contains('sn')&&cur.closest('#side')&&!cur.classList.contains('cur')){ok(cur);return}
  if((d==='u'||d==='d')&&cur.hasAttribute('data-scroll')){const b=cur,st=b.scrollTop,mx=b.scrollHeight-b.clientHeight;if(d==='d'&&st<mx-2){b.scrollTop=Math.min(mx,st+180);return}if(d==='u'&&st>2){b.scrollTop=Math.max(0,st-180);return}}
  /* afiş şeritleri arasında yukarı/aşağı: ekranda görünmese de bir üst/alt şeride sırayla geç */
  if((d==='u'||d==='d')&&!PAD&&cur.parentElement&&cur.parentElement.classList.contains('row')){const sc=cur.closest('.rows')||cur.closest('#view');
   if(sc){const R=[...sc.querySelectorAll('.row')].filter(r=>r.dataset.cold||r.querySelector('[data-f]')),i=R.indexOf(cur.parentElement),n=R[i+(d==='u'?-1:1)];
-   if(n){const c=cur.getBoundingClientRect(),cx=c.left+c.width/2,pick=()=>{let best=null,bd=1e9;for(const e of n.querySelectorAll('[data-f]')){const r=e.getBoundingClientRect(),dx=Math.abs(r.left+r.width/2-cx);if(dx<bd){bd=dx;best=e}}return best};
+   if(n){const pick=()=>{const f=n.querySelector('[data-f]');try{n.scrollLeft=0}catch(e){}return f};
     if(n.dataset.cold&&BR){delete n.dataset.cold;rowFill(BR,n.dataset.cat,n.dataset.n).then(()=>{const b=pick();if(b)focus(b)});return}
     const best=pick();if(best)return focus(best)}}}
  if((d==='l'||d==='r')&&cur.parentElement&&cur.parentElement.matches(HROW)){let n=d==='r'?cur.nextElementSibling:cur.previousElementSibling;
@@ -1172,7 +1172,7 @@ function ok(e){if(!e)return;if(e.tagName==='INPUT')return e.focus();const d=e.da
  case'login':{let acc;try{acc=parseLogin($('#in1').value,$('#in2').value,$('#in3').value)}catch(x){$('#lerr').textContent=x.message;return focus($('#in1'))}return doLogin(acc)}
  case'logout':AV.close();ACC=null;save('rg-acc',null);API.C={};go('login');return focus($('#in1'));
  case'reload':API.C={};['live','vod','series'].forEach(k=>save('rg-c-'+k+'-'+(ACC.u||''),null));toast('Liste yenileniyor','');return(ACC.type==='m3u'?M3U.load(ACC.url):Promise.resolve()).then(()=>render('home')).catch(x=>toast('Yenilenemedi',x.message));
- case'nav':if(d.v==='who')return profGate(()=>render('who'));if(d.v==='settings'&&PROF().kid)return pad('pin',()=>{render('settings');focus($('.sn[data-v="settings"]'))});if(d.v==='search'&&!Q)SF=null;render(d.v==='live'?'tv':d.v);return focus($(`.sn[data-v="${d.v}"]`));
+ case'nav':if(d.v==='who')return profGate(()=>render('who'));if(d.v==='settings'&&PROF().kid)return pad('pin',()=>{render('settings');focus($('.sn[data-v="settings"]'))});if(d.v==='search'&&!Q)SF=null;render(d.v==='live'?'tv':d.v);focus($(`.sn[data-v="${d.v}"]`));{const v=d.v;let n=0;const go2=()=>{if(PAD||(cv==='who'&&v!=='who'))return;const t=$('#view [data-f]');if(t&&cur&&cur.closest('#side'))return focus(t);if(++n<14&&cur&&cur.closest('#side'))setTimeout(go2,150)};setTimeout(go2,60)}return;
  case'srch':Q='';SF=null;return render('search',d.s);
  case'prof':{const go2=()=>{useProfile(d.id);nav=[];render('home');focus($('#view [data-f]'))};const tgt=PROFS.find(p=>p.id===d.id);if(PROF().kid&&!tgt.kid&&d.id!==PID&&!PGOK)return pad('pin',go2);return go2()}
  case'padd':PEDIT={kid:d.kid==='1'};PNAME='';return render('pname');
